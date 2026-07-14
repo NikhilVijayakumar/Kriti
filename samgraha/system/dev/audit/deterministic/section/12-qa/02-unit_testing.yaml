@@ -1,0 +1,61 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: unit_testing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-unit-001
+    description: "Unit testing section exists"
+    condition: "document has a section with semantic_type = 'unit_testing'"
+    message: "Missing required 'Unit Testing' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "unit_testing"
+
+  - id: qa-sec-unit-002
+    description: "Unit testing defines scope"
+    condition: "section specifies what components or modules are covered by unit tests"
+    message: "Unit testing section does not define test scope"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "unit"
+        - "component"
+        - "module"
+        - "function"
+
+  - id: qa-sec-unit-003
+    description: "Unit testing defines conventions"
+    condition: "section specifies naming conventions, structure, or patterns for unit tests"
+    message: "Unit testing section does not define test conventions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "convention"
+        - "naming"
+        - "pattern"
+        - "structure"
+
+  - id: qa-sec-unit-004
+    description: "Unit testing references engineering standards"
+    condition: "section references Engineering Documentation testing standards"
+    message: "Unit testing does not reference Engineering Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: engineering
+          direction: derives_from

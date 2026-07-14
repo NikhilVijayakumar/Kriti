@@ -1,0 +1,59 @@
+system_id: samgraha-documentation
+domain: design
+section_type: ux_principles
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: design-sec-ux-001
+    description: "UX principles section exists"
+    condition: "document has a section with semantic_type = 'ux_principles'"
+    message: "Missing required 'UX Principles' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "ux_principles"
+
+  - id: design-sec-ux-002
+    description: "UX principles are enumerated"
+    condition: "section lists at least two distinct UX principles"
+    message: "UX principles are not enumerated"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_count: 2
+
+  - id: design-sec-ux-003
+    description: "UX principles are technology-independent"
+    condition: "principles describe user experience, not specific UI frameworks or libraries"
+    message: "UX principles contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: design-sec-ux-004
+    description: "UX principles are user-centered"
+    condition: "principles reference user needs, behaviors, or goals"
+    message: "UX principles are not user-centered"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "user"
+        - "human"
+        - "person"
+        - "interaction"
+        - "experience"

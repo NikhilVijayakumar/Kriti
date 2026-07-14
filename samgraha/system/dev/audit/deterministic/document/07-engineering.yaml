@@ -1,0 +1,121 @@
+system_id: samgraha-documentation
+domain: engineering
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Engineering Documentation. Validates structural completeness, modularity, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: eng-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/05-engineering-standards.md Required Sections table"
+    message: "Engineering document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - guiding_principles
+        - rationale
+        - build_standards
+        - testing_standards
+
+  - id: eng-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: eng-doc-003
+    description: "Document covers one engineering concern"
+    condition: "document has a single primary focus — does not mix unrelated engineering concerns"
+    message: "Document covers multiple unrelated engineering concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: eng-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Engineering document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: eng-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream standards (Philosophy, Architecture) and downstream standards (Implementation) where applicable"
+    message: "Engineering document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: philosophy
+          direction: guided_by
+        - domain: architecture
+          direction: soft_aligns_with
+
+  # --- Duplicate content ---
+  - id: eng-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Engineering document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Tier enforcement ---
+  - id: eng-doc-007
+    description: "Engineering does not derive from lower-tier documents"
+    condition: "document does not claim derivation from Feature Design, Feature Technical, or Implementation"
+    message: "Engineering is Tier 2 and must not derive from Tier 3 documents"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: relationship_validation
+      forbidden_derived_from:
+        - feature-design
+        - feature-technical
+        - implementation
+
+  # --- Script-sourced: ground truth from repo ---
+  - id: eng-doc-013
+    description: "Lint standards pass"
+    condition: "lint-standards script reports lint_exit_code == 0"
+    message: "Lint standards failed — lint_exit_code is not 0"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/07-engineering/lint-standards.schema.json#metrics.lint_exit_code"
+      threshold: 0
+      comparison: "=="

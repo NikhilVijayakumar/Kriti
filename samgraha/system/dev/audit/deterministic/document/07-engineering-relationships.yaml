@@ -1,0 +1,131 @@
+system_id: samgraha-documentation
+domain: engineering
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: eng-purpose-derives-philosophy
+    from_section: purpose
+    type: derives_from
+    target_domain: philosophy
+    target_section: purpose
+    owner: section
+
+  - id: eng-purpose-guided-by-philosophy
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-guiding-guided-by-philosophy
+    from_section: guiding_principles
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-guiding-derives-philosophy
+    from_section: guiding_principles
+    type: derives_from
+    target_domain: philosophy
+    target_section: rationale
+    owner: section
+
+  - id: eng-rationale-derives-philosophy
+    from_section: rationale
+    type: derives_from
+    target_domain: philosophy
+    target_section: rationale
+    owner: section
+
+  - id: eng-rationale-informs-guiding
+    from_section: rationale
+    type: informs
+    target_domain: engineering
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-build-derives-arch
+    from_section: build_standards
+    type: derives_from
+    target_domain: architecture
+    target_section: operational_readiness
+    owner: section
+
+  - id: eng-build-derives-philosophy
+    from_section: build_standards
+    type: derives_from
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-testing-derives-arch
+    from_section: testing_standards
+    type: derives_from
+    target_domain: architecture
+    target_section: observability
+    owner: section
+
+  - id: eng-testing-derives-philosophy
+    from_section: testing_standards
+    type: derives_from
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-code-constrains-ft
+    from_section: code_standards
+    type: constrains
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: eng-constraints-derives-arch
+    from_section: constraints
+    type: derives_from
+    target_domain: architecture
+    target_section: constraints
+    owner: section
+
+  - id: eng-constraints-constrains-ft
+    from_section: constraints
+    type: constrains
+    target_domain: feature-technical
+    target_section: runtime_constraints
+    owner: section
+
+  - id: eng-trace-derives-philosophy
+    from_section: traceability
+    type: traceable_to
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: eng-trace-derives-arch
+    from_section: traceability
+    type: traceable_to
+    target_domain: architecture
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: eng-section-consistency
+    type: section_consistency
+    description: "Sections within engineering docs are mutually consistent — no contradictions between guiding_principles, build_standards, testing_standards, and code_standards"
+    owner: document
+
+  - id: eng-collection-coherence
+    type: collection_coherence
+    description: "All engineering documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: eng-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all engineering sections — same concept, same name"
+    owner: document

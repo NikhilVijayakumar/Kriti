@@ -1,0 +1,4 @@
+check: unit-test-coverage
+depends_on: []
+timeout_seconds: 300
+requires_network: false

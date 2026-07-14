@@ -1,0 +1,64 @@
+system_id: samgraha-documentation
+domain: external-context
+section_type: integration_contract
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ext-sec-ic-001
+    description: "Integration contract section exists"
+    condition: "document has a section with semantic_type = 'integration_contract'"
+    message: "Missing required 'Integration Contract' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "integration_contract"
+
+  - id: ext-sec-ic-002
+    description: "Integration contract defines interfaces"
+    condition: "section specifies the interfaces, protocols, or data formats the external context exposes or consumes"
+    message: "Integration contract does not define interfaces"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "interface"
+        - "protocol"
+        - "format"
+        - "API"
+        - "contract"
+        - "schema"
+
+  - id: ext-sec-ic-003
+    description: "Integration contract is technology-independent"
+    condition: "contract describes interfaces abstractly, not tied to specific implementation technologies"
+    message: "Integration contract contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: ext-sec-ic-004
+    description: "Integration contract defines boundaries"
+    condition: "section clearly states what is inside vs. outside the system boundary"
+    message: "Integration contract does not define system boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "boundary"
+        - "external"
+        - "internal"
+        - "system"

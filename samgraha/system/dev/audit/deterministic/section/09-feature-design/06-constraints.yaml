@@ -1,0 +1,53 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-constraints-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing optional 'Constraints' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: fd-sec-constraints-002
+    description: "Constraints defines design constraints"
+    condition: "section contains specific constraints on feature design such as usability, accessibility, or platform constraints"
+    message: "Constraints section does not define design constraints"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "must"
+        - "shall"
+        - "cannot"
+        - "prohibited"
+        - "constraint"
+        - "limitation"
+        - "accessibility"
+
+  - id: fd-sec-constraints-003
+    description: "Constraints have clear sources"
+    condition: "each constraint identifies where it originates (user needs, platform, regulatory)"
+    message: "Constraints section does not identify constraint sources"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "user"
+        - "platform"
+        - "regulatory"
+        - "business"
+        - "accessibility"
+

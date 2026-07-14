@@ -1,0 +1,65 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: states
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-states-001
+    description: "States section exists"
+    condition: "document has a section with semantic_type = 'states'"
+    message: "Missing required 'States' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "states"
+
+  - id: fd-sec-states-002
+    description: "States defines feature states"
+    condition: "section contains definitions of the distinct states the feature or its entities can be in"
+    message: "States section does not define feature states"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "state"
+        - "status"
+        - "active"
+        - "inactive"
+        - "pending"
+        - "transition"
+
+  - id: fd-sec-states-003
+    description: "States defines valid transitions"
+    condition: "section specifies which state transitions are allowed and which are not"
+    message: "States section does not define valid transitions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "transition"
+        - "from.*to"
+        - "allowed"
+        - "invalid"
+
+  - id: fd-sec-states-004
+    description: "States are technology-independent"
+    condition: "section does not reference specific state management libraries or implementation mechanisms"
+    message: "States section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

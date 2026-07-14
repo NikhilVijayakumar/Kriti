@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: test_strategy
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-strategy-001
+    description: "Test strategy section exists"
+    condition: "document has a section with semantic_type = 'test_strategy'"
+    message: "Missing required 'Test Strategy' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "test_strategy"
+
+  - id: qa-sec-strategy-002
+    description: "Test strategy defines approach"
+    condition: "section contains a statement of the overall testing approach and philosophy"
+    message: "Test strategy section does not define testing approach"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "strategy"
+        - "approach"
+        - "methodology"
+        - "testing"
+
+  - id: qa-sec-strategy-003
+    description: "Test strategy defines coverage goals"
+    condition: "section specifies target coverage metrics or thresholds"
+    message: "Test strategy does not define coverage goals"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "coverage"
+        - "threshold"
+        - "target"
+        - "metric"
+
+  - id: qa-sec-strategy-004
+    description: "Test strategy references architecture"
+    condition: "section references Architecture Documentation for test scope"
+    message: "Test strategy does not reference Architecture Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
+

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/10-feature-technical/integration-points-exist.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "integration-points-exist" },
+    "domain": { "const": "10-feature-technical" },
+    "category": { "const": "B" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["points_declared", "points_found", "points_missing"],
+      "properties": {
+        "points_declared": { "type": "integer", "minimum": 0 },
+        "points_found": { "type": "integer", "minimum": 0 },
+        "points_missing": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

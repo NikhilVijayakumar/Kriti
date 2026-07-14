@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: external-context
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ext-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing required 'Purpose' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: ext-sec-purpose-002
+    description: "Purpose states external context intent"
+    condition: "section contains a statement of why this external context documentation exists"
+    message: "Purpose section does not state external context intent"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "external"
+        - "context"
+        - "purpose"
+        - "integration"
+
+  - id: ext-sec-purpose-003
+    description: "Purpose is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Purpose section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: ext-sec-purpose-004
+    description: "Purpose scope boundaries defined"
+    condition: "section defines what the external context is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

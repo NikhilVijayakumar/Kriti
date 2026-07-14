@@ -1,0 +1,80 @@
+system_id: samgraha-documentation
+domain: security
+section_type: security_principles
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: sec-sec-sp-001
+    description: "Security principles section exists"
+    condition: "document has a section with semantic_type = 'security_principles'"
+    message: "Missing required 'Security Principles' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "security_principles"
+
+  - id: sec-sec-sp-002
+    description: "Security principles stated clearly"
+    condition: "each principle is a discrete, numbered or bulleted statement with a clear directive"
+    message: "Security principles are not stated as clear discrete directives"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: discrete_statements
+
+  - id: sec-sec-sp-003
+    description: "Technology-independent principles"
+    condition: "section does not reference specific security technologies, libraries, frameworks, or implementation details"
+    message: "Security principles contain technology-specific references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - security_libraries
+        - security_frameworks
+        - security_tools
+        - programming_languages
+
+  - id: sec-sec-sp-004
+    description: "Principles are prescriptive"
+    condition: "each principle uses imperative language directing security decisions rather than describing current state"
+    message: "Security principles read as observations rather than directives"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: prescriptive_not_descriptive
+
+  - id: sec-sec-sp-005
+    description: "Principles align with philosophy"
+    condition: "security principles do not contradict the project philosophy guiding principles"
+    message: "Security principles conflict with project philosophy"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected_section: guiding_principles
+      target_domain: philosophy
+
+  - id: sec-sec-sp-006
+    description: "At least three security principles defined"
+    condition: "section contains at least three distinct security principles"
+    message: "Fewer than three security principles defined"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 3
+

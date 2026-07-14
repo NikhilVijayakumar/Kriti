@@ -1,0 +1,70 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: system_overview
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-so-001
+    description: "System Overview section exists"
+    condition: "document has a section with semantic_type = 'system_overview'"
+    message: "Missing required 'System Overview' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "system_overview"
+
+  - id: arch-sec-so-002
+    description: "System Overview has required subsections"
+    condition: "section contains Overview and Diagram subsections"
+    message: "System Overview is missing required subsections (Overview, Diagram)"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: subsection_presence
+      required:
+        - "Overview"
+        - "Diagram"
+
+  - id: arch-sec-so-003
+    description: "System Overview describes system purpose"
+    condition: "section contains a description of what the system does"
+    message: "System Overview does not describe system purpose"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_paragraphs: 1
+
+  - id: arch-sec-so-004
+    description: "System Overview is technology-independent"
+    condition: "section does not name specific libraries, frameworks, or infrastructure"
+    message: "System Overview contains technology-specific references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - frameworks
+        - libraries
+        - infrastructure
+
+  - id: arch-sec-so-005
+    description: "System Overview includes a diagram"
+    condition: "section contains or references a system context or component overview diagram"
+    message: "System Overview lacks a diagram"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: diagram_presence
+      kinds:
+        - component
+        - system_context
+

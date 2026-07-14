@@ -1,0 +1,4 @@
+check: lint-pass
+depends_on: []
+timeout_seconds: 300
+requires_network: false
