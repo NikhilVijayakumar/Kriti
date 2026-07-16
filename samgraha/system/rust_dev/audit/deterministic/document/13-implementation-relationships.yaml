@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: implementation
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# Implementation derives from Feature Technical + Engineering.
+# Implementation derives Build.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: impl-gen-plan-derives-feature-technical
+    from_section: generation_plan
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: impl-gen-plan-derives-engineering
+    from_section: generation_plan
+    type: derives_from
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: impl-security-fix-derives-security
+    from_section: security_fix_plan
+    type: derives_from
+    target_domain: security
+    target_section: threat_model
+    owner: section
+
+  - id: impl-security-fix-traces-threats
+    from_section: security_fix_plan
+    type: traceable_to
+    target_domain: security
+    target_section: mitigation_strategies
+    owner: section
+
+  - id: impl-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: impl-section-consistency
+    type: section_consistency
+    description: "Sections within implementation docs are mutually consistent — generation plan aligns with security fix plan"
+    owner: document
+
+  - id: impl-collection-coherence
+    type: collection_coherence
+    description: "All implementation documents in the domain cohere as one system — no orphaned or contradictory implementation plans"
+    owner: document
+
+  - id: impl-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all implementation sections — same concept, same name"
+    owner: document

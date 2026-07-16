@@ -1,0 +1,11 @@
+id: aggregation_10_ai_explanations
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/document/10-ai-explanations.yaml
+  semantic: calculation/semantic/ensemble/10-ai-explanations.yaml
+weights:
+  deterministic: 0.60
+  semantic: 0.40
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

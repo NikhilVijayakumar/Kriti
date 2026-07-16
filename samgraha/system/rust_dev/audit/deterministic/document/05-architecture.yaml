@@ -1,0 +1,122 @@
+system_id: samgraha-documentation
+domain: architecture
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Architecture Documentation. Validates structural completeness, modularity, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: arch-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/05-architecture-standards.md Required Sections table"
+    message: "Architecture document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - system_overview
+        - component_model
+        - communication_paths
+        - data_flow
+        - security_considerations
+        - crate_architecture
+        - trait_design
+
+  - id: arch-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: arch-doc-003
+    description: "Document covers one architectural concern"
+    condition: "document has a single primary focus — does not mix unrelated architectural concerns"
+    message: "Document covers multiple unrelated architectural concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: arch-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Architecture document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: arch-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream standards (Vision, Philosophy) and downstream standards (Feature Technical, Engineering) where applicable"
+    message: "Architecture document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: derives_from
+        - domain: philosophy
+          direction: guided_by
+
+  # --- Duplicate content ---
+  - id: arch-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Architecture document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  
+  # --- Script-sourced: ground truth from repo ---
+  - id: arch-doc-rust-001
+    description: "Crate Architecture required"
+    condition: "document contains the crate_architecture section"
+    message: "Architecture document must define the crate architecture"
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - crate_architecture
+
+  - id: arch-doc-014
+    description: "Module boundaries match declared structure"
+    condition: "module-boundary-diff script reports boundary_violations == 0"
+    message: "Module boundary violations detected — boundary_violations > 0"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/05-architecture/module-boundary-diff.schema.json#metrics.boundary_violations"
+      threshold: 0
+      comparison: "=="

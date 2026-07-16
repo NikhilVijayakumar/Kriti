@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: build
+section: crate_publishing
+kind: deterministic
+
+rules:
+  - id: sec-crate-publishing-001
+    description: "Template conformance: Crate Publishing"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

@@ -1,0 +1,38 @@
+id: trend_v1
+calculation: trend_comparison
+inputs: [current_score, previous_score]
+tolerance:
+  method: stddev
+  k: 1.0
+  floor: 0.1
+  scope: per_standard
+  min_samples: 5
+  fallback_scope: global
+  fallback_min_samples: 5
+formula: |
+  if previous_score is null: "baseline"
+  elif current_score - previous_score > tolerance: "Improved"
+  elif previous_score - current_score > tolerance: "Regressed"
+  else: "Unchanged"
+tolerance_resolution: |
+  tolerance = k * stddev(historical deltas), scoped per_standard (pooled across
+  all documents audited under the same standard, e.g. all architecture docs),
+  using all available history — no fixed window, since a document is typically
+  audited only a handful of times, not enough to ever fill a rolling window.
+  If the standard has fewer than min_samples deltas, fall back to a stddev
+  pooled across ALL standards (fallback_scope: global) instead. If even that
+  pool has fewer than fallback_min_samples deltas, use floor. This is a
+  two-tier fallback (per_standard -> global -> floor), not a single choice
+  between "computed" and "hardcoded" — a new standard with little history of
+  its own still benefits from the rest of the repo's accumulated noise profile
+  before dropping to the floor.
+note: >
+  Tolerance prevents float-noise flip-flopping (e.g. 87.0 → 87.04 should not
+  count as Improved). Resolution happens independently per scored entity:
+  deterministic_whole, deterministic_section, semantic_whole, semantic_section,
+  and final_score each get their own trend comparison, each with its own
+  resolved tolerance (a standard's deterministic_section deltas and its
+  semantic_whole deltas are different populations, not pooled together).
+  Global trend exists only as this fallback source — there is no separately
+  displayed repo-wide trend report; that was considered and deliberately
+  deferred as new scope beyond a single document's reports.

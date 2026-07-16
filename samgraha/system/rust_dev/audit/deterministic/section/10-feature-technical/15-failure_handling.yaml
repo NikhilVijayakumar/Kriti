@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: failure_handling
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-failure-001
+    description: "Failure Handling section exists"
+    condition: "document has a section with semantic_type = 'failure_handling'"
+    message: "Missing optional 'Failure Handling' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "failure_handling"
+
+  - id: ft-sec-failure-002
+    description: "Failure Handling defines failure modes"
+    condition: "section contains descriptions of failure modes, error handling, retry strategies, or fallback mechanisms"
+    message: "Failure Handling section does not define failure modes"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "failure"
+        - "error"
+        - "retry"
+        - "fallback"
+        - "recover"
+        - "degraded"
+        - "circuit breaker"
+
+  - id: ft-sec-failure-003
+    description: "Failure Handling is technology-independent"
+    condition: "section does not reference specific error handling libraries, frameworks, or implementation technologies"
+    message: "Failure Handling section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

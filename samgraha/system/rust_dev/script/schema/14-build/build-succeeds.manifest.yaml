@@ -1,0 +1,4 @@
+check: build-succeeds
+depends_on: []
+timeout_seconds: 600
+requires_network: true

@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: outputs
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-outputs-001
+    description: "Outputs section exists"
+    condition: "document has a section with semantic_type = 'outputs'"
+    message: "Missing 'Outputs' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "outputs"
+
+  - id: feat-sec-outputs-002
+    description: "Outputs are enumerated"
+    condition: "section lists each distinct output the feature produces"
+    message: "Outputs are not clearly enumerated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+
+  - id: feat-sec-outputs-003
+    description: "Each output has a consumer"
+    condition: "every listed output identifies its downstream consumer or destination"
+    message: "Some outputs lack a defined consumer"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "to"
+        - "consumed by"
+        - "destination"
+        - "delivered to"

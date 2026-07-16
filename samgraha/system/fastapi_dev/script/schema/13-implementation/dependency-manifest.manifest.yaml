@@ -1,0 +1,4 @@
+check: dependency-manifest
+depends_on: []
+timeout_seconds: 30
+requires_network: false

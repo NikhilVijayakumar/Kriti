@@ -1,0 +1,108 @@
+system_id: samgraha-documentation
+domain: vision
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Vision Documentation. Validates structural completeness, technology independence, and Tier 1 positioning that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: vis-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/02-vision-standards.md Required Sections table"
+    message: "Vision document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - purpose
+        - vision_statement
+        - problem
+        - solution
+        - target_audience
+        - systems_vision
+
+  - id: vis-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: vis-doc-003
+    description: "Document covers one product vision"
+    condition: "document has a single primary focus — does not mix unrelated product visions"
+    message: "Document covers multiple unrelated product visions; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: vis-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Vision document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Tier 1 positioning ---
+  - id: vis-doc-005
+    description: "Vision derives from no other domain"
+    condition: "document has no derives_from relationships to other domains — Vision is Tier 1"
+    message: "Vision document should not derive from any other domain (it is Tier 1)"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: relationship_absence
+      forbidden_direction: derives_from
+
+  # --- Cross-references ---
+  - id: vis-doc-006
+    description: "Vision inspires downstream domains"
+    condition: "document references or is traceable to Philosophy, Feature, and Security domains"
+    message: "Vision document is missing expected downstream cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: philosophy
+          direction: inspires
+        - domain: feature
+          direction: inspires
+        - domain: security
+          direction: inspires
+
+  # --- Duplicate content ---
+  - id: vis-doc-007
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Vision document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document

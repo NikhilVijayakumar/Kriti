@@ -1,0 +1,78 @@
+system_id: samgraha-documentation
+domain: security
+section_type: threat_model
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: sec-sec-tm-001
+    description: "Threat model section exists"
+    condition: "document has a section with semantic_type = 'threat_model'"
+    message: "Missing required 'Threat Model' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "threat_model"
+
+  - id: sec-sec-tm-002
+    description: "Threats identified with mitigations"
+    condition: "each identified threat includes a corresponding mitigation or countermeasure"
+    message: "Threats identified without corresponding mitigations"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: threat_mitigation_pairs
+
+  - id: sec-sec-tm-003
+    description: "No specific security library references"
+    condition: "section does not reference specific security libraries, frameworks, or tooling"
+    message: "Threat model contains references to specific security libraries or tools"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - security_libraries
+        - security_frameworks
+        - security_tools
+
+  - id: sec-sec-tm-004
+    description: "Threats categorized or structured"
+    condition: "threats are organized by category, severity, or attack vector rather than listed as an unstructured paragraph"
+    message: "Threats are not organized into a structured format"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: structured_listing
+
+  - id: sec-sec-tm-005
+    description: "Threats reference data classifications"
+    condition: "threats identify which data classifications are affected"
+    message: "Threats do not reference data classifications they affect"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected_section: data_classification
+
+  - id: sec-sec-tm-006
+    description: "At least two threats documented"
+    condition: "section contains at least two distinct threats with mitigations"
+    message: "Fewer than two threats documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 2
+

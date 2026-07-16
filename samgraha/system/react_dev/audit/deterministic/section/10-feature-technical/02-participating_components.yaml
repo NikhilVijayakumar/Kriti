@@ -1,0 +1,65 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: participating_components
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-components-001
+    description: "Participating Components section exists"
+    condition: "document has a section with semantic_type = 'participating_components'"
+    message: "Missing required 'Participating Components' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "participating_components"
+
+  - id: ft-sec-components-002
+    description: "Participating Components lists components"
+    condition: "section contains a list or description of components that participate in the feature"
+    message: "Participating Components section does not list components"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "component"
+        - "module"
+        - "service"
+        - "layer"
+        - "boundary"
+
+  - id: ft-sec-components-003
+    description: "Participating Components is technology-independent"
+    condition: "section does not name specific technologies, frameworks, or implementation details"
+    message: "Participating Components section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: ft-sec-components-004
+    description: "Participating Components defines component boundaries"
+    condition: "section defines the responsibility boundary of each listed component"
+    message: "Participating Components section does not define component boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "responsible for"
+        - "boundary"
+        - "scope"
+        - "owns"
+        - "handles"
+

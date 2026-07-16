@@ -1,0 +1,76 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: component_testing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-comp-001
+    description: "Component Testing section exists"
+    condition: "document has a section with semantic_type = 'component_testing'"
+    message: "No component_testing section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: qa-sec-comp-002
+    description: "Test co-location is documented"
+    condition: "section mentions test files co-located with components"
+    message: "Test co-location convention not documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - colocated
+        - co-located
+        - alongside
+        - next to
+
+  - id: qa-sec-comp-003
+    description: "Mock patterns are documented"
+    condition: "section describes mocking useLanguage or other hooks"
+    message: "Mock patterns not documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - mock
+        - vi.mock
+        - useLanguage
+        - mock
+
+  - id: qa-sec-comp-004
+    description: "Test categories are defined"
+    condition: "section mentions render, interaction, and context tests"
+    message: "Test categories not defined"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - render
+        - interaction
+        - context
+        - test
+
+  - id: qa-sec-comp-005
+    description: "Testing framework is specified"
+    condition: "section mentions Vitest and Testing Library"
+    message: "Testing framework not specified"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - vitest
+        - testing library
+        - "@testing-library"

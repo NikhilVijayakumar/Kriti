@@ -1,0 +1,50 @@
+﻿system_id: samgraha-documentation
+domain: vision
+section_type: philosophy
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-philosophy-001
+    description: "Philosophy section exists"
+    condition: "document has a section with semantic_type = 'philosophy'"
+    message: "Missing optional 'Philosophy' section"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "philosophy"
+
+  - id: vis-sec-philosophy-002
+    description: "Philosophy is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Philosophy section contains implementation technology references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: vis-sec-philosophy-003
+    description: "Philosophy describes design values"
+    condition: "section articulates core values or beliefs guiding the product"
+    message: "Philosophy section does not describe design values"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "value"
+        - "believe"
+        - "principle"
+        - "ethos"
+        - "creed"
+        - "ideology"
+

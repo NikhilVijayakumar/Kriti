@@ -1,0 +1,66 @@
+system_id: samgraha-documentation
+domain: feature
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: feat-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: feat-purpose-guided-by-philosophy
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: feat-functional-requirements-derives-feature-design
+    from_section: functional_requirements
+    type: derives_from
+    target_domain: feature_design
+    target_section: design_rationale
+    owner: section
+
+  - id: feat-acceptance-criteria-derives-feature-technical
+    from_section: acceptance_criteria
+    type: derives_from
+    target_domain: feature_technical
+    target_section: testing_strategy
+    owner: section
+
+  - id: feat-constraints-derives-philosophy
+    from_section: constraints
+    type: constrains
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: feat-traceability-derives-vision
+    from_section: traceability
+    type: traceable_to
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: feat-section-consistency
+    type: section_consistency
+    description: "Sections within feature docs are mutually consistent — no contradictions between functional_requirements, acceptance_criteria, and business_rules"
+    owner: document
+
+  - id: feat-collection-coherence
+    type: collection_coherence
+    description: "All feature documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: feat-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all feature sections — same concept, same name"
+    owner: document

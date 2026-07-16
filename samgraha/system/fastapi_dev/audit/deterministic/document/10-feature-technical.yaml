@@ -1,0 +1,140 @@
+system_id: samgraha-documentation
+domain: feature-technical
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Feature Technical Documentation. Validates structural completeness, modularity, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: ft-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/05-feature-technical-standards.md Required Sections table"
+    message: "Feature Technical document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - purpose
+        - participating_components
+        - component_interactions
+        - data_ownership
+        - layer_implementation
+
+  - id: ft-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: ft-doc-003
+    description: "Document covers one feature technical concern"
+    condition: "document has a single primary focus — does not mix unrelated feature technical concerns"
+    message: "Document covers multiple unrelated feature technical concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: ft-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Feature Technical document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: ft-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream domains (Feature, Engineering, Architecture, External Context) where applicable"
+    message: "Feature Technical document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+        - domain: engineering
+          direction: derives_from
+        - domain: architecture
+          direction: derives_from
+
+  # --- Duplicate content ---
+  - id: ft-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Feature Technical document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Tier enforcement ---
+  - id: ft-doc-007
+    description: "Feature Technical does not derive from lower-tier documents"
+    condition: "document does not claim derivation from Implementation or Prototype"
+    message: "Feature Technical is Tier 3 and must not derive from Implementation or Prototype"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: relationship_validation
+      forbidden_derived_from:
+        - implementation
+        - prototype
+
+  # --- Validation marker ---
+  - id: ft-doc-008
+    description: "Document mentions validation by Prototype"
+    condition: "document or its relationships reference Prototype as validation gate"
+    message: "Feature Technical document does not mention Prototype validation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "prototype"
+        - "validated by"
+        - "verification"
+
+  # --- Derivation marker ---
+  - id: ft-doc-009
+    description: "Document mentions derivation of Implementation"
+    condition: "document or its relationships reference Implementation as downstream consumer"
+    message: "Feature Technical document does not mention derivation of Implementation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "implementation"
+        - "derives"
+        - "realized by"
+        - "consumed by"

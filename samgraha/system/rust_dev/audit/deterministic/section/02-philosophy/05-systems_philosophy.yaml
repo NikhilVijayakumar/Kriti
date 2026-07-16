@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: philosophy
+section: systems_philosophy
+kind: deterministic
+
+rules:
+  - id: phil-sec-systems-001
+    description: "Template conformance: Systems Philosophy"
+    condition: "section contains a list"
+    message: "Section must contain a list"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_lists: 1

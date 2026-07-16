@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/03-security/dependency-vuln-scan.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "dependency-vuln-scan" },
+    "domain": { "const": "03-security" },
+    "category": { "const": "A" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["vulnerabilities_found", "dependencies_scanned"],
+      "properties": {
+        "vulnerabilities_found": { "type": "integer", "minimum": 0 },
+        "dependencies_scanned": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

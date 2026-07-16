@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: design
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: design-sec-con-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing 'Constraints' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: design-sec-con-002
+    description: "Constraints are clearly stated"
+    condition: "each constraint is a discrete, unambiguous restriction"
+    message: "Constraints are ambiguous or unclear"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "shall not"
+        - "must not"
+        - "limited to"
+        - "maximum"
+        - "minimum"
+
+  - id: design-sec-con-003
+    description: "Constraints trace to philosophy"
+    condition: "constraints reference upstream philosophy principles where applicable"
+    message: "Constraints do not trace back to philosophy"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: philosophy
+          section: guiding_principles
+          direction: constrained_by
+
+  - id: design-sec-con-004
+    description: "Constraints are technology-independent"
+    condition: "constraints describe design restrictions, not implementation choices"
+    message: "Constraints contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+domain: qa
+section: api_testing
+kind: deterministic
+
+rules:
+  - id: qa-sec-api-001
+    description: "Template conformance: API Testing Strategy"
+    condition: "section contains at least 2 paragraphs and Validation Boundaries subsection"
+    message: "Section must contain Validation Boundaries subsection"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 2
+      required_subsections:
+        - Validation Boundaries

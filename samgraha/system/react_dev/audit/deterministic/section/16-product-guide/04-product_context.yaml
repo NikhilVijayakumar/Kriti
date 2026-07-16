@@ -1,0 +1,46 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: product_context
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-context-001
+    description: "Product context section exists"
+    condition: "document has a section with semantic_type = 'product_context'"
+    message: "Missing optional 'Product Context' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "product_context"
+
+  - id: pg-sec-context-002
+    description: "Product context provides background"
+    condition: "section contains background information about the product"
+    message: "Product context section lacks background information"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "product"
+        - "context"
+        - "background"
+        - "overview"
+
+  - id: pg-sec-context-003
+    description: "Product context references vision"
+    condition: "section references Vision Documentation for product context"
+    message: "Product context does not reference Vision Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: derives_from

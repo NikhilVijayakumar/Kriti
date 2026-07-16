@@ -1,0 +1,4 @@
+check: artifact-exists
+depends_on: [build-succeeds]
+timeout_seconds: 30
+requires_network: false

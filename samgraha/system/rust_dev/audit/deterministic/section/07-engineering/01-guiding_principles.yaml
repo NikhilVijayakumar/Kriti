@@ -1,0 +1,63 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: guiding_principles
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-guiding-001
+    description: "Guiding Principles section exists"
+    condition: "document has a section with semantic_type = 'guiding_principles'"
+    message: "Missing required 'Guiding Principles' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "guiding_principles"
+
+  - id: eng-sec-guiding-002
+    description: "Guiding Principles states engineering philosophy"
+    condition: "section contains principles that guide engineering decisions and practices"
+    message: "Guiding Principles section does not state engineering philosophy"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "principle"
+        - "engineering"
+        - "practice"
+        - "approach"
+
+  - id: eng-sec-guiding-003
+    description: "Guiding Principles are technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Guiding Principles section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: eng-sec-guiding-004
+    description: "Guiding Principles are actionable"
+    condition: "section contains principles that can guide concrete engineering decisions"
+    message: "Guiding Principles section lacks actionable guidance"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "should"
+        - "must"
+        - "prefer"
+        - "avoid"
+

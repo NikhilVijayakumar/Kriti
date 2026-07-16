@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: external-context
+section: systems_technology
+kind: deterministic
+
+rules:
+  - id: ext-sec-systems-technology-001
+    description: "Template conformance: Systems Technology"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_lists: 1

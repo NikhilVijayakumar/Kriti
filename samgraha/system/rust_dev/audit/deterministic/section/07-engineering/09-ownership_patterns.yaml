@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+domain: engineering
+section: ownership_patterns
+kind: deterministic
+
+rules:
+  - id: eng-sec-ownership-patterns-001
+    description: "Template conformance: Ownership Patterns"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 2
+      required_subsections:
+        - Shared Ownership Limitations

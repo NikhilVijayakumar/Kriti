@@ -1,0 +1,61 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: business_rules
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-br-001
+    description: "Business rules section exists"
+    condition: "document has a section with semantic_type = 'business_rules'"
+    message: "Missing 'Business Rules' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "business_rules"
+
+  - id: feat-sec-br-002
+    description: "Business rules are clearly stated"
+    condition: "each rule is a discrete, unambiguous statement"
+    message: "Business rules are ambiguous or unclear"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "shall"
+        - "must"
+        - "is not allowed"
+        - "prohibited"
+
+  - id: feat-sec-br-003
+    description: "Business rules trace to requirements"
+    condition: "each rule can be linked to one or more functional requirements"
+    message: "Business rules do not trace back to functional requirements"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          section: functional_requirements
+          direction: traces_to
+
+  - id: feat-sec-br-004
+    description: "Business rules are technology-independent"
+    condition: "rules describe business logic, not technical implementation"
+    message: "Business rules contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

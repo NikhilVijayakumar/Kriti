@@ -1,0 +1,76 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: component_patterns
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-pat-001
+    description: "Component Patterns section exists"
+    condition: "document has a section with semantic_type = 'component_patterns'"
+    message: "No component_patterns section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: eng-sec-pat-002
+    description: "Pattern selection criteria are documented"
+    condition: "section describes when to use each pattern"
+    message: "Pattern selection criteria not documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - when
+        - use
+        - choose
+        - select
+        - pattern
+
+  - id: eng-sec-pat-003
+    description: "Anti-patterns are listed"
+    condition: "section mentions anti-patterns or what NOT to do"
+    message: "No anti-patterns documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - anti-pattern
+        - avoid
+        - dont
+        - never
+        - not
+
+  - id: eng-sec-pat-004
+    description: "No class component patterns"
+    condition: "section does not describe class component patterns as acceptable"
+    message: "Class component patterns found as acceptable"
+    severity: error
+    weight: 0.8
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - class_components
+
+  - id: eng-sec-pat-005
+    description: "Composition guidance is provided"
+    condition: "section describes composition over inheritance"
+    message: "Composition over inheritance guidance missing"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - composition
+        - inheritance
+        - compose
+        - extend

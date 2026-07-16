@@ -1,0 +1,172 @@
+system: electron_dev
+domain: engineering
+section_type: security_hardening
+version: "1.0.0"
+
+engineering_intent: >
+  Electron security hardening audits the application's defense-in-depth
+  posture across every process boundary and runtime surface. Electron
+  applications are uniquely exposed: they embed a full Chromium browser
+  and Node.js runtime, creating a large attack surface where web content
+  meets native system access. This audit verifies that context isolation
+  is enforced, nodeIntegration is disabled, Content Security Policy (CSP)
+  is configured, code signing is implemented for all distributable
+  artifacts, the Chromium sandbox is active, and every IPC input is
+  validated and sanitized at the trust boundary. The goal is to ensure
+  that no path exists from untrusted web content to native system
+  capabilities without explicit, validated mediation.
+
+audit_objectives:
+  - contextIsolation is enabled in all BrowserWindow and WebContents configurations
+  - nodeIntegration is explicitly set to false in every web-creation site
+  - nodeIntegrationInWorker is disabled unless a documented, justified exception exists
+  - Content Security Policy (CSP) is defined and enforced with no unsafe-inline or unsafe-eval
+  - Code signing is implemented for all distributable targets (Windows, macOS, autoUpdater)
+  - Chromium sandbox is enabled — sandbox: true in BrowserWindow configuration
+  - All IPC input is validated at the receiving boundary before processing
+  - remote module is disabled or removed (electron.remote deprecated, not used)
+  - webSecurity is not disabled — no webSecurity: false in any BrowserWindow
+  - Permissions API, clipboard, notifications, and media access are restricted per origin
+  - Navigation and new-window events are restricted to trusted origins only
+  - Preload scripts expose minimum necessary API surface via contextBridge
+  - Native module usage is audited — only necessary native addons with up-to-date binaries
+  - Dependency vulnerability scanning covers both npm and native addon dependencies
+
+expected_quality:
+  - Security configuration is centralized in a hardening module, not scattered across files
+  - CSP directive includes default-src, script-src, style-src, connect-src at minimum
+  - CSP violations are logged and monitored (report-uri or report-to directive present)
+  - Code signing certificates are stored in secure key management (not filesystem)
+  - IPC handler validates payload schema before any business logic execution
+  - Security-sensitive IPC channels require explicit sender validation (webContents ID check)
+  - AutoUpdater signature verification is enforced — unsigned updates rejected
+  - Permission requests (camera, microphone, geolocation) default to deny
+  - DevTools are disabled or restricted in production builds
+  - Session cookies use secure, httpOnly, sameSite attributes where applicable
+
+red_flags:
+  - contextIsolation: false anywhere in the codebase
+  - nodeIntegration: true in any BrowserWindow (except documented test fixtures)
+  - CSP contains 'unsafe-inline' or 'unsafe-eval' for script-src
+  - electron.remote module imported or used
+  - webSecurity: false in any BrowserWindow configuration
+  - No code signing configured for release builds
+  - IPC handlers accept payloads without schema validation
+  - Sandbox disabled without documented justification
+  - DevTools open in production builds
+  - Permissions API grants access without user consent flow
+  - preload.js contains business logic instead of thin bridge delegation
+  - Native modules loaded without checking for known CVEs
+  - Auto-update accepts unsigned or unverified packages
+  - CORS bypass via webRequest hooks without security review
+
+edge_cases:
+  - Third-party iframes requiring nodeIntegration (documented exception with compensating controls)
+  - WebView tags (deprecated but still present) that bypass contextIsolation
+  - BrowserView (deprecated) used for embedded content without sandbox
+  - UtilityProcess for compute-heavy tasks — must also enforce isolation
+  - DevTools protocol access during development vs production (must be gated)
+  - Content scripts in Chromium extensions that share the Renderer process
+  - SharedArrayBuffer usage requiring cross-origin isolation headers
+  - WebRTC or media access in Renderer that bypasses permission documentation
+  - preload script loaded from a URL (not local file) — origin validation needed
+  - CSP report-uri endpoint itself must be reachable without CSP restrictions
+  - Electron flash plugin or PDF viewer plugins with native capabilities
+  - Multiple BrowserWindows with different security profiles sharing a session
+  - Protocol handler registration (app.setAsDefaultProtocolClient) — deep link injection risk
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      contextIsolation is enabled and nodeIntegration is disabled in all
+      BrowserWindow and WebContents configurations. No exceptions without
+      documented justification and compensating controls.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Content Security Policy (CSP) is defined with restrictive directives
+      — no unsafe-inline or unsafe-eval in script-src. CSP violations are
+      reported via report-uri or report-to.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Code signing is configured for all distributable targets (Windows
+      Authenticode, macOS codesign/notarize). Auto-update signature
+      verification is enforced.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Chromium sandbox is enabled (sandbox: true). webSecurity is not
+      disabled. remote module is not used. DevTools are disabled in
+      production builds.
+
+  - id: C5
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      All IPC input is validated at the handler boundary. Payload schema
+      validation occurs before any business logic. Sender identity
+      (webContents ID) is verified for privileged channels.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Preload scripts expose minimum API surface via contextBridge.
+      Permission requests default to deny. Session cookie attributes
+      (secure, httpOnly, sameSite) are configured.
+
+  - id: C7
+    weight: recommended
+    score: "0 or 5"
+    description: >
+      Dependency vulnerability scanning covers npm packages and native
+      addons. Known CVEs are tracked and resolved or documented as
+      accepted risk.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: security_hardening
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C6
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C7
+      passed: false
+      score: "0-5"
+      evidence: string
+  findings:
+    - string

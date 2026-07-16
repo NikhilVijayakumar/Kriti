@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "metrics": {
+            "type": "object",
+            "properties": {
+                "unformatted_files": {
+                    "type": "integer"
+                },
+                "total_violations": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

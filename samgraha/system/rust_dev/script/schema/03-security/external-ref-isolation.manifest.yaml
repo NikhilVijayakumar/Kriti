@@ -1,0 +1,10 @@
+check: external-ref-isolation
+description: >
+  Scans all documentation-standards/ files for references to external
+  system names (Astra, Prati, Prana, etc.) and external file paths.
+patterns:
+  - "\\bAstra\\b"
+  - "\\bPrati\\b"
+  - "\\bPrana\\b"
+  - "E:\\\\Python\\\\"
+severity: error

@@ -1,0 +1,143 @@
+system: electron_dev
+domain: engineering
+section_type: caching
+version: "1.0.0"
+
+engineering_intent: >
+  Desktop caching audits the cache strategy per storage domain, cross-process
+  cache coherence, and cache size management within an Electron application.
+  Desktop applications have unique caching requirements: they must manage
+  storage across multiple processes (Main, Renderer, Preload), each with
+  different storage APIs and constraints. The Main process can access the
+  full filesystem, electron-store, and SQLite databases; the Renderer
+  process is limited to localStorage, sessionStorage, IndexedDB, and
+  cache API. This audit verifies that each storage domain has a defined
+  caching strategy, that cross-process caches maintain coherence, and
+  that storage size is bounded and managed with eviction policies.
+
+audit_objectives:
+  - Each storage domain (Main filesystem, Renderer IndexedDB, Renderer localStorage, session cache) has a documented caching strategy
+  - Cache keys follow a consistent naming convention with versioning or namespace isolation
+  - Cross-process cache coherence is defined — which process is authoritative for each cache
+  - Cache invalidation strategy is documented (TTL, event-driven, manual, LRU)
+  - Cache size limits are defined per storage domain with eviction policies
+  - Cache warming strategy is documented for cold-start performance
+  - Sensitive data caching policies are defined — PII, credentials, tokens are never cached without encryption
+  - Cache persistence across application restarts is specified per domain
+  - Stale cache handling and fallback behavior are documented
+  - Cache monitoring and observability (hit rate, miss rate, size) are described
+
+expected_quality:
+  - Cache strategy documents include both read and write paths with conflict resolution
+  - Cross-process caches have a single writer or use electron IPC for coordinated writes
+  - Cache invalidation TTLs are domain-appropriate (short for volatile data, long for static assets)
+  - Eviction policies are defined before cache limits are exceeded, not as afterthoughts
+  - Cache keys include version or namespace to prevent collision across app versions
+  - Sensitive cached data has encryption-at-rest and secure deletion on app uninstall
+  - Cache warming does not block the UI thread — performed asynchronously in Main process
+  - Stale cache entries trigger fallback to source (network, database) rather than serving stale data
+
+red_flags:
+  - No caching strategy documented — caches exist without ownership or rules
+  - Renderer process writes to Main-process caches directly (bypassing IPC)
+  - Cache keys are ad hoc strings without versioning or namespace
+  - No cache size limits — caches grow unbounded until disk or memory exhaustion
+  - Sensitive data (tokens, PII) cached in plaintext in localStorage or IndexedDB
+  - Cache invalidation relies solely on application restart (no active invalidation)
+  - No fallback behavior when cache read fails — application crashes on cache miss
+  - Cross-process cache writes without locking — concurrent writes risk corruption
+  - Cache warming blocks the Renderer thread — UI freezes on cold start
+
+edge_cases:
+  - First-run experience when no cache exists — must gracefully fall back to fresh data
+  - Application update that invalidates cache schema — migration or forced eviction needed
+  - Multiple BrowserWindows sharing the same Renderer-process cache (IndexedDB origin collision)
+  - Offline mode where cache is the only data source — cache must be complete and coherent
+  - User clears application data from OS settings — cache must recover gracefully
+  - Disk full condition — cache eviction must handle write failures
+  - macOS sandbox restrictions on filesystem access — cache paths must comply
+  - Windows AppData roaming — cache that should not roam vs cache that should
+  - Development mode with hot reload — cache must not persist stale development state
+  - Cache entries referencing deleted entities — referential integrity across cache invalidation
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Each storage domain has a documented caching strategy specifying
+      what is cached, where it lives (Main filesystem, Renderer IndexedDB,
+      Renderer localStorage, session cache), and the invalidation approach.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Cross-process cache coherence is defined — a single authoritative
+      writer per cache, or coordinated writes via IPC with conflict
+      resolution documented.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Cache size limits are defined per storage domain with eviction
+      policies (LRU, LFU, TTL-based). Eviction is tested and does not
+      block the UI thread.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Sensitive data caching policies are defined — PII, credentials,
+      and tokens are encrypted at rest, excluded from cache, or subject
+      to secure deletion.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Cache warming strategy is documented for cold-start performance.
+      Warming runs asynchronously and does not block Renderer initialization.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Cache observability is described — hit rate, miss rate, size, and
+      eviction frequency are logged or exposed to monitoring.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: caching
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+  findings:
+    - string

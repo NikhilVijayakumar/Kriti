@@ -1,0 +1,40 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: dependencies
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-dep-001
+    description: "Dependencies section exists"
+    condition: "document has a section with semantic_type = 'dependencies'"
+    message: "Missing 'Dependencies' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "dependencies"
+
+  - id: feat-sec-dep-002
+    description: "Dependencies are enumerated"
+    condition: "section lists each dependency this feature has on other features, systems, or standards"
+    message: "Dependencies are not clearly enumerated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+
+  - id: feat-sec-dep-003
+    description: "Dependencies are not circular"
+    condition: "no dependency chain forms a cycle back to the same feature"
+    message: "Circular dependency detected"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: dependency_cycle
+      scope: feature_domain

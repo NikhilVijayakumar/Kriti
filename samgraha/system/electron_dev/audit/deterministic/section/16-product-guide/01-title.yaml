@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: title
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-title-001
+    description: "Title section exists"
+    condition: "document has a section with semantic_type = 'title'"
+    message: "Missing required 'Title' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "title"
+
+  - id: pg-sec-title-002
+    description: "Title is descriptive"
+    condition: "section contains a descriptive title that identifies the product guide topic"
+    message: "Title section is not descriptive"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "guide"
+        - "product"
+        - "tutorial"
+        - "how to"
+
+  - id: pg-sec-title-003
+    description: "Title matches document focus"
+    condition: "title accurately represents the document's content focus"
+    message: "Title does not match document focus"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: title_content_alignment

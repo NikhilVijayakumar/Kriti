@@ -1,0 +1,149 @@
+system: electron_dev
+domain: feature-technical
+section_type: ipc_implementation
+version: "1.0.0"
+
+engineering_intent: >
+  IPC implementation audits the channel naming conventions, handler
+  registration patterns, type-safe IPC contracts, and error handling
+  across all Inter-Process Communication in the Electron application.
+  IPC is the nervous system of a multi-process desktop application —
+  every feature that crosses a process boundary depends on well-designed
+  channels. This audit verifies that channels follow a domain:action
+  naming convention, that handlers are registered consistently with
+  typed request/response contracts, that IPC errors are propagated
+  correctly to callers, and that the IPC layer is testable in isolation
+  via mock transports. The goal is to ensure the IPC layer is reliable,
+  discoverable, and maintainable as the application grows.
+
+audit_objectives:
+  - All IPC channels follow a documented naming convention (domain:action pattern)
+  - Channel registry exists as a structured artifact listing every channel, its direction, and types
+  - Handler registration is centralized — handlers are not scattered across arbitrary files
+  - Each IPC channel has typed request payload, response payload, and error type defined
+  - IPC error handling propagates errors to the caller with structured error objects
+  - Handler registration prevents duplicate channel registration (single handler per channel)
+  - IPC channels are versioned or namespaced to support backward compatibility during updates
+  - One-way channels (ipcRenderer.send) and two-way channels (ipcRenderer.invoke) are distinguished
+  - IPC handler tests use mock transport, not a running Electron instance
+  - Channel documentation includes usage examples and caller expectations
+
+expected_quality:
+  - Channel names are structured strings: {domain}:{action} (e.g., file:read, config:get)
+  - Channel registry is generated or validated — not manually maintained
+  - Handler registration uses a decorator, factory, or registry pattern — not raw ipcMain.on
+  - Typed IPC contracts use TypeScript generics or schema validation (zod, joi, io-ts)
+  - Error responses use a structured error type with code, message, and optional metadata
+  - Handler idempotency is documented where applicable (safe to retry)
+  - IPC timeout behavior is documented — caller knows when to expect timeout error
+  - Mock IPC transport implements the same interface as production IPC layer
+  - Channel naming convention is enforced by linting or CI validation
+  - Dead or unused channels are detected and removed
+
+red_flags:
+  - IPC channels named arbitrarily without convention (e.g., 'doStuff', 'handleEvent')
+  - No channel registry — channels discovered by grepping for ipcMain.on / ipcRenderer.send
+  - Handlers registered directly with raw ipcMain.on without type safety
+  - IPC errors swallowed in handlers — caller never learns of failure
+  - Duplicate handler registration for the same channel — last registration wins silently
+  - No distinction between invoke (two-way) and send (one-way) channels
+  - IPC types defined inline in handler, not in shared type module
+  - No mock IPC transport — all IPC tests require running Electron instance
+  - Channel naming convention not enforced — new channels violate the pattern
+  - IPC contracts change without versioning — breaking changes in minor updates
+
+edge_cases:
+  - Channel registered from a dynamically loaded module — registration timing matters
+  - Multiple preload scripts exposing overlapping channel namespaces
+  - IPC channel used by both invoke and send patterns (mixed semantics)
+  - Channel that must work across multiple Electron major versions (compatibility layer)
+  - Large payloads that approach Electron IPC message size limits
+  - IPC handler that delegates to a different IPC channel (handler chaining)
+  - Channel registration in a UtilityProcess — must mirror Main-process patterns
+  - IPC channel used in tests without a running app — mock must support all patterns
+  - Hot module replacement removing and re-registering IPC handlers mid-session
+  - Channel documentation drift — registry out of sync with actual handler implementations
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      All IPC channels follow a documented naming convention (domain:action)
+      and a channel registry exists listing every channel with its direction
+      (Main->Renderer, Renderer->Main, bidirectional) and payload types.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Handler registration is centralized using a pattern (registry, factory,
+      decorator) that prevents duplicate registration and enforces one handler
+      per channel. Raw ipcMain.on/ipcMain.handle calls are wrapped.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      IPC contracts are type-safe — request payload, response payload, and
+      error type are defined in a shared type module. TypeScript generics
+      or schema validation (zod, joi) enforce type boundaries.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      IPC error handling propagates structured errors to the caller.
+      Handlers never swallow exceptions silently. Error objects include
+      code, message, and optional metadata for diagnostics.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      IPC handler tests use a mock transport layer that implements the
+      same interface as production IPC. Tests run without a running
+      Electron instance.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 5"
+    description: >
+      Channel naming convention is enforced by linting rules or CI
+      validation. New channels that violate the pattern are rejected
+      before merge.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: ipc_implementation
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-5"
+      evidence: string
+  findings:
+    - string

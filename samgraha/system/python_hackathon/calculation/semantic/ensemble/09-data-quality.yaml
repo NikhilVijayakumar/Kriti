@@ -1,0 +1,15 @@
+id: semantic_09_data_quality
+calculation: reliability_aware_ensemble
+scope: document
+inputs:
+  from: audit/semantic/document/09-data-quality.yaml
+  fields: [model, score, reasoning, evidence]
+formula: |
+  mean_score = mean(scores)
+  stdev_score = stdev(scores)
+  agreement = "High" if stdev_score <= 5 else "Medium" if stdev_score <= 15 else "Low"
+  final_score = mean_score
+outputs:
+  - score
+  - agreement
+  - stdev

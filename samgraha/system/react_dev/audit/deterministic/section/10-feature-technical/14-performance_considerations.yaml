@@ -1,0 +1,52 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: performance_considerations
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-perf-001
+    description: "Performance Considerations section exists"
+    condition: "document has a section with semantic_type = 'performance_considerations'"
+    message: "Missing optional 'Performance Considerations' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "performance_considerations"
+
+  - id: ft-sec-perf-002
+    description: "Performance Considerations defines performance aspects"
+    condition: "section contains performance considerations such as latency targets, throughput requirements, or optimization strategies"
+    message: "Performance Considerations section does not define performance aspects"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "performance"
+        - "latency"
+        - "throughput"
+        - "optimize"
+        - "cache"
+        - "efficiency"
+
+  - id: ft-sec-perf-003
+    description: "Performance Considerations has measurable targets"
+    condition: "section defines measurable performance targets or thresholds"
+    message: "Performance Considerations section does not define measurable targets"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "\\d+"
+        - "ms"
+        - "mb"
+        - "percent"
+        - "threshold"
+

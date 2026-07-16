@@ -1,0 +1,44 @@
+system_id: python_hackathon
+domain: infrastructure
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 3
+total_weight: 2.5
+
+description: "Rules checking presence and configuration of infrastructure artifacts like Docker and uv."
+
+rules:
+  - id: inf-001
+    description: "uv.lock file present"
+    condition: "repository contains uv.lock file at root"
+    message: "Missing uv.lock file. Ensure dependencies are locked."
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: file_presence
+      target: uv.lock
+
+  - id: inf-002
+    description: "Dockerfile present"
+    condition: "repository contains Dockerfile at root"
+    message: "Missing Dockerfile for containerization."
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: file_presence
+      target: Dockerfile
+
+  - id: inf-003
+    severity: warning
+    weight: 1
+    description: "Docker Compose configuration exists"
+    check:
+      file_globs:
+        - "docker-compose.yaml"
+        - "docker-compose.yml"
+        - "docker-compose.*.yaml"
+        - "compose.yaml"
+        - "compose.yml"

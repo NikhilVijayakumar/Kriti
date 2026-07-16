@@ -1,0 +1,149 @@
+system: electron_dev
+domain: feature-technical
+section_type: process_architecture
+version: "1.0.0"
+
+engineering_intent: >
+  Process architecture audits the Main, Renderer, and Preload process
+  setup, contextBridge usage, and service initialization order within the
+  Electron application. The three-process model is the architectural
+  backbone of every Electron application — the Main process manages the
+  application lifecycle and native OS access; the Renderer process manages
+  UI rendering and user interaction within a Chromium sandbox; the Preload
+  process runs in a privileged context that bridges the two via
+  contextBridge. This audit verifies that each process is correctly
+  initialized, that contextBridge exposes only the documented API surface,
+  that service initialization follows a deterministic order, and that the
+  process boundaries are maintained at runtime.
+
+audit_objectives:
+  - Main process setup is documented: app lifecycle handlers, BrowserWindow creation, service initialization
+  - Renderer process setup is documented: React/UI framework mount, IPC listener registration, DOM readiness
+  - Preload script setup is documented: contextBridge.exposeInMainWorld calls, API surface definition
+  - contextBridge API surface is a documented allowlist — no dynamic or conditional exposure
+  - Service initialization order is deterministic and documented (Main ready -> window created -> preload loaded -> renderer hydrated)
+  - IPC listener registration timing is documented relative to process lifecycle events
+  - Process-specific error handling is defined (uncaughtException in Main, error boundaries in Renderer)
+  - DevTools and development-mode process behavior is documented separately from production
+  - Process health monitoring (heartbeat, crash detection) is implemented where applicable
+  - Preload script is a pure bridge — no business logic, no state, no side effects
+
+expected_quality:
+  - Main process entry point (main.ts/main.js) documents the full initialization sequence
+  - BrowserWindow configuration specifies webPreferences with security-relevant options documented
+  - Preload script uses contextBridge.exposeInMainWorld with explicit method list — no spread, no dynamic keys
+  - Renderer initialization waits for DOMContentLoaded or equivalent before mounting UI framework
+  - IPC listeners in Renderer are registered before any IPC calls are made
+  - Service initialization failures in Main process are caught and surface a recovery path
+  - contextBridge API is tested to verify only documented methods are exposed to Renderer
+  - Process crash/kill recovery is documented — what happens when Renderer crashes, when Main exits
+  - Development vs production process behavior is clearly separated in documentation
+  - Each process documents its module loading strategy (ESM, CJS, bundler configuration)
+
+red_flags:
+  - Main process contains UI logic (DOM manipulation, React rendering)
+  - Preload script contains business logic instead of thin delegation to contextBridge
+  - contextBridge.exposeInMainWorld uses dynamic keys or spread operators — API surface is uncontrolled
+  - No documented initialization order — process startup is implicit
+  - Renderer registers IPC listeners after making IPC calls — race condition
+  - No error handling for Main process uncaughtException or Renderer unhandledrejection
+  - BrowserWindow webPreferences not documented or using insecure defaults
+  - Preload script imports modules that are not available in preload context
+  - No crash recovery for Renderer process — application becomes unresponsive
+  - Process architecture documentation duplicates without adding value (copy-paste from Electron docs)
+
+edge_cases:
+  - Multiple BrowserWindows with different Preload scripts and contextBridge APIs
+  - BrowserWindow created before app ready (ready-pending window pattern)
+  - Preload script loaded from a protocol handler (custom protocol, not file://)
+  - UtilityProcess (Electron 22+) as a fourth process boundary to document
+  - Service Worker in Renderer that operates outside the documented process model
+  - Extension-host process introduced by Chromium extensions
+  - app.on('ready') vs app.whenReady() — async initialization pattern differences
+  - Single-instance lock (requestSingleInstanceLock) affecting process startup flow
+  - Process architecture during auto-update — old vs new version process handoff
+  - Graceful shutdown sequence when multiple processes have pending operations
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Main, Renderer, and Preload process setup is documented with
+      explicit initialization steps for each. The sequence from
+      application launch to ready state is deterministic and documented.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      contextBridge usage is documented — the Preload script exposes an
+      explicit, testable API surface via contextBridge.exposeInMainWorld.
+      No dynamic or conditional exposure. API surface is a documented allowlist.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Service initialization order is deterministic — Main process services
+      start before BrowserWindow creation, Preload loads before Renderer
+      hydration, and IPC listeners register before any IPC calls.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Process-specific error handling is defined: uncaughtException and
+      unhandledRejection in Main, React error boundaries and IPC error
+      handlers in Renderer, and contextBridge error propagation from Preload.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Process health monitoring is documented — crash detection, heartbeat
+      mechanisms, and recovery procedures when a process terminates
+      unexpectedly.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 5"
+    description: >
+      Development vs production process behavior is separated — DevTools
+      availability, hot reload handling, and debug IPC channels are
+      gated behind environment checks.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: process_architecture
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-5"
+      evidence: string
+  findings:
+    - string

@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: extension_points
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-extension-001
+    description: "Extension Points section exists"
+    condition: "document has a section with semantic_type = 'extension_points'"
+    message: "Missing optional 'Extension Points' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "extension_points"
+
+  - id: ft-sec-extension-002
+    description: "Extension Points defines extension mechanisms"
+    condition: "section contains descriptions of where and how the feature can be extended or customized"
+    message: "Extension Points section does not define extension mechanisms"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "extend"
+        - "extension"
+        - "plugin"
+        - "hook"
+        - "customiz"
+        - "override"
+        - "override point"
+
+  - id: ft-sec-extension-003
+    description: "Extension Points is technology-independent"
+    condition: "section does not reference specific extension frameworks, plugin systems, or implementation technologies"
+    message: "Extension Points section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

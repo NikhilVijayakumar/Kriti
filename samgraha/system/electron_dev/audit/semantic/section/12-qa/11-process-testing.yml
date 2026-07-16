@@ -1,0 +1,131 @@
+system: electron_dev
+domain: qa
+section_type: process_testing
+version: "1.0.0"
+
+engineering_intent: >
+  Process Testing validates that Main, Renderer, and Preload processes
+  maintain proper isolation, handle lifecycle events correctly, and recover
+  gracefully from crashes. It covers process boundary enforcement, service
+  lifecycle management within the Main process, crash recovery and restart
+  strategies, and the behavioral contract between processes under stress.
+
+audit_objectives:
+  - Process isolation verified — Renderer cannot access Main process internals
+  - Main process service lifecycle tested (init, ready, shutdown, error states)
+  - Renderer crash detection and recovery tested (crash reporters, restart)
+  - Preload script isolation tested — contextBridge is sole exposure surface
+  - Service registry lifecycle tested — services start/stop in dependency order
+  - Background job processes tested for resource cleanup on termination
+  - Process memory and CPU limits tested under sustained load
+  - Graceful shutdown tested — in-flight operations complete or abort cleanly
+
+expected_quality:
+  - Process isolation tests prove Renderer cannot require/import Main modules
+  - Service lifecycle tests cover init→ready→running→stopping→stopped transitions
+  - Crash recovery tests simulate Renderer crash and verify app stability
+  - Preload tests verify only contextBridge-exposed APIs are available in renderer
+  - Service dependency graph tested — circular dependencies detected at startup
+  - Background job tests verify child process cleanup on parent exit
+  - Memory limit tests verify OOM behavior matches documented policy
+  - Shutdown tests verify no dangling file handles, open connections, or timers
+
+red_flags:
+  - Process testing section absent or generic with no Electron-specific content
+  - No process isolation tests — security boundary between Main/Renderer untested
+  - Service lifecycle tested only for happy path — error/stopping states untested
+  - No crash recovery strategy — Renderer crash silently ignored or crashes app
+  - Preload isolation not tested — contextBridge bypass possible
+  - Service registry has no dependency ordering tests — startup race conditions
+  - Background processes not cleaned up — zombie processes after app exit
+  - Shutdown tests absent — app leaves resources dangling on quit
+
+edge_cases:
+  - Renderer process killed via OS signal (SIGKILL, taskkill) vs. graceful close
+  - Main process OOM — behavior when Node.js heap exceeds system limit
+  - Multiple Renderer windows — crash in one must not affect others
+  - Service depends on another service that fails to start (partial degradation)
+  - Preload script throws during injection — Renderer must still load
+  - GPU process crash — Electron spawns replacement, must not duplicate state
+  - App quit during active IPC transaction — in-flight calls must timeout cleanly
+  - Service restart after crash — state recovery from persisted checkpoint
+  - Utility process (electron utility) crash — must not take down Main
+  - Fork bomb scenario — rapid process spawning must be rate-limited
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Process testing section exists with substantive content covering
+      Main/Renderer/Preload isolation, service lifecycle, and crash recovery.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Process isolation tests defined — Renderer cannot access Main process
+      modules, services, or privileged APIs beyond contextBridge surface.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Service lifecycle tests exist covering init, ready, running, error,
+      stopping, and stopped states with dependency ordering validation.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Crash recovery tests simulate process failures (Renderer crash, GPU
+      crash, utility process crash) and verify app stability and recovery.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Graceful shutdown tests verify no dangling file handles, open connections,
+      timers, or child processes remain after app quit.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Resource limit tests validate process memory/CPU behavior under sustained
+      load and confirm documented OOM or throttle policies are enforced.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: process_testing
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: false
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+  findings:
+    - string

@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: architectural_constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-archcon-001
+    description: "Architectural Constraints section exists"
+    condition: "document has a section with semantic_type = 'architectural_constraints'"
+    message: "Missing optional 'Architectural Constraints' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "architectural_constraints"
+
+  - id: ft-sec-archcon-002
+    description: "Architectural Constraints defines constraints"
+    condition: "section contains architectural constraints that limit how the feature can be implemented"
+    message: "Architectural Constraints section does not define constraints"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "architectural"
+        - "constraint"
+        - "must"
+        - "shall"
+        - "cannot"
+        - "limitation"
+
+  - id: ft-sec-archcon-003
+    description: "Architectural Constraints references Architecture domain"
+    condition: "section references Architecture documentation as source of constraints"
+    message: "Architectural Constraints section does not reference Architecture domain"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "architecture"
+        - "component model"
+        - "data flow"
+        - "communication"
+

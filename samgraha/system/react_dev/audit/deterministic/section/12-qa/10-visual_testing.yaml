@@ -1,0 +1,76 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: visual_testing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-vis-001
+    description: "Visual Testing section exists"
+    condition: "document has a section with semantic_type = 'visual_testing'"
+    message: "No visual_testing section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: qa-sec-vis-002
+    description: "Screenshot testing is configured"
+    condition: "section mentions screenshot testing or visual diff"
+    message: "Screenshot testing not configured"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - screenshot
+        - visual
+        - diff
+        - baseline
+
+  - id: qa-sec-vis-003
+    description: "Storybook integration is documented"
+    condition: "section mentions Storybook for visual testing"
+    message: "Storybook integration not documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - storybook
+        - story
+        - stories
+
+  - id: qa-sec-vis-004
+    description: "CI gates are configured"
+    condition: "section mentions CI integration for visual tests"
+    message: "CI gates for visual tests not configured"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - ci
+        - pipeline
+        - gate
+        - automated
+
+  - id: qa-sec-vis-005
+    description: "Baseline management is documented"
+    condition: "section describes how baselines are stored and updated"
+    message: "Baseline management not documented"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - baseline
+        - store
+        - update
+        - version

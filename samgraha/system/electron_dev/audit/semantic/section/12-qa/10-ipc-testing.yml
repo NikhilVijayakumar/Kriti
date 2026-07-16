@@ -1,0 +1,124 @@
+system: electron_dev
+domain: qa
+section_type: ipc_testing
+version: "1.0.0"
+
+engineering_intent: >
+  IPC Testing validates that the Inter-Process Communication layer between
+  Main, Renderer, and Preload processes operates correctly under normal,
+  edge-case, and failure conditions. It covers mock IPC transport for
+  deterministic handler testing, channel-level isolation guarantees,
+  serialization boundary correctness, and integration test patterns
+  that exercise real IPC flows across process boundaries.
+
+audit_objectives:
+  - Mock IPC transport layer available for deterministic handler unit tests
+  - Each IPC channel handler tested in isolation with typed request/response
+  - Channel isolation verified — one channel cannot invoke or observe another
+  - Serialization/deserialization boundary tested for all payload types
+  - IPC error propagation tested — handler failures surface correctly to caller
+  - contextBridge exposure tested — preload API surface matches allowlist
+  - Timeout and cancellation semantics validated for long-running IPC calls
+  - IPC layer integration tests cover full Main↔Renderer round-trips
+
+expected_quality:
+  - Mock transport implements the same interface as production IPC layer
+  - Handler tests use the mock transport, not a running Electron instance
+  - Each channel has at least one happy-path and one error-path test
+  - Channel isolation tests prove that cross-channel leakage is impossible
+  - contextBridge tests verify only exposed methods are callable from renderer
+  - Serialization tests cover JSON, binary, Date, RegExp, Map, Set, and typed arrays
+  - IPC timeout tests verify caller receives error within configured deadline
+  - Integration tests run against real BrowserWindow with preload scripts loaded
+
+red_flags:
+  - IPC testing section absent or contains only generic "test your IPC" guidance
+  - No mock IPC transport — all IPC tests require a full Electron app instance
+  - Handler tests coupled to specific renderer code rather than testing the channel
+  - Channel naming conventions not enforced by tests (e.g. domain:action pattern)
+  - No tests for IPC error paths — handler exceptions untested
+  - contextBridge tests missing — preload API surface is undocumented or untested
+  - Serialization boundary not tested — assumptions about JSON round-trip only
+  - No integration tests that exercise real Main↔Renderer communication
+
+edge_cases:
+  - Binary payload transfer (ArrayBuffer, SharedArrayBuffer) across process boundary
+  - IPC channels opened before BrowserWindow finishes loading (timing race)
+  - Multiple BrowserWindows sharing the same IPC channel namespace
+  - IPC handler registered multiple times (duplicate registration safety)
+  - Large payloads exceeding IPC message size limits (electron IPC buffer cap)
+  - IPC calls during app suspend/resume lifecycle on macOS
+  - Renderer crash during outstanding IPC call — caller must receive error
+  - Preload script reloaded via webContents.reload — channel re-registration
+  - ipcRenderer.invoke vs ipcRenderer.send semantic difference testing
+  - One-way (send) vs two-way (invoke) channel isolation
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 30"
+    description: >
+      IPC testing section exists with substantive desktop-specific content
+      describing mock transport, handler tests, and channel isolation strategy.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Mock IPC transport layer is defined — provides an abstraction that
+      replaces electron ipcMain/ipcRenderer for deterministic unit testing
+      without a running Electron process.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Channel handler isolation tests exist — each IPC channel handler is
+      tested independently with typed request payloads and asserted responses,
+      covering both success and error paths.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Channel isolation tests prove that IPC channels cannot invoke or observe
+      each other — cross-channel leakage is detected and prevented.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 15"
+    description: >
+      Integration test patterns documented that exercise real Main↔Renderer
+      IPC round-trips with preload scripts, contextBridge exposure, and
+      webContents lifecycle.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: ipc_testing
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-30"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: false
+      score: "0-15"
+      evidence: string
+  findings:
+    - string

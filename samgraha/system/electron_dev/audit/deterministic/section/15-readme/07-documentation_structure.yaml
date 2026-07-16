@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: documentation_structure
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-doc-struct-001
+    description: "Documentation structure section exists"
+    condition: "document has a section with semantic_type = 'documentation_structure'"
+    message: "Missing required 'Documentation Structure' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "documentation_structure"
+
+  - id: readme-sec-doc-struct-002
+    description: "Documentation structure describes docs layout"
+    condition: "section contains a description of how documentation is organized"
+    message: "Documentation structure section does not describe docs layout"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "documentation"
+        - "docs"
+        - "structure"
+        - "organization"
+
+  - id: readme-sec-doc-struct-003
+    description: "Documentation structure references knowledge hub"
+    condition: "section references the knowledge hub documentation structure"
+    message: "Documentation structure does not reference knowledge hub"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
+

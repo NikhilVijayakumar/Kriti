@@ -1,0 +1,11 @@
+id: aggregation_02_engineering
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/document/02-engineering.yaml
+  semantic: calculation/semantic/ensemble/02-engineering.yaml
+weights:
+  deterministic: 0.60
+  semantic: 0.40
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/14-build/openapi-schema-valid.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "openapi-schema-valid" },
+    "domain": { "const": "14-build" },
+    "category": { "const": "A" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["schema_valid", "diff_count"],
+      "properties": {
+        "schema_valid": { "type": "boolean" },
+        "diff_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

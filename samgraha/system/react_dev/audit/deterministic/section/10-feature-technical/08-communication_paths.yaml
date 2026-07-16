@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: communication_paths
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-comm-001
+    description: "Communication Paths section exists"
+    condition: "document has a section with semantic_type = 'communication_paths'"
+    message: "Missing optional 'Communication Paths' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "communication_paths"
+
+  - id: ft-sec-comm-002
+    description: "Communication Paths defines paths"
+    condition: "section contains descriptions of communication paths between components"
+    message: "Communication Paths section does not define communication paths"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "path"
+        - "channel"
+        - "route"
+        - "transport"
+        - "message"
+        - "event"
+
+  - id: ft-sec-comm-003
+    description: "Communication Paths is technology-independent"
+    condition: "section does not reference specific protocols, message brokers, or implementation technologies"
+    message: "Communication Paths section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - protocols
+

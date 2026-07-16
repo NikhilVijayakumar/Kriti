@@ -1,0 +1,58 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-con-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing 'Constraints' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: arch-sec-con-002
+    description: "Hard constraints have source attribution"
+    condition: "every hard constraint names its source (External Context, Platform Pillars, organizational rule)"
+    message: "One or more hard constraints lack source attribution"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Source"
+
+  - id: arch-sec-con-003
+    description: "Hard and soft constraints are distinguished"
+    condition: "section separates hard constraints from soft preferences"
+    message: "Constraints section does not distinguish hard from soft constraints"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "Hard Constraints"
+        - "Soft Constraints"
+
+  - id: arch-sec-con-004
+    description: "Constraints are technology-independent"
+    condition: "section does not list implementation constraints (language versions, dependency pins)"
+    message: "Constraints section contains implementation-level constraints"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - language_versions
+        - dependency_pins
+        - implementation_limits
+

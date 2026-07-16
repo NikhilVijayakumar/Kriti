@@ -1,0 +1,145 @@
+system: electron_dev
+domain: implementation
+section_type: service_patterns
+version: "1.0.0"
+
+engineering_intent: >
+  Service Patterns audits the architectural patterns used to implement services
+  within the desktop application — specifically the service factory pattern,
+  lifecycle management, IPC wrapping for cross-process service access, event
+  wiring, and dependency resolution. It ensures services follow consistent
+  conventions, are testable in isolation, and integrate cleanly with the IPC
+  abstraction and process boundaries.
+
+audit_objectives:
+  - Service factory pattern documented — how services are created, configured, and registered
+  - Service lifecycle management defined — init, start, stop, restart, error recovery
+  - IPC wrapping pattern defined — how Main process services expose API to Renderer via IPC
+  - Event wiring pattern documented — how services emit and subscribe to system events
+  - Dependency resolution strategy defined — service dependency graph, ordering, circular detection
+  - Service registry pattern documented — how services are discovered and resolved at runtime
+  - Configuration lock pattern — services read immutable config, cannot modify at runtime
+  - Storage domain isolation — each service owns its storage namespace, no cross-service access
+
+expected_quality:
+  - Service factory pattern includes typed factory function with config injection
+  - Lifecycle states explicitly enumerated (created, initialized, running, stopping, stopped, error)
+  - IPC wrapper generates typed channel bindings from service interface definition
+  - Event wiring uses a typed event bus with namespace isolation per service
+  - Dependency resolution is declarative (config-driven) not imperative (manual wiring)
+  - Service registry provides health check and status query for each registered service
+  - Configuration is frozen after init — services receive immutable config snapshot
+  - Storage domains are namespaced — service A cannot read/write service B's storage
+
+red_flags:
+  - Service patterns section absent or contains only generic design pattern descriptions
+  - No service factory — services created ad-hoc with manual constructor wiring
+  - Lifecycle not defined — services have no explicit start/stop, rely on GC or process exit
+  - IPC wrapping absent — Renderer directly calls Main process functions without abstraction
+  - Event wiring uses global EventEmitter without namespace isolation
+  - Dependencies wired manually in a single bootstrap file — no dependency graph
+  - Services mutate configuration at runtime — no config lock
+  - Storage is shared globally — any service can read/write any data
+  - No error recovery — service failure is unrecoverable without app restart
+  - No health checks — failed services are invisible to monitoring
+
+edge_cases:
+  - Service depends on another service that has not yet initialized (startup ordering)
+  - Circular dependency detected at registration time — must fail fast with clear error
+  - Service restart after crash — must re-register with registry and re-subscribe events
+  - Hot reload of service implementation during development — must not leak old subscriptions
+  - Service accessed from multiple Renderer windows simultaneously — thread safety
+  - Service needs to broadcast event to all Renderers — fan-out pattern
+  - Configuration update requires service restart — cannot hot-reload config
+  - Service attempts to access another service's storage domain — must be denied
+  - Service factory creates long-running service with async init — factory must await
+  - Preload-exposed service API differs from internal API — versioning surface
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Service patterns section exists with substantive desktop-specific content
+      covering factory pattern, lifecycle, IPC wrapping, and dependency resolution.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Service factory pattern documented — typed factory function with config
+      injection, registration with service registry, and creation conventions.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Service lifecycle management defined — explicit state machine with
+      init, start, stop, restart, and error recovery transitions.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      IPC wrapping pattern documented — how Main process services expose typed
+      API to Renderer via contextBridge and channel abstraction.
+
+  - id: C5
+    weight: mandatory
+    score: "0 or 10"
+    description: >
+      Dependency resolution strategy defined — declarative dependency graph,
+      startup ordering, and circular dependency detection.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Event wiring and storage domain isolation patterns documented — typed
+      event bus with namespace isolation and per-service storage ownership.
+
+  - id: C7
+    weight: recommended
+    score: "0 or 5"
+    description: >
+      Configuration lock pattern documented — services receive immutable config
+      snapshot at init, cannot mutate configuration at runtime.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: service_patterns
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+    - id: C7
+      passed: false
+      score: "0-5"
+      evidence: string
+  findings:
+    - string

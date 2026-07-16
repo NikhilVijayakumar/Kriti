@@ -1,0 +1,33 @@
+system_id: python_hackathon
+domain: infrastructure
+scope: document
+kind: semantic
+
+description: "Semantic evaluation of infrastructure readiness, offline execution capability, and local reproducibility."
+
+metadata_fields:
+  - model_identifier
+  - provider
+  - prompt_version
+  - execution_timestamp
+  - standard_version
+
+ensemble:
+  required_models:
+    - claude-3-5-sonnet
+    - gemini-1.5-pro
+    - gpt-4o
+
+prompt_template: |
+  Analyze the repository structure and documentation.
+  Does the project demonstrate a clear, reproducible infrastructure setup?
+  Is there evidence that the project can be run locally and offline without internet access?
+  Are dependency management, containerization, and environment setup clearly defined?
+  Provide a score out of 100 based on the overall infrastructure quality and offline capability.
+
+evidence_requirements:
+  - type: json
+    schema:
+      score: number
+      reasoning: string
+      evidence: string

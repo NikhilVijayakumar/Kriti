@@ -1,0 +1,147 @@
+system: electron_dev
+domain: architecture
+section_type: microservices
+version: "1.0.0"
+
+engineering_intent: >
+  Desktop service architecture audits the three-process model compliance
+  (Main, Renderer, Preload), IPC channel design, service registry patterns,
+  and process isolation validation. A desktop application built on Electron
+  relies on a strict separation of concerns across its process boundaries:
+  the Main process owns OS integration, lifecycle, and privileged operations;
+  the Renderer process owns UI rendering and user interaction; the Preload
+  process serves as the trusted bridge between the two via contextBridge.
+  This audit verifies that the architecture documentation captures each
+  service's role, the IPC contract between processes, the registry of
+  available services, and the isolation guarantees that prevent privilege
+  escalation or data leakage across process boundaries.
+
+audit_objectives:
+  - Three-process model (Main, Renderer, Preload) is explicitly documented with ownership boundaries
+  - Each service or module declares a single responsibility within its host process
+  - IPC channel design follows a consistent naming convention (domain:action) with directionality
+  - Service registry enumerates all available services, their host process, and exposed interfaces
+  - Process isolation is validated: Main cannot be directly invoked by Renderer without Preload mediation
+  - Privileged operations (file system, network, native modules) are confined to the Main process
+  - Renderer process sandbox compliance is documented (nodeIntegration disabled, contextIsolation enabled)
+  - Service lifecycle (initialization order, graceful shutdown, restart) is defined per process
+  - Cross-process data flow is traceable through documented IPC channels only
+  - No undocumented backdoor channels bypass the service registry
+
+expected_quality:
+  - Each process has a written responsibility boundary with explicit exclusions
+  - Service registry is a structured document or code artifact, not ad hoc knowledge
+  - IPC channels specify request type, response type, error type, and timeout per channel
+  - Process isolation includes not just runtime separation but also data serialization boundaries
+  - Shutdown order is documented: Renderer teardown, Preload cleanup, Main termination
+  - Initialization order is documented: Main ready -> BrowserWindow created -> Preload loaded -> Renderer hydrated
+  - Services that span multiple processes have their cross-boundary interface explicitly defined
+  - Service registry includes versioning or compatibility notes for each registered service
+
+red_flags:
+  - Main process contains UI rendering logic or DOM manipulation
+  - Renderer process imports Node.js modules directly (nodeIntegration: true)
+  - IPC channels lack naming convention — channels are named arbitrarily
+  - Service registry does not exist — services are discovered by ad hoc imports
+  - No documented process isolation boundary — Main and Renderer share state freely
+  - Preload script contains business logic instead of pure bridge code
+  - Privileged operations (fs, net, child_process) appear in Renderer code
+  - No shutdown or cleanup sequence defined for any process
+  - Undocumented IPC channels exist outside the service registry
+  - Service initialization order is implicit or dependent on timing luck
+
+edge_cases:
+  - Single-window applications where the Renderer process boundary is less obvious but still enforced
+  - Multiple BrowserWindows sharing services from a single Main process instance
+  - Background windows (BrowserWindow with show: false) that host renderer logic
+  - Service Worker registration inside the Renderer that operates outside the documented process model
+  - Native Node addons loaded in Main that expose IPC-callable functions
+  - Hot module replacement in development that reloads Preload scripts mid-session
+  - UtilityProcess (Electron 22+) used for compute-heavy tasks — new process boundary to audit
+  - SharedArrayBuffer usage between Main and Renderer for high-throughput data transfer
+  - Process model deviations during testing (e.g., integration tests that merge processes)
+  - Extension-host processes that introduce additional process boundaries
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Three-process model is documented with explicit ownership for Main,
+      Renderer, and Preload. Each process declares what it owns and what
+      it is forbidden from doing.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Service registry exists as a structured artifact enumerating all
+      services, their host process, exposed IPC interface (channel name,
+      request/response types), and lifecycle state.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      IPC channel design follows a documented naming convention (domain:action)
+      with every channel specifying direction (Main->Renderer, Renderer->Main,
+      bidirectional), serialization format, error handling, and timeout.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Process isolation is validated — no Renderer code imports Node.js
+      modules directly, no Main process code manipulates DOM, and
+      all cross-process data flow is routed through documented IPC channels.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Service lifecycle (initialization order, graceful shutdown, error
+      recovery) is documented for each process, including the sequence
+      of events from application launch to ready state.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 5"
+    description: >
+      Cross-process data flow is traceable through documented IPC channels
+      only — no undocumented backdoor channels, no direct shared state,
+      no electron.remote usage.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: microservices
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-5"
+      evidence: string
+  findings:
+    - string

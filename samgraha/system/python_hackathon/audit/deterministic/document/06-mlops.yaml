@@ -1,0 +1,32 @@
+system_id: python_hackathon
+domain: mlops
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 2
+total_weight: 2.0
+
+description: "Rules checking MLOps tracking tools."
+
+rules:
+  - id: mlp-001
+    description: "DVC configuration exists"
+    condition: "repository contains .dvc or dvc.yaml"
+    message: "No DVC configuration found for dataset lineage."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: file_presence
+      targets: [.dvc, dvc.yaml]
+
+  - id: mlp-002
+    severity: warning
+    weight: 1
+    description: "MLflow configuration exists"
+    check:
+      file_globs:
+        - "mlruns/**"
+        - "mlflow.ini"
+        - "mlflow.yaml"
+        - "mlprojects/**"

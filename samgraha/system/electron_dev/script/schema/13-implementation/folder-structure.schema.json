@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/13-implementation/folder-structure.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "folder-structure" },
+    "domain": { "const": "13-implementation" },
+    "category": { "const": "A" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["expected_count", "actual_count", "mismatch_count"],
+      "properties": {
+        "expected_count": { "type": "integer", "minimum": 0 },
+        "actual_count": { "type": "integer", "minimum": 0 },
+        "mismatch_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

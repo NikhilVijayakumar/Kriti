@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/07-engineering/lint-standards.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "lint-standards" },
+    "domain": { "const": "07-engineering" },
+    "category": { "const": "A" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["lint_exit_code", "lint_errors"],
+      "properties": {
+        "lint_exit_code": { "type": "integer" },
+        "lint_errors": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

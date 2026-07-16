@@ -1,0 +1,4 @@
+check: dependency-vuln-scan
+depends_on: []
+timeout_seconds: 120
+requires_network: true

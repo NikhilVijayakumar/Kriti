@@ -1,0 +1,136 @@
+system: electron_dev
+domain: build
+section_type: packaging
+version: "1.0.0"
+
+engineering_intent: >
+  Packaging audits the desktop application packaging pipeline — how the Electron
+  app is bundled, signed, and distributed as platform-specific installers. It
+  covers electron-builder or equivalent configuration, platform-specific packaging
+  formats (DMG/MSI/AppImage/deb/rpm), code signing and notarization, asset
+  optimization, and post-build artifact validation. It exists so the shipped
+  binary is correct, secure, and optimized for each target platform.
+
+audit_objectives:
+  - electron-builder or equivalent config documented with platform-specific targets
+  - Windows packaging defined — NSIS installer, MSI, portable, with code signing
+  - macOS packaging defined — DMG, pkg, with code signing and Apple notarization
+  - Linux packaging defined — AppImage, deb, rpm with correct dependency declarations
+  - Code signing configured for all platforms — certificate management and rotation
+  - Asset optimization defined — asar packaging, native module rebuilding, icon sets
+  - Artifact naming and versioning convention documented
+  - Post-build validation verifies artifact integrity, signatures, and size budgets
+
+expected_quality:
+  - electron-builder config specifies targets per platform with concrete options
+  - Windows: NSIS with per-machine/per-user install modes, uninstaller, Start Menu integration
+  - macOS: DMG with background image, symlink to /Applications, codesign + notarytool
+  - Linux: AppImage with correct desktop entry, deb with maintainer/scripts, rpm with dependencies
+  - Code signing uses hardware tokens or cloud KMS, not bundled private keys
+  - asar packaging configured with unpack pattern for native modules and binaries
+  - Native modules rebuilt for target platform via electron-rebuild or prebuildify
+  - Icon sets provided in all required formats (.ico, .icns, .png) and sizes
+  - Artifact names include version, platform, and architecture (e.g. app-1.2.3-win-x64.exe)
+  - Post-build checks verify code signature validity, notarization ticket, and size budget
+
+red_flags:
+  - Packaging section absent or contains only "run electron-builder" with no config detail
+  - No platform-specific packaging — only one platform configured
+  - Code signing not configured — signed builds are unsigned
+  - macOS notarization absent — app triggers Gatekeeper warnings
+  - asar packaging not configured — source code exposed in distributed binary
+  - Native modules not rebuilt for target — runtime crashes on different architectures
+  - No icon set — app uses Electron default icon
+  - Artifact naming inconsistent — no version or platform identifier in filename
+  - No post-build validation — packaging produces output without verification
+  - Private signing keys bundled in repository or CI environment without rotation
+
+edge_cases:
+  - Native module with prebuild binaries not available for target platform
+  - macOS universal binary (arm64 + x64) — fat binary packaging and signing
+  - Windows ARM64 builds — native module cross-compilation requirements
+  - Linux glibc version compatibility — targeting old distributions vs. new features
+  - macOS hardened runtime — entitlements for specific capabilities (camera, mic, network)
+  - Code signing certificate expiry during release cycle — rotation and renewal process
+  - Large binary exceeding distribution platform size limits (GitHub releases, S3)
+  - Multiple installer formats for same platform — conflict prevention
+  - Auto-update channel configuration — stable/beta/dev per platform
+  - Sandbox entitlements on macOS — required for App Store or notarization
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Packaging section exists with substantive content documenting
+      electron-builder or equivalent config with platform-specific targets.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Platform-specific packaging formats defined for Windows (NSIS/MSI),
+      macOS (DMG/pkg), and Linux (AppImage/deb/rpm) with concrete options.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Code signing configured for all target platforms — certificate storage,
+      signing commands, and macOS notarization with notarytool.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Asset optimization defined — asar packaging with unpack pattern, native
+      module rebuilding for target platform, and icon set in required formats.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 15"
+    description: >
+      Post-build artifact validation defined — signature verification, size
+      budget checks, and installer functionality testing per platform.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Artifact naming and versioning convention documented — consistent
+      filename format with version, platform, and architecture identifiers.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: packaging
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: false
+      score: "0-15"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+  findings:
+    - string

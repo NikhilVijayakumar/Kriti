@@ -1,0 +1,17 @@
+system_id: samgraha-documentation
+domain: architecture
+section: layered_architecture
+kind: deterministic
+
+rules:
+  - id: arch-sec-layered-001
+    description: "Template conformance: Layered Architecture"
+    condition: "section contains at least 2 paragraphs and 1 architecture diagram"
+    message: "Section must contain at least 2 paragraphs and 1 architecture diagram"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 2
+      min_diagrams: 1

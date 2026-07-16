@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: overview
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-overview-001
+    description: "Overview section exists"
+    condition: "document has a section with semantic_type = 'overview'"
+    message: "Missing required 'Overview' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "overview"
+
+  - id: readme-sec-overview-002
+    description: "Overview provides context"
+    condition: "section contains a high-level overview of the project and its context"
+    message: "Overview section does not provide project context"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "overview"
+        - "context"
+        - "project"
+        - "system"
+
+  - id: readme-sec-overview-003
+    description: "Overview references architecture"
+    condition: "section references Architecture Documentation for system context"
+    message: "Overview does not reference Architecture Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
+

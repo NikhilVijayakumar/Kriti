@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: build
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-build-001
+    description: "Build section exists"
+    condition: "document has a section with semantic_type = 'build'"
+    message: "Missing required 'Build' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "build"
+
+  - id: readme-sec-build-002
+    description: "Build provides instructions"
+    condition: "section contains build instructions or a pointer to them"
+    message: "Build section does not provide build instructions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "build"
+        - "compile"
+        - "make"
+        - "run"
+
+  - id: readme-sec-build-003
+    description: "Build references build documentation"
+    condition: "section references Build Documentation for detailed build process"
+    message: "Build section does not reference Build Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: build
+          direction: derives_from
+

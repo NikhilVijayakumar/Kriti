@@ -1,0 +1,33 @@
+system_id: python_hackathon
+domain: testing
+scope: document
+kind: semantic
+
+description: "Semantic evaluation of testing strategy, coverage intent, and validation completeness."
+
+metadata_fields:
+  - model_identifier
+  - provider
+  - prompt_version
+  - execution_timestamp
+  - standard_version
+
+ensemble:
+  required_models:
+    - claude-3-5-sonnet
+    - gemini-1.5-pro
+    - gpt-4o
+
+prompt_template: |
+  Analyze the test files, test naming conventions, and README references to testing.
+  Does the team demonstrate a thoughtful testing strategy beyond trivial smoke tests?
+  Are edge cases and failure modes considered?
+  Is there evidence of integration tests or validation of the core ML/AI pipeline in addition to unit tests?
+  Provide a score out of 100 based on the depth and intent of the testing approach.
+
+evidence_requirements:
+  - type: json
+    schema:
+      score: number
+      reasoning: string
+      evidence: string

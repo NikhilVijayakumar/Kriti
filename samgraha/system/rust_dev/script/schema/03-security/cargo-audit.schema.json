@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "metrics": {
+            "type": "object",
+            "properties": {
+                "vulnerability_count": {
+                    "type": "integer"
+                },
+                "critical_count": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

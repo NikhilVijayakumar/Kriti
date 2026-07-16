@@ -1,0 +1,116 @@
+system_id: samgraha-documentation
+domain: implementation
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Implementation Documentation. Validates generation plan completeness, security fix coverage, and derivation traceability that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: impl-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards Implementation requirements"
+    message: "Implementation document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - generation_plan
+        - security_fix_plan
+
+  - id: impl-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: impl-doc-003
+    description: "Document covers one implementation concern"
+    condition: "document has a single primary focus — does not mix unrelated implementation plans"
+    message: "Document covers multiple unrelated implementation concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Derivation completeness ---
+  - id: impl-doc-004
+    description: "Document derives from required sources"
+    condition: "document references upstream Feature Technical, Engineering, and Prototype documents"
+    message: "Implementation document does not derive from all required sources"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: derives_from
+        - domain: engineering
+          direction: derives_from
+        - domain: prototype
+          direction: derives_from
+
+  # --- Cross-references ---
+  - id: impl-doc-005
+    description: "Required cross-references present"
+    condition: "document references downstream Build Documentation where applicable"
+    message: "Implementation document is missing expected downstream cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: build
+          direction: derives_to
+
+  # --- Duplicate content ---
+  - id: impl-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Implementation document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Script-sourced: ground truth from repo ---
+  - id: impl-doc-015
+    description: "Folder structure matches expected"
+    condition: "folder-structure script reports mismatch_count == 0"
+    message: "Folder structure does not match expected layout — mismatch_count > 0"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/13-implementation/folder-structure.schema.json#metrics.mismatch_count"
+      threshold: 0
+      comparison: "=="
+
+  - id: impl-doc-017
+    description: "Dependency manifest exists"
+    condition: "dependency-manifest script reports manifest_exists == true"
+    message: "Dependency manifest not found"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/13-implementation/dependency-manifest.schema.json#metrics.manifest_exists"
+      threshold: true
+      comparison: "=="

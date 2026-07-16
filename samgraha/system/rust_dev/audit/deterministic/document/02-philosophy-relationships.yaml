@@ -1,0 +1,96 @@
+system_id: samgraha-documentation
+domain: philosophy
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: phil-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  - id: phil-purpose-guided-by-guiding-principles
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: phil-guiding-principles-derives-vision
+    from_section: guiding_principles
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: phil-guiding-principles-guides-architecture
+    from_section: guiding_principles
+    type: derives_from
+    target_domain: architecture
+    target_section: purpose
+    owner: section
+
+  - id: phil-guiding-principles-guides-engineering
+    from_section: guiding_principles
+    type: derives_from
+    target_domain: engineering
+    target_section: purpose
+    owner: section
+
+  - id: phil-values-derives-vision
+    from_section: values
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: phil-values-guides-architecture
+    from_section: values
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: phil-tradeoffs-derives-vision
+    from_section: tradeoffs
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: phil-tradeoffs-informs-architecture
+    from_section: tradeoffs
+    type: informs
+    target_domain: architecture
+    target_section: constraints
+    owner: section
+
+  - id: phil-tradeoffs-guides-feature
+    from_section: tradeoffs
+    type: derives_from
+    target_domain: feature
+    target_section: priority
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: phil-section-consistency
+    type: section_consistency
+    description: "Sections within philosophy docs are mutually consistent — guiding_principles, values, and tradeoffs do not contradict each other"
+    owner: document
+
+  - id: phil-collection-coherence
+    type: collection_coherence
+    description: "All philosophy documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: phil-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all philosophy sections — same concept, same name"
+    owner: document

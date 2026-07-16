@@ -1,0 +1,96 @@
+system_id: samgraha-documentation
+domain: prototype
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: proto-scope-derives-feature
+    from_section: scope
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: proto-scope-derives-feature-technical
+    from_section: scope
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: proto-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  - id: proto-constraints-derives-architecture
+    from_section: constraints
+    type: derives_from
+    target_domain: architecture
+    target_section: constraints
+    owner: section
+
+  - id: proto-constraints-derives-security
+    from_section: constraints
+    type: derives_from
+    target_domain: security
+    target_section: purpose
+    owner: section
+
+  - id: proto-constraints-derives-engineering
+    from_section: constraints
+    type: derives_from
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: proto-data-model-derives-feature-technical
+    from_section: data_model
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: proto-traceability-traces-vision
+    from_section: traceability
+    type: traceable_to
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: proto-traceability-traces-feature
+    from_section: traceability
+    type: traceable_to
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: proto-traceability-traces-feature-technical
+    from_section: traceability
+    type: traceable_to
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: proto-section-consistency
+    type: section_consistency
+    description: "Sections within prototype docs are mutually consistent — mock APIs match data model, scope matches traceability"
+    owner: document
+
+  - id: proto-collection-coherence
+    type: collection_coherence
+    description: "All prototype documents in the domain cohere as one system — no orphaned or contradictory prototypes"
+    owner: document
+
+  - id: proto-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all prototype sections — same concept, same name"
+    owner: document

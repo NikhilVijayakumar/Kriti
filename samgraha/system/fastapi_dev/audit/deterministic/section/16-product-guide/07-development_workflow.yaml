@@ -1,0 +1,19 @@
+system_id: samgraha-documentation
+domain: product-guide
+section: development_workflow
+kind: deterministic
+
+rules:
+  - id: pg-sec-workflow-001
+    description: "Template conformance: Development Workflow"
+    condition: "section contains local setup, running, and testing subsections"
+    message: "Section must contain Local Setup, Running Locally, and Testing and Linting subsections"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      required_subsections:
+        - Local Setup
+        - Running Locally
+        - Testing and Linting

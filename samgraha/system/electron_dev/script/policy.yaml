@@ -1,0 +1,10 @@
+id: script_cache_policy_v1
+default:
+  strategy: fingerprint       # fingerprint | ttl | always_rerun
+  max_age_seconds: null       # null = no age cap, fingerprint match alone is enough
+overrides:
+  - check: dependency-reachable
+    strategy: fingerprint
+    max_age_seconds: 3600      # external state drifts even if the repo doesn't
+  - check: mock-api-runs
+    strategy: always_rerun     # server state is ephemeral, must rerun each pass

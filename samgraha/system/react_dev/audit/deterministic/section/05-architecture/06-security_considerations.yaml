@@ -1,0 +1,82 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: security_considerations
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-sec-001
+    description: "Security section exists"
+    condition: "document has a section with semantic_type = 'security_considerations'"
+    message: "Missing required 'Security' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "security_considerations"
+
+  - id: arch-sec-sec-002
+    description: "Security has required subsections"
+    condition: "section contains Trust Boundaries and Threat Model subsections"
+    message: "Security is missing required subsections (Trust Boundaries, Threat Model)"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: subsection_presence
+      required:
+        - "Trust Boundaries"
+        - "Threat Model"
+
+  - id: arch-sec-sec-003
+    description: "Trust boundaries defined for all external interfaces"
+    condition: "every external system interface in the Component Model has a corresponding trust boundary"
+    message: "Not all external interfaces have documented trust boundaries"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: cross_section_check
+      requires_section: component_model
+      coverage: all_external_interfaces
+
+  - id: arch-sec-sec-004
+    description: "Each threat has a mitigation"
+    condition: "every listed threat has an associated mitigation strategy"
+    message: "One or more threats lack documented mitigations"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Mitigation"
+
+  - id: arch-sec-sec-005
+    description: "Security is technology-independent"
+    condition: "section does not reference specific security libraries, cipher suites, or implementation details"
+    message: "Security section contains implementation-level security details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - security_libraries
+        - cipher_suites
+        - implementation_details
+
+  - id: arch-sec-sec-006
+    description: "Trust boundary diagram present"
+    condition: "section contains or references a trust boundary diagram"
+    message: "Security section lacks a trust boundary diagram"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: diagram_presence
+      kinds:
+        - component
+

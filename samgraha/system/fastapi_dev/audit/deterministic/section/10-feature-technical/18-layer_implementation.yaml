@@ -1,0 +1,20 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section: layer_implementation
+kind: deterministic
+
+rules:
+  - id: ft-sec-layer-001
+    description: "Template conformance: Layer Implementation"
+    condition: "section contains required subsections for layers"
+    message: "Section must contain Router, Service, and Repository implementation subsections"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 3
+      required_subsections:
+        - Router Implementation
+        - Service Implementation
+        - Repository Implementation

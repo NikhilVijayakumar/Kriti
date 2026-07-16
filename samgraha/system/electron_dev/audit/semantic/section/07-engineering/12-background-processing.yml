@@ -1,0 +1,147 @@
+system: electron_dev
+domain: engineering
+section_type: background_processing
+version: "1.0.0"
+
+engineering_intent: >
+  Background processing audits the state machine compliance, worker thread
+  patterns, and IPC progress channels for all background jobs within the
+  Electron application. Desktop applications must perform long-running
+  tasks — file I/O, data synchronization, encryption, batch processing,
+  native module operations — without blocking the UI thread. This audit
+  verifies that each background job follows the state machine
+  (INIT -> LOADING -> COMPLETED with error states), that worker threads
+  or UtilityProcess are used appropriately, and that progress is reported
+  back to the Renderer via dedicated IPC channels. The goal is to ensure
+  predictable, observable, and recoverable background operations.
+
+audit_objectives:
+  - Every background job has a documented state machine (INIT, LOADING, COMPLETED, ERROR, CANCELLED)
+  - State transitions are triggered by explicit events, not implicit timing
+  - Worker threads (node:worker_threads) or UtilityProcess are used for CPU-bound tasks
+  - IPC progress channels report job status, percentage, and intermediate results
+  - Job failure modes are enumerated with recovery strategies per state
+  - Job cancellation is supported and documented — clean teardown on cancel
+  - Job queue management (ordering, priority, concurrency limits) is defined
+  - Resource constraints are documented — memory limits, CPU affinity, file descriptor usage
+  - Job results are persisted or delivered to the Renderer process reliably
+  - Background jobs do not prevent application shutdown — graceful termination is handled
+
+expected_quality:
+  - State machines are explicit code constructs (enum, state chart), not comments
+  - Each state transition has a guard condition or trigger event documented
+  - Worker threads communicate with Main via structured IPC, not shared memory (unless documented)
+  - Progress IPC channels use a consistent naming convention (job:progress, job:complete, job:error)
+  - Job failure in any state has a defined next state and cleanup action
+  - Concurrent job execution respects documented concurrency limits
+  - Job timeout is defined — long-running jobs are not left indefinitely
+  - Job retry policy (count, backoff, jitter) is documented per failure type
+  - Memory pressure from background jobs is monitored — no unbounded allocations
+  - Application quit waits for in-progress jobs to reach a terminal state or force-terminates with warning
+
+red_flags:
+  - Background jobs without explicit state machine — status tracked by ad hoc boolean flags
+  - CPU-bound work running on the Main thread — UI freezes during processing
+  - No IPC progress channel — user has no visibility into background job status
+  - Job cancellation not implemented — jobs run to completion regardless of user intent
+  - No timeout on background jobs — jobs hang indefinitely on network or I/O
+  - Worker threads spawned without resource limits — memory exhaustion risk
+  - Job results lost on application restart without persistence layer
+  - Background jobs prevent application shutdown — no graceful termination path
+  - Concurrent jobs without queue or semaphore — resource contention and race conditions
+  - Error handling in background jobs swallows exceptions silently — no error propagation to caller
+
+edge_cases:
+  - Application quit during an in-progress background job — must handle partial results
+  - Background job that spawns child processes (ffmpeg, imagemagick) — child lifecycle management
+  - Job that depends on a network resource that becomes unavailable mid-execution
+  - Multiple BrowserWindows requesting the same background job — deduplication or isolation
+  - Background job on macOS that requires user interaction (file dialog, permission prompt)
+  - UtilityProcess crash during background job — restart policy and state recovery
+  - Scheduled jobs (cron-like) that must survive application restart
+  - Background jobs that modify shared database state — transaction isolation
+  - Development mode hot reload killing worker threads mid-job
+  - Background job producing large result sets that exceed IPC message size limits
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Every background job has a documented state machine with explicit
+      states (INIT, LOADING, COMPLETED, ERROR, CANCELLED) and defined
+      transition triggers between each state.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      CPU-bound and long-running tasks use worker threads (node:worker_threads)
+      or UtilityProcess — not the Main thread. Thread/process lifecycle
+      is managed (creation, messaging, termination).
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      IPC progress channels report job status to the Renderer process.
+      Channels follow a naming convention and include status, percentage
+      complete, and intermediate results where applicable.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Job failure modes are enumerated with recovery strategies per state.
+      Job cancellation is supported with clean teardown. Timeouts are
+      defined for all background jobs.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Job queue management is documented — ordering, priority, concurrency
+      limits, and deduplication rules for concurrent requests.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Application shutdown handling for background jobs is documented —
+      graceful termination, partial result persistence, and forced
+      kill escalation path.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: background_processing
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: true
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+  findings:
+    - string

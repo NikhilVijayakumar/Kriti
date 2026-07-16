@@ -1,0 +1,33 @@
+system_id: python_hackathon
+domain: data-quality
+scope: document
+kind: semantic
+
+description: "Semantic evaluation of the data sources and collection methodology."
+
+metadata_fields:
+  - model_identifier
+  - provider
+  - prompt_version
+  - execution_timestamp
+  - standard_version
+
+ensemble:
+  required_models:
+    - claude-3-5-sonnet
+    - gemini-1.5-pro
+    - gpt-4o
+
+prompt_template: |
+  Analyze the README.md and documentation.
+  Verify the quality of the data sources used by the team.
+  Is the source of the data clearly stated and trustworthy?
+  Do they explain their data collection, cleaning, or preprocessing methods?
+  Provide a score out of 100 based on the clarity and quality of their data methodology.
+  
+evidence_requirements:
+  - type: json
+    schema:
+      score: number
+      reasoning: string
+      evidence: string

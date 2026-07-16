@@ -1,0 +1,65 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: rationale
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-rationale-001
+    description: "Rationale section exists"
+    condition: "document has a section with semantic_type = 'rationale'"
+    message: "Missing required 'Rationale' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "rationale"
+
+  - id: eng-sec-rationale-002
+    description: "Rationale explains why engineering standards exist"
+    condition: "section contains justification for the engineering approach"
+    message: "Rationale section does not explain engineering justification"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "because"
+        - "reason"
+        - "justify"
+        - "trade-off"
+        - "rationale"
+
+  - id: eng-sec-rationale-003
+    description: "Rationale references upstream domains"
+    condition: "section connects engineering decisions to Philosophy or Architecture constraints"
+    message: "Rationale section does not reference upstream domains"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "philosophy"
+        - "architecture"
+        - "design"
+        - "vision"
+
+  - id: eng-sec-rationale-004
+    description: "Rationale includes trade-offs"
+    condition: "section discusses alternatives considered or trade-offs made"
+    message: "Rationale section does not discuss trade-offs"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "instead"
+        - "alternative"
+        - "trade-off"
+        - "considered"
+

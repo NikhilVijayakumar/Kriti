@@ -1,0 +1,50 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: installation
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-install-001
+    description: "Installation section exists"
+    condition: "document has a section with semantic_type = 'installation'"
+    message: "Missing required 'Installation' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "installation"
+
+  - id: readme-sec-install-002
+    description: "Installation provides steps"
+    condition: "section contains installation steps or a pointer to them"
+    message: "Installation section does not provide installation steps"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "install"
+        - "setup"
+        - "configure"
+        - "pip"
+        - "npm"
+
+  - id: readme-sec-install-003
+    description: "Installation lists dependencies"
+    condition: "section lists required dependencies or tools"
+    message: "Installation does not list dependencies"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "dependency"
+        - "require"
+        - "need"
+        - "tool"
+

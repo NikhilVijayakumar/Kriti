@@ -1,0 +1,75 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: component_architecture
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-comp-001
+    description: "Component Architecture section exists"
+    condition: "document has a section with semantic_type = 'component_architecture'"
+    message: "No component_architecture section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: arch-sec-comp-002
+    description: "Component hierarchy follows atomic tiers"
+    condition: "section mentions atoms, molecules, organisms, or templates as hierarchy levels"
+    message: "Component hierarchy does not reference atomic design tiers"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - atoms
+        - molecules
+        - organisms
+        - templates
+        - hierarchy
+
+  - id: arch-sec-comp-003
+    description: "Barrel exports are documented"
+    condition: "section mentions index.ts or barrel exports"
+    message: "No barrel export conventions documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - index
+        - barrel
+        - export
+
+  - id: arch-sec-comp-004
+    description: "Composition patterns are specified"
+    condition: "section describes how components compose together"
+    message: "No composition patterns documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - compose
+        - composition
+        - children
+        - render
+        - slot
+
+  - id: arch-sec-comp-005
+    description: "No cross-tier imports mentioned"
+    condition: "section does not describe atoms importing from organisms or templates"
+    message: "Cross-tier import violations found in component architecture"
+    severity: error
+    weight: 0.8
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - cross_tier_imports

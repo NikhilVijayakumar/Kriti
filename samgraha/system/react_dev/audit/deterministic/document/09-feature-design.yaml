@@ -1,0 +1,121 @@
+system_id: samgraha-documentation
+domain: feature-design
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Feature Design Documentation. Validates structural completeness, modularity, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: fd-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/05-feature-design-standards.md Required Sections table"
+    message: "Feature Design document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - user_experience
+        - workflow
+        - states
+
+  - id: fd-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: fd-doc-003
+    description: "Document covers one feature design concern"
+    condition: "document has a single primary focus — does not mix unrelated feature design concerns"
+    message: "Document covers multiple unrelated feature design concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: fd-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Feature Design document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: fd-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream domains (Feature, Design, External Context) where applicable"
+    message: "Feature Design document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+        - domain: design
+          direction: derives_from
+
+  # --- Duplicate content ---
+  - id: fd-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Feature Design document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Tier enforcement ---
+  - id: fd-doc-007
+    description: "Feature Design does not derive from higher-tier documents"
+    condition: "document does not claim derivation from Architecture, Engineering, or Vision"
+    message: "Feature Design is Tier 3 and must not derive from Tier 1 or Tier 2 documents"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: relationship_validation
+      forbidden_derived_from:
+        - architecture
+        - engineering
+        - vision
+
+  # --- Validation marker ---
+  - id: fd-doc-008
+    description: "Document mentions validation by Prototype"
+    condition: "document or its relationships reference Prototype as validation gate"
+    message: "Feature Design document does not mention Prototype validation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "prototype"
+        - "validated by"
+        - "verification"

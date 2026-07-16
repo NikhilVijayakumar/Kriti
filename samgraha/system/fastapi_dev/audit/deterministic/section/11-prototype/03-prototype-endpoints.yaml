@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: prototype
+section: prototype-endpoints
+kind: deterministic
+
+rules:
+  - id: prot-sec-endpoints-001
+    description: "Template conformance: Prototype Endpoints"
+    condition: "section describes at least 1 endpoint"
+    message: "Section must describe at least one prototyped endpoint"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

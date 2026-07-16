@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing 'Traceability' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: feat-sec-trace-002
+    description: "Traceability links to vision"
+    condition: "section traces feature back to a vision element"
+    message: "Feature does not trace back to vision"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: traceable_to
+
+  - id: feat-sec-trace-003
+    description: "Traceability links to downstream"
+    condition: "section identifies downstream artifacts that derive from this feature"
+    message: "Feature does not identify downstream derivations"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: derives

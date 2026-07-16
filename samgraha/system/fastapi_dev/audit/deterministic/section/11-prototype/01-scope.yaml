@@ -1,0 +1,60 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: scope
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-scope-001
+    description: "Scope section exists"
+    condition: "document has a section with semantic_type = 'scope'"
+    message: "Missing required 'Scope' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "scope"
+
+  - id: proto-sec-scope-002
+    description: "Scope defines prototype boundaries"
+    condition: "section contains a statement of what the prototype covers and what it excludes"
+    message: "Scope section does not define prototype boundaries"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "scope"
+        - "covers"
+        - "includes"
+        - "excludes"
+
+  - id: proto-sec-scope-003
+    description: "Scope references feature design"
+    condition: "section references the upstream Feature Design document"
+    message: "Scope section does not reference Feature Design"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+
+  - id: proto-sec-scope-004
+    description: "Scope references feature technical"
+    condition: "section references the upstream Feature Technical document"
+    message: "Scope section does not reference Feature Technical"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: derives_from
+

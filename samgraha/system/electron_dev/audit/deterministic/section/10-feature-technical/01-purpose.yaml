@@ -1,0 +1,63 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing required 'Purpose' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: ft-sec-purpose-002
+    description: "Purpose states feature technical intent"
+    condition: "section contains a statement of why Feature Technical Documentation exists"
+    message: "Purpose section does not state feature technical intent"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "feature"
+        - "technical"
+        - "standard"
+        - "documentation"
+        - "purpose"
+
+  - id: ft-sec-purpose-003
+    description: "Purpose is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Purpose section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: ft-sec-purpose-004
+    description: "Purpose scope boundaries defined"
+    condition: "section defines what Feature Technical Documentation is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

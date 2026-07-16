@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+domain: engineering
+section: async_patterns
+kind: deterministic
+
+rules:
+  - id: eng-sec-async-patterns-001
+    description: "Template conformance: Async Patterns"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1
+      required_subsections:
+        - Blocking Task Offloading

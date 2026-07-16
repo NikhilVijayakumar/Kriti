@@ -1,0 +1,42 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: future_extensions
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-fe-001
+    description: "Future extensions section exists"
+    condition: "document has a section with semantic_type = 'future_extensions'"
+    message: "Missing 'Future Extensions' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "future_extensions"
+
+  - id: feat-sec-fe-002
+    description: "Future extensions are enumerated"
+    condition: "section lists potential future capabilities or expansions"
+    message: "Future extensions are not enumerated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+
+  - id: feat-sec-fe-003
+    description: "Future extensions do not contradict current scope"
+    condition: "listed extensions are compatible with non-goals and constraints"
+    message: "Future extensions contradict current non-goals or constraints"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: internal_consistency
+      check_against:
+        - non_goals
+        - constraints

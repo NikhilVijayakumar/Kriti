@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: build
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: build-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing optional 'Purpose' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: build-sec-purpose-002
+    description: "Purpose states build intent"
+    condition: "section contains a statement of why Build Documentation exists"
+    message: "Purpose section does not state build intent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "build"
+        - "purpose"
+        - "intent"
+        - "documentation"
+
+  - id: build-sec-purpose-003
+    description: "Purpose defines scope boundaries"
+    condition: "section defines what Build Documentation is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

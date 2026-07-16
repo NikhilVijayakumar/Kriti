@@ -1,0 +1,73 @@
+system_id: samgraha-documentation
+domain: implementation
+section_type: generation_plan
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: impl-sec-gen-001
+    description: "Generation plan section exists"
+    condition: "document has a section with semantic_type = 'generation_plan'"
+    message: "Missing required 'Generation Plan' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "generation_plan"
+
+  - id: impl-sec-gen-002
+    description: "Generation plan defines steps"
+    condition: "section contains at least one generation step or phase"
+    message: "Generation plan section has no steps defined"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "step"
+        - "phase"
+        - "stage"
+        - "task"
+
+  - id: impl-sec-gen-003
+    description: "Generation plan references feature technical"
+    condition: "section references Feature Technical component responsibilities or runtime behavior"
+    message: "Generation plan does not reference Feature Technical"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: derives_from
+
+  - id: impl-sec-gen-004
+    description: "Generation plan references engineering"
+    condition: "section references Engineering Documentation code or build standards"
+    message: "Generation plan does not reference Engineering Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: engineering
+          direction: derives_from
+
+  - id: impl-sec-gen-005
+    description: "Generation plan references security"
+    condition: "section references Security Documentation threat model or constraints"
+    message: "Generation plan does not reference Security Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: security
+          direction: derives_from
+

@@ -1,0 +1,107 @@
+system_id: samgraha-documentation
+domain: readme
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for README Documentation. Validates structural completeness, section coverage, and onboarding effectiveness that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: readme-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards README requirements"
+    message: "README document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - project_name
+        - short_description
+        - overview
+        - purpose
+        - key_capabilities
+        - repository_structure
+        - documentation_structure
+        - getting_started
+        - installation
+        - build
+        - usage
+        - development
+        - contributing
+
+  - id: readme-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: readme-doc-003
+    description: "Document covers one project"
+    condition: "document has a single primary focus — does not mix unrelated project READMEs"
+    message: "Document covers multiple unrelated projects; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Derivation completeness ---
+  - id: readme-doc-004
+    description: "Document derives from Build"
+    condition: "document references upstream Build Documentation"
+    message: "README document does not derive from Build Documentation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: build
+          direction: derives_from
+
+  # --- Section ordering ---
+  - id: readme-doc-005
+    description: "Sections appear in standard order"
+    condition: "sections follow the standard README ordering: project_name, short_description, overview, purpose, key_capabilities, repository_structure, documentation_structure, getting_started, installation, build, usage, development, contributing"
+    message: "README sections are not in standard order"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_ordering
+      expected_order:
+        - project_name
+        - short_description
+        - overview
+        - purpose
+        - key_capabilities
+        - repository_structure
+        - documentation_structure
+        - getting_started
+        - installation
+        - build
+        - usage
+        - development
+        - contributing
+
+  # --- Duplicate content ---
+  - id: readme-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "README document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document

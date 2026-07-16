@@ -1,0 +1,20 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section: crate_implementation
+kind: deterministic
+
+rules:
+  - id: sec-crate-implementation-001
+    description: "Template conformance: Crate Implementation"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 2
+      required_subsections:
+        - Module Structure
+        - Trait Definitions
+        - Core Structs

@@ -1,0 +1,11 @@
+id: aggregation_03_testing
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/document/03-testing.yaml
+  semantic: calculation/semantic/ensemble/03-testing.yaml
+weights:
+  deterministic: 0.60
+  semantic: 0.40
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

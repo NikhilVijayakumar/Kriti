@@ -1,0 +1,47 @@
+# Domain Weights for Python Hackathon Scoring
+#
+# Total base score: 100 points
+# Semantic bonus/penalty: up to +/- 15 points -> effective max: 115, normalized to 150
+#
+# Rationale:
+#   Runtime is highest-weight because the competition core is a live prediction model.
+#   Engineering and Testing follow because code quality gates reproducibility.
+#   Documentation is lowest because README is the only mandatory artifact.
+
+id: python_hackathon_weights
+version: "1.0"
+base_total: 100
+max_semantic_bonus: 15
+final_scale: 150
+
+domains:
+  infrastructure:
+    weight: 8
+    rationale: "Core requirement: reproducible local/offline execution environment"
+  engineering:
+    weight: 12
+    rationale: "Code quality and maintainability gates long-term reproducibility"
+  testing:
+    weight: 12
+    rationale: "Automated validation is essential for a live prediction API"
+  documentation:
+    weight: 5
+    rationale: "README is only mandatory artifact; depth rewarded semantically"
+  security:
+    weight: 10
+    rationale: "Secure credential handling and safe serialization are non-negotiable"
+  mlops:
+    weight: 10
+    rationale: "Experiment reproducibility is core to reliable competition submissions"
+  runtime:
+    weight: 15
+    rationale: "Highest weight: model must run within 12GB VRAM and 30s constraint"
+  team-workflow:
+    weight: 8
+    rationale: "Team collaboration and GitFlow discipline"
+  data-quality:
+    weight: 10
+    rationale: "Trustworthy data sources are foundational to model validity"
+  ai-explanations:
+    weight: 10
+    rationale: "Quality of automated AI reasoning is the product output"

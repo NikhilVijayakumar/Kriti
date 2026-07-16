@@ -1,0 +1,88 @@
+id: scoring_validation
+description: "Validates scoring pipeline integrity at every stage"
+version: "1.0"
+
+checks:
+  - id: val-001
+    name: weight_sum
+    description: "Domain weights must sum to 100"
+    rule: "sum(domain_weights) == 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-002
+    name: domain_weight_match
+    description: "Each domain weight must match weights.yaml"
+    rule: "for_each domain: audit_weight == weights_yaml_weight"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-003
+    name: deterministic_score_bounds
+    description: "Deterministic scores must be in [0, 100]"
+    rule: "for_each domain: 0 <= deterministic_score <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-004
+    name: semantic_score_bounds
+    description: "Semantic mean scores must be in [0, 100]"
+    rule: "for_each domain: 0 <= semantic_mean <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-005
+    name: domain_score_bounds
+    description: "Raw domain scores must be in [0, 100]"
+    rule: "for_each domain: 0 <= raw_domain_score <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-006
+    name: zscore_cap
+    description: "Z-score bonus/penalty must be capped at ±10"
+    rule: "for_each domain: -10 <= zscore_adjustment <= 10"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-007
+    name: adjusted_score_bounds
+    description: "Adjusted domain scores must be in [0, 115]"
+    rule: "for_each domain: 0 <= adjusted_score <= 115"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-008
+    name: weighted_score_sum
+    description: "Sum of weighted scores must be in [0, 100]"
+    rule: "0 <= sum(weighted_scores) <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-009
+    name: semantic_bonus_bounds
+    description: "Semantic agreement bonus must be in [-15, +15]"
+    rule: "-15 <= semantic_bonus <= 15"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-010
+    name: final_score_bounds
+    description: "Final normalized score must be in [0, 20]"
+    rule: "0 <= final_score <= 20"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-011
+    name: team_count
+    description: "At least one team must be evaluated"
+    rule: "team_count >= 1"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-012
+    name: domain_count
+    description: "All 10 domains must have scores"
+    rule: "domain_score_count == 10"
+    severity: critical
+    invalidate_audit: true

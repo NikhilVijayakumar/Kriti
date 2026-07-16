@@ -1,0 +1,61 @@
+id: plan_tiers_v1
+source: 00-domain-relationships.md
+note: >
+  Transcribed from 00-domain-relationships.md, not maintained independently.
+  If that file's relationship table changes, this file changes with it — one
+  source, two formats (prose for humans, this for the engine), not two
+  independently-authored copies.
+
+tiers:
+  - tier: 1
+    domains: [vision, philosophy]
+  - tier: 2
+    domains: [security, feature, architecture, engineering, external-context]
+  - tier: 3
+    domains: [feature-technical]
+  - tier: 4
+    domains: [prototype]
+  - tier: 5
+    domains: [implementation]
+  - tier: 6
+    domains: [qa]
+  - tier: 7
+    domains: [build]
+  - tier: 8
+    domains: [readme, product-guide]
+
+relationships:
+  - { from: vision, type: inspires, to: philosophy }
+  - { from: vision, type: derives, to: feature }
+  - { from: philosophy, type: derives, to: feature }
+  - { from: vision, type: derives, to: security }
+  - { from: philosophy, type: derives, to: security }
+  - { from: philosophy, type: guides, to: architecture }
+  - { from: philosophy, type: guides, to: engineering }
+  - { from: security, type: guides, to: architecture }
+  - { from: security, type: guides, to: engineering }
+  - { from: architecture, type: soft_aligns_with, to: engineering, mandatory: false, mutual: true }
+  - { from: external-context, type: informs, to: engineering }
+  - { from: external-context, type: informs, to: feature-technical }
+  - { from: feature, type: derives, to: feature-technical }
+  - { from: engineering, type: derives, to: feature-technical }
+  - { from: architecture, type: derives, to: feature-technical }
+  - { from: prototype, type: validates, to: feature-technical }
+  - { from: feature-technical, type: derives, to: implementation }
+  - { from: engineering, type: derives, to: implementation }
+  - { from: prototype, type: informs, to: implementation }
+  - { from: qa, type: validates, to: implementation }
+  - { from: qa, type: informs, to: build }
+  - { from: implementation, type: derives, to: build }
+  - { from: readme, type: references, to: vision }
+  - { from: readme, type: requires, to: build }
+
+relationship_types:
+  - inspires           # tier-gating: strict
+  - derives            # tier-gating: strict
+  - guides              # tier-gating: strict
+  - soft_aligns_with     # tier-gating: none — mutual, non-mandatory
+  - informs               # tier-gating: none — cross-cutting
+  - validates               # tier-gating: strict, validates rather than derives
+  - requires                 # tier-gating: strict
+  - references                # tier-gating: none — a citation, not a dependency

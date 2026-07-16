@@ -1,0 +1,9 @@
+check: unsafe-code-scan
+description: >
+  Scans all Rust source files for `unsafe` blocks and verifies that business-logic
+  crates have `#![forbid(unsafe_code)]` at the crate root.
+executable: "grep -r 'unsafe' src/ --include='*.rs'"
+severity: error
+requires_network: false
+depends_on: []
+timeout_seconds: 120

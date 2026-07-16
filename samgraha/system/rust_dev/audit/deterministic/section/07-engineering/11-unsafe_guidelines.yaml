@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: engineering
+section: unsafe_guidelines
+kind: deterministic
+
+rules:
+  - id: eng-sec-unsafe-guidelines-001
+    description: "Template conformance: Unsafe Guidelines"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

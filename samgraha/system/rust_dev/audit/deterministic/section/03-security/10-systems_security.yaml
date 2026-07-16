@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: security
+section: systems_security
+kind: deterministic
+
+rules:
+  - id: sec-sec-systems-security-001
+    description: "Template conformance: Systems Security"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

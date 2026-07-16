@@ -1,0 +1,51 @@
+﻿system_id: samgraha-documentation
+domain: vision
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing optional 'Traceability' section"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: vis-sec-trace-002
+    description: "Traceability links to upstream origins"
+    condition: "section documents the origin or inspiration source for the vision"
+    message: "Traceability section does not document upstream origins"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "origin"
+        - "source"
+        - "inspiration"
+        - "derived"
+        - "traceable"
+
+  - id: vis-sec-trace-003
+    description: "Traceability links to downstream consumers"
+    condition: "section lists downstream domains that consume this vision (Philosophy, Feature, Security)"
+    message: "Traceability section does not document downstream consumers"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "philosophy"
+        - "feature"
+        - "security"
+        - "downstream"
+        - "consumer"
+

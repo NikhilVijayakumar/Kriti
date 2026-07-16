@@ -1,0 +1,58 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing optional 'Traceability' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: proto-sec-trace-002
+    description: "Traceability links to feature design"
+    condition: "section contains links to the originating Feature Design document"
+    message: "Traceability section does not link to Feature Design"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: traceable_to
+
+  - id: proto-sec-trace-003
+    description: "Traceability links to feature technical"
+    condition: "section contains links to the originating Feature Technical document"
+    message: "Traceability section does not link to Feature Technical"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: traceable_to
+
+  - id: proto-sec-trace-004
+    description: "Traceability links to vision"
+    condition: "section traces prototype back to vision statement"
+    message: "Traceability section does not link to vision"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: traceable_to
+

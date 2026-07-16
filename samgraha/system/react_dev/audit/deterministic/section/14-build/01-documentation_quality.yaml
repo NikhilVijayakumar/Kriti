@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: build
+section_type: documentation_quality
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: build-sec-doc-quality-001
+    description: "Documentation quality section exists"
+    condition: "document has a section with semantic_type = 'documentation_quality'"
+    message: "Missing required 'Documentation Quality' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "documentation_quality"
+
+  - id: build-sec-doc-quality-002
+    description: "Documentation quality defines standards"
+    condition: "section specifies documentation quality standards or requirements"
+    message: "Documentation quality section does not define standards"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "quality"
+        - "standard"
+        - "requirement"
+        - "documentation"
+
+  - id: build-sec-doc-quality-003
+    description: "Documentation quality defines checks"
+    condition: "section specifies quality checks or validation steps"
+    message: "Documentation quality section does not define checks"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "check"
+        - "validate"
+        - "lint"
+        - "verify"
+
+  - id: build-sec-doc-quality-004
+    description: "Documentation quality references implementation"
+    condition: "section references Implementation Documentation generation plan"
+    message: "Documentation quality does not reference Implementation Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: implementation
+          direction: derives_from
+

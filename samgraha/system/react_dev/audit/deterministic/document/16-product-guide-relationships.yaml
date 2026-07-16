@@ -1,0 +1,35 @@
+system_id: samgraha-documentation
+domain: product-guide
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# Product Guide is flat content — no derivation relationships in the
+# derivation graph. All relationships are optional cross-reference edges
+# to related domains for discoverability.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: pg-context-derives-vision
+    from_section: product_context
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: pg-section-consistency
+    type: section_consistency
+    description: "Sections within product guide docs are mutually consistent — title matches body content, purpose aligns with context"
+    owner: document
+
+  - id: pg-collection-coherence
+    type: collection_coherence
+    description: "All product guide documents in the domain cohere as one system — no orphaned or contradictory guides"
+    owner: document
+
+  - id: pg-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all product guide sections — same concept, same name"
+    owner: document

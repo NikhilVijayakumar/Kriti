@@ -1,0 +1,46 @@
+system_id: python_hackathon
+domain: testing
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 3
+total_weight: 5.0
+
+description: "Rules checking pytest configuration and test execution results."
+
+rules:
+  - id: tst-001
+    description: "Tests directory exists"
+    condition: "repository contains a 'tests' or 'test' directory"
+    message: "Missing test directory."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_testing.py
+      check: tests_directory_present
+
+  - id: tst-002
+    description: "pytest configuration exists"
+    condition: "repository contains pytest.ini or tool.pytest block in pyproject.toml"
+    message: "Missing pytest configuration."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: script_output
+      script: script/audit_testing.py
+      check: pytest_config_present
+
+  - id: tst-003
+    description: "All tests pass"
+    condition: "pytest exits with 0 failures"
+    message: "One or more unit tests are failing."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_testing.py
+      check: tests_passed

@@ -1,0 +1,29 @@
+id: python-hackathon-tiers
+source: SYSTEM.md
+
+tiers:
+  - tier: 1
+    domains: [infrastructure, security]
+  - tier: 2
+    domains: [engineering, documentation, team-workflow]
+  - tier: 3
+    domains: [testing, mlops, data-quality]
+  - tier: 4
+    domains: [runtime, ai-explanations]
+
+relationships:
+  - { from: infrastructure, type: guides, to: engineering }
+  - { from: security, type: guides, to: engineering }
+  - { from: engineering, type: requires, to: testing }
+  - { from: testing, type: validates, to: runtime }
+  - { from: documentation, type: informs, to: engineering }
+  - { from: mlops, type: requires, to: infrastructure }
+  - { from: data-quality, type: informs, to: mlops }
+  - { from: ai-explanations, type: validates, to: runtime }
+  - { from: team-workflow, type: guides, to: engineering }
+
+relationship_types:
+  - guides
+  - requires
+  - validates
+  - informs

@@ -1,0 +1,70 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: data_flow
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-df-001
+    description: "Data Flow section exists"
+    condition: "document has a section with semantic_type = 'data_flow'"
+    message: "Missing required 'Data Flow' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "data_flow"
+
+  - id: arch-sec-df-002
+    description: "Data Flow has required subsections"
+    condition: "section contains Data Paths and Data Flow Diagram subsections"
+    message: "Data Flow is missing required subsections"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: subsection_presence
+      required:
+        - "Data Paths"
+        - "Data Flow Diagram"
+
+  - id: arch-sec-df-003
+    description: "Data ownership boundaries defined"
+    condition: "every major data path identifies which component owns the data at each boundary"
+    message: "Data ownership boundaries are not defined for all data paths"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Ownership boundary"
+
+  - id: arch-sec-df-004
+    description: "Data Flow is technology-independent"
+    condition: "section does not describe database schemas, SQL queries, or ORM methods"
+    message: "Data Flow section contains implementation-level data details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - database_schemas
+        - sql_queries
+        - orm_methods
+
+  - id: arch-sec-df-005
+    description: "Data flow diagram present"
+    condition: "section contains or references a data flow diagram covering all major paths"
+    message: "Data Flow section lacks a diagram"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: diagram_presence
+      kinds:
+        - flowchart
+

@@ -1,0 +1,5 @@
+check: openapi-schema-valid
+description: >
+  Validates that the auto-generated openapi.json matches the documented API contract.
+executable: "python -m openapi_diff"
+severity: error

@@ -1,0 +1,65 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: functional_requirements
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-freq-001
+    description: "Functional requirements section exists"
+    condition: "document has a section with semantic_type = 'functional_requirements'"
+    message: "Missing required 'Functional Requirements' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "functional_requirements"
+
+  - id: feat-sec-freq-002
+    description: "Requirements are listed individually"
+    condition: "section contains at least two distinct requirements, each clearly stated"
+    message: "Functional requirements are not listed individually"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_count: 2
+      patterns:
+        - "shall"
+        - "must"
+        - "will"
+        - "REQ-"
+
+  - id: feat-sec-freq-003
+    description: "Each requirement is testable"
+    condition: "each requirement can be verified through a concrete test or observation"
+    message: "Some requirements are not testable or verifiable"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "given"
+        - "when"
+        - "then"
+        - "test"
+        - "verify"
+        - "assert"
+
+  - id: feat-sec-freq-004
+    description: "Requirements are technology-independent"
+    condition: "requirements describe what the feature does, not how it is implemented"
+    message: "Functional requirements contain implementation details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

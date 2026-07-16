@@ -1,0 +1,285 @@
+system_id: samgraha-documentation
+domain: feature-technical
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: ft-purpose-derives-feature
+    from_section: purpose
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-purpose-derives-engineering
+    from_section: purpose
+    type: derives_from
+    target_domain: engineering
+    target_section: purpose
+    owner: section
+
+  - id: ft-purpose-derives-arch
+    from_section: purpose
+    type: derives_from
+    target_domain: architecture
+    target_section: purpose
+    owner: section
+
+  - id: ft-components-derives-arch
+    from_section: participating_components
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: ft-components-derives-feature
+    from_section: participating_components
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-interactions-derives-arch
+    from_section: component_interactions
+    type: derives_from
+    target_domain: architecture
+    target_section: communication_paths
+    owner: section
+
+  - id: ft-interactions-derives-feature
+    from_section: component_interactions
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-data-derives-arch
+    from_section: data_ownership
+    type: derives_from
+    target_domain: architecture
+    target_section: data_flow
+    owner: section
+
+  - id: ft-data-derives-feature
+    from_section: data_ownership
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-spec-derives-feature
+    from_section: feature_specification
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-resp-derives-arch
+    from_section: component_responsibilities
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: ft-resp-derives-components
+    from_section: component_responsibilities
+    type: derives_from
+    target_domain: feature-technical
+    target_section: participating_components
+    owner: section
+
+  - id: ft-runtime-derives-arch
+    from_section: runtime_behavior
+    type: derives_from
+    target_domain: architecture
+    target_section: data_flow
+    owner: section
+
+  - id: ft-runtime-derives-interactions
+    from_section: runtime_behavior
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_interactions
+    owner: section
+
+  - id: ft-comm-derives-arch
+    from_section: communication_paths
+    type: derives_from
+    target_domain: architecture
+    target_section: communication_paths
+    owner: section
+
+  - id: ft-comm-derives-interactions
+    from_section: communication_paths
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_interactions
+    owner: section
+
+  - id: ft-integration-derives-arch
+    from_section: integration_points
+    type: derives_from
+    target_domain: architecture
+    target_section: communication_paths
+    owner: section
+
+  - id: ft-integration-derives-components
+    from_section: integration_points
+    type: derives_from
+    target_domain: feature-technical
+    target_section: participating_components
+    owner: section
+
+  - id: ft-extdep-derives-arch
+    from_section: external_dependencies
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: ft-extdep-derives-engineering
+    from_section: external_dependencies
+    type: derives_from
+    target_domain: engineering
+    target_section: build_standards
+    owner: section
+
+  - id: ft-rtcon-derives-arch
+    from_section: runtime_constraints
+    type: derives_from
+    target_domain: architecture
+    target_section: constraints
+    owner: section
+
+  - id: ft-rtcon-derives-engineering
+    from_section: runtime_constraints
+    type: derives_from
+    target_domain: engineering
+    target_section: constraints
+    owner: section
+
+  - id: ft-archcon-derives-arch
+    from_section: architectural_constraints
+    type: derives_from
+    target_domain: architecture
+    target_section: constraints
+    owner: section
+
+  - id: ft-archcon-derives-component-model
+    from_section: architectural_constraints
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: ft-security-derives-arch
+    from_section: security_considerations
+    type: derives_from
+    target_domain: architecture
+    target_section: security_considerations
+    owner: section
+
+  - id: ft-security-derives-components
+    from_section: security_considerations
+    type: derives_from
+    target_domain: feature-technical
+    target_section: participating_components
+    owner: section
+
+  - id: ft-perf-derives-arch
+    from_section: performance_considerations
+    type: derives_from
+    target_domain: architecture
+    target_section: operational_readiness
+    owner: section
+
+  - id: ft-perf-derives-rtcon
+    from_section: performance_considerations
+    type: derives_from
+    target_domain: feature-technical
+    target_section: runtime_constraints
+    owner: section
+
+  - id: ft-failure-derives-arch
+    from_section: failure_handling
+    type: derives_from
+    target_domain: architecture
+    target_section: operational_readiness
+    owner: section
+
+  - id: ft-failure-derives-interactions
+    from_section: failure_handling
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_interactions
+    owner: section
+
+  - id: ft-extension-derives-components
+    from_section: extension_points
+    type: derives_from
+    target_domain: feature-technical
+    target_section: participating_components
+    owner: section
+
+  - id: ft-extension-derives-arch
+    from_section: extension_points
+    type: derives_from
+    target_domain: architecture
+    target_section: component_model
+    owner: section
+
+  - id: ft-trace-derives-feature
+    from_section: traceability
+    type: traceable_to
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: ft-trace-derives-engineering
+    from_section: traceability
+    type: traceable_to
+    target_domain: engineering
+    target_section: build_standards
+    owner: section
+
+  - id: ft-trace-derives-arch
+    from_section: traceability
+    type: traceable_to
+    target_domain: architecture
+    target_section: purpose
+    owner: section
+
+  - id: ft-crate-implementation-derives-crate-architecture
+    from_section: crate_implementation
+    type: derives_from
+    target_domain: architecture
+    target_section: crate_architecture
+    owner: section
+
+  - id: ft-error-implementation-derives-trait-design
+    from_section: error_implementation
+    type: derives_from
+    target_domain: architecture
+    target_section: trait_design
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: ft-section-consistency
+    type: section_consistency
+    description: "Sections within feature-technical docs are mutually consistent — no contradictions between participating_components, component_interactions, data_ownership, and runtime_behavior"
+    owner: document
+
+  - id: ft-collection-coherence
+    type: collection_coherence
+    description: "All feature-technical documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: ft-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all feature-technical sections — same concept, same name"
+    owner: document

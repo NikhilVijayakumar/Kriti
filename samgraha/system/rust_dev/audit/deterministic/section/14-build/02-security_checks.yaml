@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: build
+section_type: security_checks
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: build-sec-security-001
+    description: "Security checks section exists"
+    condition: "document has a section with semantic_type = 'security_checks'"
+    message: "Missing required 'Security Checks' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "security_checks"
+
+  - id: build-sec-security-002
+    description: "Security checks define scan steps"
+    condition: "section specifies security scan or audit steps to run during build"
+    message: "Security checks section does not define scan steps"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "scan"
+        - "audit"
+        - "check"
+        - "security"
+
+  - id: build-sec-security-003
+    description: "Security checks define failure criteria"
+    condition: "section specifies what conditions cause build failure"
+    message: "Security checks do not define failure criteria"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "fail"
+        - "block"
+        - "gate"
+        - "threshold"
+
+  - id: build-sec-security-004
+    description: "Security checks reference security standard"
+    condition: "section references Security Documentation mitigation strategies"
+    message: "Security checks do not reference Security Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: security
+          direction: derives_from
+

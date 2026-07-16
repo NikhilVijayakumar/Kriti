@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+domain: feature
+section: systems_feature_definition
+kind: deterministic
+
+rules:
+  - id: feat-sec-systems-feature-definition-001
+    description: "Template conformance: Systems Feature Definition"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      required_subsections:
+        - API Contracts
+        - State Machines

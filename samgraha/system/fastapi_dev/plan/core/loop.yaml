@@ -1,0 +1,77 @@
+id: plan_loop_v1
+source: proposal.md §3 + §5 decisions
+note: >
+  The per-domain procedure the tier loop executes. Reads tiers.yaml for
+  domain→tier assignments and relationship_types for gating logic. This file
+  is data, not code — the engine interprets it, same pattern as calculation/.
+
+threshold:
+  score: acceptable_minimum  # resolved at runtime from score_bands — not a hardcoded number
+  rating: Acceptable         # label for reports
+
+max_iterations: 5
+fallback: human_review  # after max_iterations, flag failing sections for human; gate stays hard
+
+within_tier_ordering:
+  - tier: 2
+    from: external-context
+    to: engineering
+    rule: external-context must complete before engineering starts
+  # All other tiers: full parallel, no ordering constraints
+  # Architecture/Engineering soft-alignment is non-blocking (tier-gating: none)
+  #
+  # from/to are the machine-readable domain keys an ingestion loader
+  # resolves directly (via domains.key) to set domain_relationships.
+  # enforce_order = 1 on the matching edge — the loader must not have to
+  # parse "rule" prose to extract the pair. Any future entry added here
+  # needs from/to alongside its prose rule for the same reason.
+
+path_selection:
+  # Path A: no existing documentation → generate from scratch
+  generate:
+    template: templates/generation/document/{domain}.md
+    context: all already-completed upstream domains (from tiers.yaml relationships)
+    note: >
+      A domain's generation call includes its upstream tiers' completed output
+      as input context, not just its own template. Tier 3 generation includes
+      Tier 1/2 outputs.
+
+  # Path B: documentation exists but doesn't conform → audit → fix
+  audit:
+    deterministic_document: audit/deterministic/document/{domain}.yaml
+    deterministic_section: audit/deterministic/section/{domain}/*.yaml
+    semantic_document: audit/semantic/document/{domain}.md
+    semantic_section: audit/semantic/section/{domain}/*.md
+    report_templates:
+      - templates/audit/deterministic/document/{domain}-report.md
+      - templates/audit/deterministic/section/{domain}-report.md
+      - templates/audit/semantic/document/{domain}-report.md
+      - templates/audit/semantic/section/{domain}-report.md
+      - templates/audit/summary/{domain}-report.md
+
+scoring:
+  final_score: calculation/summary/final_score.yaml
+  score_bands: calculation/summary/score_bands.yaml
+
+fix_loop:
+  trigger: Path B AND final_score < threshold.score
+  mechanism: >
+    For each failing section, feed the finding into
+    templates/generation/section/{domain}/{section}.md's ## Audit Fix slot,
+    regenerate, re-audit that section.
+  max_iterations: 5
+  fallback: human_review
+
+tier_gate:
+  rule: every domain in the tier must reach threshold before the next tier starts
+  threshold: acceptable_minimum  # resolved at runtime from score_bands
+
+special_cases:
+  product-guide:
+    note: >
+      product-guide has zero edges in relationships — it depends on everything,
+      not nothing. For Path A generation, a domain absent from the relationships
+      list gets all already-completed domains as context (full-context generation).
+      This matches 00-domain-relationships.md: "needs everything else, including
+      README, to be accurate."
+    context: all_domains  # not derived from relationships; uses full context

@@ -1,0 +1,11 @@
+id: aggregation_07_runtime
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/document/07-runtime.yaml
+  semantic: calculation/semantic/ensemble/07-runtime.yaml
+weights:
+  deterministic: 0.60
+  semantic: 0.40
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

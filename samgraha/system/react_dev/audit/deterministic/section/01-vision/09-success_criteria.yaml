@@ -1,0 +1,50 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: success_criteria
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-sc-001
+    description: "Success Criteria section exists"
+    condition: "document has a section with semantic_type = 'success_criteria'"
+    message: "Missing optional 'Success Criteria' section"
+    severity: suggestion
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "success_criteria"
+
+  - id: vis-sec-sc-002
+    description: "Success Criteria are technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Success Criteria section contains implementation technology references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: vis-sec-sc-003
+    description: "Success Criteria are measurable"
+    condition: "section includes quantifiable or verifiable success metrics"
+    message: "Success Criteria section lacks measurable criteria"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "\\d+"
+        - "percent"
+        - "measure"
+        - "metric"
+        - "KPI"
+        - "target"
+

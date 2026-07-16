@@ -1,0 +1,64 @@
+system_id: python_hackathon
+domain: engineering
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 5
+total_weight: 5.0
+
+description: "Rules checking code quality configurations and type hinting."
+
+rules:
+  - id: eng-001
+    description: "Radon configuration present"
+    condition: "repository contains radon configuration (e.g., radon.cfg or in pyproject.toml)"
+    message: "Missing radon configuration for cyclomatic complexity checks."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: file_presence
+      targets: [radon.cfg, pyproject.toml]
+
+  - id: eng-002
+    description: "Type hints enabled"
+    condition: "mypy or pyright configuration exists"
+    message: "Missing static type checker configuration."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: config_analysis
+      target: pyproject.toml
+      check: type_checker_enabled
+
+  - id: eng-003
+    severity: warning
+    weight: 1
+    description: "Python linter configuration exists"
+    check:
+      file_globs:
+        - ".flake8"
+        - "setup.cfg"
+        - "pyproject.toml"
+        - ".ruff.toml"
+        - "ruff.toml"
+
+  - id: eng-004
+    severity: warning
+    weight: 1
+    description: "Type checking configuration exists"
+    check:
+      file_globs:
+        - "mypy.ini"
+        - "mypy.cfg"
+        - "pyproject.toml"
+        - "pyrightconfig.json"
+
+  - id: eng-005
+    severity: info
+    weight: 1
+    description: "Pre-commit hooks configured"
+    check:
+      file_globs:
+        - ".pre-commit-config.yaml"

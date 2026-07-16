@@ -1,0 +1,8 @@
+check: cargo-audit
+description: >
+  Validates that there are no vulnerable dependencies using cargo-audit.
+executable: "cargo audit"
+severity: error
+requires_network: true
+depends_on: []
+timeout_seconds: 300

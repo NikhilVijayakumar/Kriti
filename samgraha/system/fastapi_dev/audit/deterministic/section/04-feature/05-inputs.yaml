@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: inputs
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-inputs-001
+    description: "Inputs section exists"
+    condition: "document has a section with semantic_type = 'inputs'"
+    message: "Missing 'Inputs' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "inputs"
+
+  - id: feat-sec-inputs-002
+    description: "Inputs are enumerated"
+    condition: "section lists each distinct input the feature consumes"
+    message: "Inputs are not clearly enumerated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+
+  - id: feat-sec-inputs-003
+    description: "Each input has a source"
+    condition: "every listed input identifies its origin or source"
+    message: "Some inputs lack a defined source"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "from"
+        - "source"
+        - "origin"
+        - "provided by"

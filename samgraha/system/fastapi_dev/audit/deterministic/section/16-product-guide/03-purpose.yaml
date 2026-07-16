@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing optional 'Purpose' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: pg-sec-purpose-002
+    description: "Purpose states guide intent"
+    condition: "section contains a statement of why this product guide exists"
+    message: "Purpose section does not state guide intent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "purpose"
+        - "intent"
+        - "guide"
+        - "help"
+
+  - id: pg-sec-purpose-003
+    description: "Purpose defines audience"
+    condition: "section defines the target audience for this guide"
+    message: "Purpose section does not define target audience"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "audience"
+        - "user"
+        - "developer"
+        - "reader"

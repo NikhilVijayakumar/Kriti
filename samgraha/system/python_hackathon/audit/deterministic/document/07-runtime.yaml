@@ -1,0 +1,73 @@
+system_id: python_hackathon
+domain: runtime
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 5
+total_weight: 9.0
+
+description: "Rules validating model artifact format, VRAM constraints, inference speed, offline execution, and API contract compliance per competition rules (Sections 17.1-17.3)."
+
+rules:
+  - id: run-001
+    description: "Entrypoint script exists"
+    condition: "repository contains main.py, app.py, or run.py"
+    message: "No clear execution entrypoint found."
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: file_presence
+      targets: [main.py, app.py, run.py]
+
+  - id: run-002
+    description: "Model artifact in allowed format (.pt/.pth/.pkl)"
+    condition: "submitted model files use only .pt, .pth, or .pkl format"
+    message: "Model artifact uses a disallowed file format. Only .pt/.pth/.pkl are accepted."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_model_artifact.py
+      check: invalid_format_files
+      expected: []
+
+  - id: run-003
+    description: "Model artifact does not exceed 12GB VRAM estimate"
+    condition: "largest model file is under 12,288 MB"
+    message: "Model artifact exceeds the 12GB VRAM ceiling for Colab T4 compatibility."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_model_artifact.py
+      check: exceeds_vram_estimate
+      expected: false
+
+  - id: run-004
+    description: "Inference completes within 30 seconds"
+    condition: "single predict() call completes within 30 seconds on target hardware"
+    message: "Inference exceeded the 30-second time limit. Optimize the pipeline."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_model_artifact.py
+      check: inference.within_time_limit
+      expected: true
+
+  - id: run-005
+    description: "API output contract satisfied"
+    condition: "predict() output JSON matches required schema (team_a_score, team_b_score)"
+    message: "predict() output does not satisfy the required API contract."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_model_artifact.py
+      check: inference.api_contract_valid
+      expected: true

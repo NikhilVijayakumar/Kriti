@@ -1,0 +1,103 @@
+system_id: samgraha-documentation
+domain: philosophy
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Philosophy Documentation. Validates structural completeness, prescriptive integrity, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: phil-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/03-philosophy-standards.md Required Sections table"
+    message: "Philosophy document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - guiding_principles
+        - values
+        - tradeoffs
+        - backend_philosophy
+
+  - id: phil-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: phil-doc-003
+    description: "Document covers one philosophical concern"
+    condition: "document has a single primary focus — does not mix unrelated philosophical concerns"
+    message: "Document covers multiple unrelated philosophical concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: phil-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Philosophy document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: phil-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream standards (Vision) and downstream standards (Architecture, Design, Engineering) where applicable"
+    message: "Philosophy document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: derives_from
+
+  # --- Duplicate content ---
+  - id: phil-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Philosophy document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Prescriptive integrity ---
+  - id: phil-doc-007
+    description: "Guiding principles are prescriptive not descriptive"
+    condition: "guiding_principles section states actionable directives rather than observations about the world"
+    message: "Guiding principles read as descriptions rather than prescriptions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: prescriptive_not_descriptive
+      section: guiding_principles

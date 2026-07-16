@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section: error_implementation
+kind: deterministic
+
+rules:
+  - id: sec-error-implementation-001
+    description: "Template conformance: Error Implementation"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

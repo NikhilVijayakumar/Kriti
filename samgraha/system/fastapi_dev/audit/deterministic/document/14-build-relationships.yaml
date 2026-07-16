@@ -1,0 +1,55 @@
+system_id: samgraha-documentation
+domain: build
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# Build derives from Implementation.
+# Build derives Readme.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: build-doc-quality-derives-implementation
+    from_section: documentation_quality
+    type: derives_from
+    target_domain: implementation
+    target_section: generation_plan
+    owner: section
+
+  - id: build-security-checks-derives-security
+    from_section: security_checks
+    type: derives_from
+    target_domain: security
+    target_section: mitigation_strategies
+    owner: section
+
+  - id: build-versioning-derives-engineering
+    from_section: versioning_naming
+    type: derives_from
+    target_domain: engineering
+    target_section: build_standards
+    owner: section
+
+  - id: build-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: build-section-consistency
+    type: section_consistency
+    description: "Sections within build docs are mutually consistent — security checks align with versioning, documentation quality aligns with both"
+    owner: document
+
+  - id: build-collection-coherence
+    type: collection_coherence
+    description: "All build documents in the domain cohere as one system — no orphaned or contradictory build configurations"
+    owner: document
+
+  - id: build-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all build sections — same concept, same name"
+    owner: document

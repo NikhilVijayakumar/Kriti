@@ -1,0 +1,44 @@
+id: python-hackathon-loop
+version: "1.0"
+
+stages:
+  - repository:
+      description: "Ingest target repository for evaluation"
+
+  - audit:
+      type: deterministic
+      scope: document
+      parallel: true
+
+  - audit:
+      type: semantic
+      scope: document
+      parallel: true
+
+  - calculate:
+      type: deterministic
+      scope: document
+
+  - calculate:
+      type: semantic
+      scope: ensemble
+
+  - aggregate:
+      type: domain
+
+  - calculate:
+      type: relative
+      scope: competition
+
+  - normalize:
+      type: final
+      cap: 20
+
+  - validate:
+      type: scoring
+      source: calculation/validation/scoring_validation.yaml
+      on_failure: abort
+
+  - report:
+      type: generation
+      templates: templates/reports

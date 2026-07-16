@@ -1,0 +1,44 @@
+system_id: python_hackathon
+domain: documentation
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 3
+total_weight: 5.0
+
+description: "Rules checking README.md completeness against the documentation standards."
+
+rules:
+  - id: doc-001
+    description: "README.md exists"
+    condition: "repository contains README.md at root"
+    message: "Missing README.md"
+    severity: error
+    weight: 3.0
+    mandatory: true
+    evidence:
+      type: file_presence
+      target: README.md
+
+  - id: doc-002
+    description: "Installation instructions present"
+    condition: "README.md contains 'Installation' or 'Setup' section with code blocks per documentation-standards/04-documentation-standards.md"
+    message: "Missing installation section."
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      target: README.md
+      required_semantic_types: [installation]
+
+  - id: doc-003
+    description: "No broken links in README"
+    condition: "all markdown links resolve successfully"
+    message: "README contains broken links."
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: link_validation
+      target: README.md

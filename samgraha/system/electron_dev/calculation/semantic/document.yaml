@@ -1,0 +1,13 @@
+id: semantic_document_v1
+calculation: sum_capped_at_100
+scope: document
+inputs:
+  from: audit/semantic/document/{domain}.md
+  fields: [criterion_id, points, mandatory, passed]
+formula: |
+  score = min(100, sum(points) where passed=true)
+rollup: null   # document scope — one score, no rollup needed
+note: >
+  Mandatory criterion failure = full criterion points forfeited (0 for that criterion).
+  There is no partial credit. The cap at 100 prevents over-scoring when total
+  possible points exceed 100 (which happens when many criteria pass).

@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: code_standards
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-code-001
+    description: "Code Standards section exists"
+    condition: "document has a section with semantic_type = 'code_standards'"
+    message: "Missing optional 'Code Standards' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "code_standards"
+
+  - id: eng-sec-code-002
+    description: "Code Standards defines coding conventions"
+    condition: "section contains specific coding standards such as naming, formatting, documentation, or style guidelines"
+    message: "Code Standards section does not define coding conventions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "naming"
+        - "format"
+        - "style"
+        - "convention"
+        - "lint"
+        - "documentation"
+
+  - id: eng-sec-code-003
+    description: "Code Standards is technology-independent"
+    condition: "section does not name specific linters, formatters, or language-specific tools"
+    message: "Code Standards section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - lint_tools
+

@@ -1,0 +1,68 @@
+system_id: samgraha-documentation
+domain: security
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: sec-sec-tr-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing required 'Traceability' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: sec-sec-tr-002
+    description: "Threats traceable to vision"
+    condition: "section maps threats back to vision-level security goals or concerns"
+    message: "Threats are not traceable to vision-level goals"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: cross_reference
+      target_domain: vision
+      target_section: vision_statement
+
+  - id: sec-sec-tr-003
+    description: "Data classifications traceable to threats"
+    condition: "section shows which data classifications are addressed by which threats and mitigations"
+    message: "Data classifications are not linked to threats"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      target_domain: security
+      target_section: threat_model
+
+  - id: sec-sec-tr-004
+    description: "No implementation technology references"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Traceability contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: sec-sec-tr-005
+    description: "Bidirectional traceability"
+    condition: "traceability maps work both upstream (to vision/philosophy) and downstream (to architecture/engineering)"
+    message: "Traceability is one-directional only"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: bidirectional_traceability
+

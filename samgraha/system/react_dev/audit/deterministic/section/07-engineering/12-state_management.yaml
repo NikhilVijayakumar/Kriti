@@ -1,0 +1,75 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: state_management
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-state-001
+    description: "State Management section exists"
+    condition: "document has a section with semantic_type = 'state_management'"
+    message: "No state_management section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: eng-sec-state-002
+    description: "Context usage is documented"
+    condition: "section describes React Context for cross-cutting state"
+    message: "React Context usage not documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - context
+        - provider
+        - consumer
+        - createContext
+
+  - id: eng-sec-state-003
+    description: "No external state libraries mentioned"
+    condition: "section does not mention Redux, Zustand, MobX, Jotai, or Recoil"
+    message: "External state libraries found in state management section"
+    severity: error
+    weight: 0.8
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - external_state_libs
+
+  - id: eng-sec-state-004
+    description: "Props-down convention is documented"
+    condition: "section describes props-down data flow"
+    message: "Props-down data flow convention not documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - props
+        - down
+        - flow
+        - unidirectional
+
+  - id: eng-sec-state-005
+    description: "State ownership rules are defined"
+    condition: "section describes which components own which state"
+    message: "State ownership rules not defined"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - ownership
+        - own
+        - local
+        - global
+        - cross-cutting

@@ -1,0 +1,134 @@
+system: electron_dev
+domain: qa
+section_type: cross_platform_testing
+version: "1.0.0"
+
+engineering_intent: >
+  Cross-Platform Testing validates that the desktop application behaves
+  consistently across Windows, macOS, and Linux. It covers platform-specific
+  test matrices, native integration correctness (tray, menu bar, notifications,
+  file associations, auto-updater), OS-level permission handling, and CI
+  configuration for multi-platform builds and automated test execution.
+
+audit_objectives:
+  - Platform test matrix defined covering Windows, macOS, and Linux variants
+  - Native integration tests cover tray icon, menu bar, notifications per platform
+  - File association and protocol handler tests per OS
+  - Auto-updater tests per platform (Squirrel, electron-updater, code signing)
+  - OS-specific permission tests (keychain access, filesystem, network sandbox)
+  - CI pipeline configured for parallel multi-platform test execution
+  - Platform-specific UI behavior tested (window chrome, title bar, DPI scaling)
+  - Installer tests per platform (NSIS/MSI for Windows, DMG/pkg for macOS, AppImage/deb/rpm for Linux)
+
+expected_quality:
+  - Test matrix specifies exact OS versions and architectures (x64, arm64) per platform
+  - Native integration tests run on real OS instances, not mocked platform APIs
+  - File association tests verify .ext files open in the correct app on each OS
+  - Auto-updater tests verify code signing validation and rollback per platform
+  - Permission tests document which OS permissions are required and how denial is handled
+  - CI config shows parallel platform jobs with artifact collection per OS
+  - DPI scaling tests cover 100%, 125%, 150%, 200% on Windows and Retina on macOS
+  - Installer tests verify silent install, upgrade, uninstall per platform
+
+red_flags:
+  - Cross-platform testing section absent or mentions only one platform
+  - No platform test matrix — testing done on developer's OS only
+  - Native integrations tested only on one platform — tray/menu/notifications untested on others
+  - File associations not tested — installers register but no verification
+  - Auto-updater tests absent — signing and update flow untested
+  - CI pipeline runs tests on single platform only
+  - No DPI scaling or HiDPI tests — UI breaks on high-DPI displays
+  - Installer tests absent — packaging produces artifacts but correctness unverified
+  - Platform-specific code paths not guarded by runtime OS detection
+
+edge_cases:
+  - Windows ARM64 builds — native module compatibility (node-gyp, prebuild)
+  - macOS code signing with hardened runtime and notarization
+  - Linux AppArmor/AppArmor restrictions affecting file/network access
+  - Wayland vs X11 rendering differences on Linux
+  - macOS Gatekeeper blocking unsigned or unsigned-right binary on first launch
+  - Windows SmartScreen warning on unsigned installer
+  - Linux distribution-specific dependency differences (glibc versions)
+  - macOS sandbox restrictions on file system access outside app container
+  - Windows UAC elevation required for system-wide install
+  - Multiple monitor DPI mismatch — window moved between screens
+
+scoring_criteria:
+  - id: C1
+    weight: mandatory
+    score: "0 or 25"
+    description: >
+      Cross-platform testing section exists with a defined test matrix
+      covering Windows, macOS, and Linux with specific OS versions and
+      architectures.
+
+  - id: C2
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      Native integration tests exist for platform-specific features
+      (tray, menu bar, notifications, file associations) running on
+      real OS instances per platform.
+
+  - id: C3
+    weight: mandatory
+    score: "0 or 20"
+    description: >
+      CI pipeline configured for parallel multi-platform test execution
+      with artifact collection and test result reporting per OS.
+
+  - id: C4
+    weight: mandatory
+    score: "0 or 15"
+    description: >
+      Installer and packaging tests verify correct installation, upgrade,
+      uninstallation, and file/protocol association registration per platform.
+
+  - id: C5
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      DPI scaling and HiDPI tests cover multiple scaling factors on Windows
+      and Retina displays on macOS, verifying UI correctness.
+
+  - id: C6
+    weight: recommended
+    score: "0 or 10"
+    description: >
+      Auto-updater and code signing tests verify signed update delivery,
+      signature validation, and rollback behavior per platform.
+
+score_calculation: >
+  section_score = min(100, sum of passed criterion scores).
+  Mandatory criterion failure = ERROR. Recommended = WARNING.
+
+output_schema:
+  section: cross_platform_testing
+  score: "0-100"
+  criteria:
+    - id: C1
+      passed: true
+      score: "0-25"
+      evidence: string
+    - id: C2
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C3
+      passed: true
+      score: "0-20"
+      evidence: string
+    - id: C4
+      passed: true
+      score: "0-15"
+      evidence: string
+    - id: C5
+      passed: false
+      score: "0-10"
+      evidence: string
+    - id: C6
+      passed: false
+      score: "0-10"
+      evidence: string
+  findings:
+    - string

@@ -1,0 +1,118 @@
+system_id: samgraha-documentation
+domain: security
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Security Documentation. Validates structural completeness, technology independence, and collection-level properties that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: sec-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards/07-security-standards.md Required Sections table"
+    message: "Security document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - threat_model
+        - data_classification
+        - security_principles
+
+  - id: sec-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: sec-doc-003
+    description: "Document covers one security concern"
+    condition: "document has a single primary focus — does not mix unrelated security concerns"
+    message: "Document covers multiple unrelated security concerns; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Technology independence ---
+  - id: sec-doc-004
+    description: "No implementation technology references"
+    condition: "document does not name specific programming languages, frameworks, libraries, APIs, database schemas, or protocols"
+    message: "Security document contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+        - protocols
+
+  # --- Cross-references ---
+  - id: sec-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream standards (Vision, Philosophy) and downstream standards (Architecture, Engineering) where applicable"
+    message: "Security document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: vision
+          direction: derives_from
+        - domain: philosophy
+          direction: guided_by
+
+  # --- Duplicate content ---
+  - id: sec-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Security document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Script-sourced: ground truth from repo ---
+  - id: sec-doc-015
+    description: "No hardcoded secrets in repository"
+    condition: "secret-scan script reports secrets_found == 0"
+    message: "Secret scan found hardcoded secrets in the repository"
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/03-security/secret-scan.schema.json#metrics.secrets_found"
+      threshold: 0
+      comparison: "=="
+
+  - id: sec-doc-016
+    description: "No known vulnerable dependencies"
+    condition: "dependency-vuln-scan script reports vulnerabilities_found == 0"
+    message: "Dependency vulnerability scan found known vulnerabilities"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/03-security/dependency-vuln-scan.schema.json#metrics.vulnerabilities_found"
+      threshold: 0
+      comparison: "=="

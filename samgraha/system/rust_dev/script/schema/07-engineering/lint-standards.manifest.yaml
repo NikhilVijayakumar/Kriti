@@ -1,0 +1,6 @@
+check: lint-standards
+depends_on: []
+timeout_seconds: 300
+requires_network: false
+
+executable: "cargo clippy --all-targets --all-features -- -D warnings"

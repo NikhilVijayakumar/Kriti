@@ -1,0 +1,14 @@
+id: deterministic_document_v1
+calculation: weighted_pass_rate
+scope: document
+inputs:
+  from: audit/deterministic/document/{domain}.yaml
+  fields: [id, weight, mandatory, passed]
+formula: |
+  score = 100 * (sum(weight) where passed=true) / (sum(weight), all rules)
+rollup: null   # document scope — one score, no rollup needed
+note: >
+  Mandatory rules carry their full weight in the numerator like any other rule;
+  "mandatory" is a severity-level concern (error vs. warning), not a scoring-mode
+  concern. A mandatory rule that fails hits the score exactly as hard as its weight
+  dictates — no extra penalty, no double-counting.

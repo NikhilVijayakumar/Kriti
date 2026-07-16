@@ -1,0 +1,73 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: hook_conventions
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-hook-001
+    description: "Hook Conventions section exists"
+    condition: "document has a section with semantic_type = 'hook_conventions'"
+    message: "No hook_conventions section found"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+
+  - id: eng-sec-hook-002
+    description: "Hook naming follows use* convention"
+    condition: "section mentions use prefix for hooks"
+    message: "Hook naming convention not documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - use
+        - prefix
+        - naming
+
+  - id: eng-sec-hook-003
+    description: "Hook return types are documented"
+    condition: "section mentions return types or typed objects"
+    message: "Hook return types not documented"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - return
+        - type
+        - object
+        - interface
+
+  - id: eng-sec-hook-004
+    description: "No conditional hook usage"
+    condition: "section does not mention calling hooks inside conditions"
+    message: "Conditional hook usage patterns found"
+    severity: error
+    weight: 0.8
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - conditional_hooks
+
+  - id: eng-sec-hook-005
+    description: "Hook composition rules are defined"
+    condition: "section describes how hooks compose or chain together"
+    message: "Hook composition rules not defined"
+    severity: warning
+    weight: 0.4
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - compose
+        - chain
+        - combine
+        - use

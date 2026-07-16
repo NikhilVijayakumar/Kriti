@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+standard_id: documentation-standards
+domain: readme
+section_type: systems_readme
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-systems-readme-001
+    description: "Template conformance: Systems Readme"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_lists: 1

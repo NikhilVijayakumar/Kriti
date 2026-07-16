@@ -1,0 +1,41 @@
+system_id: samgraha-documentation
+standard_id: documentation-standards
+domain: product-guide
+section_type: product_context
+scope: section
+kind: deterministic
+
+rules:
+  - id: product-guide-sec-product_context-001
+    description: "Product Context section exists"
+    condition: "document has a section with semantic_type = 'product_context'"
+    message: "Missing optional 'Product Context' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "product_context"
+
+  - id: product-guide-sec-product_context-002
+    description: "Product Context has substantive content"
+    condition: "section contains at least one paragraph of project-specific content"
+    message: "Product Context section is empty or placeholder only"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_length: 100
+
+  - id: product-guide-sec-product_context-003
+    description: "Product Context is specific to this project"
+    condition: "section contains project-specific details, not generic boilerplate"
+    message: "Product Context contains generic content"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "product-guide"

@@ -1,0 +1,11 @@
+id: aggregation_01_infrastructure
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/document/01-infrastructure.yaml
+  semantic: calculation/semantic/ensemble/01-infrastructure.yaml
+weights:
+  deterministic: 0.60
+  semantic: 0.40
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

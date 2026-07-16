@@ -1,0 +1,7 @@
+check: cargo-fmt
+description: Verifies that all Rust source files are formatted according to rustfmt
+executable: "cargo fmt --all -- --check"
+severity: warning
+requires_network: false
+depends_on: []
+timeout_seconds: 60

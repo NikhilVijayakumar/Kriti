@@ -1,0 +1,62 @@
+[repository]
+kind = "repository"
+dependencies = []
+id = "Kriti"
+name = "Kriti"
+uuid = "7fc19025-772b-41ed-9934-b90b052f55e3"
+source_exclude = []
+
+[repository.documentation]
+root_dir = "docs"
+domain = []
+domain_exclusion = []
+
+[repository.documentation.script_overrides]
+
+[repository.documentation.check_overrides]
+
+[repository.ignore]
+patterns = [
+    "**/node_modules/**",
+    "**/target/**",
+    "**/.git/**",
+    "**/audit-standards/**",
+]
+
+[repository.implementation]
+dir = "${SAMGRAHA_IMPLEMENTATION_DIR}"
+
+[compilation]
+watch = false
+debounce_ms = 100
+batch_size = 100
+
+[compilation.documentation]
+standards = []
+
+[resolver]
+metadata_cache = true
+metadata_ttl = "24h"
+knowledge_ttl = "720h"
+auto_refresh = true
+registry_type = "file"
+
+[knowledge]
+root = "system"
+dependencies = []
+interests = []
+
+[ai]
+
+[audit]
+default_severity = "suggestion"
+providers = ["deterministic"]
+
+[audit.gates]
+
+[output]
+format = "text"
+color = true
+
+[report]
+dir = "${SAMGRAHA_REPORT_DIR}"

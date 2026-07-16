@@ -1,0 +1,9 @@
+check: crate-dependency-graph
+description: >
+  Uses `cargo metadata` to extract the crate dependency graph and checks that no
+  business-logic or domain crates depend on infrastructural crates.
+executable: "cargo metadata --format-version 1"
+severity: error
+requires_network: false
+depends_on: []
+timeout_seconds: 60

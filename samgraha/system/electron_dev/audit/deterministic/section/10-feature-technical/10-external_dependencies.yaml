@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: external_dependencies
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-extdep-001
+    description: "External Dependencies section exists"
+    condition: "document has a section with semantic_type = 'external_dependencies'"
+    message: "Missing optional 'External Dependencies' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "external_dependencies"
+
+  - id: ft-sec-extdep-002
+    description: "External Dependencies lists dependencies"
+    condition: "section contains a list of external systems, services, or libraries the feature depends on"
+    message: "External Dependencies section does not list dependencies"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "dependency"
+        - "depends"
+        - "requires"
+        - "external"
+        - "third-party"
+
+  - id: ft-sec-extdep-003
+    description: "External Dependencies defines dependency nature"
+    condition: "section specifies the nature of each dependency (required, optional, version constraints)"
+    message: "External Dependencies section does not define dependency nature"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "required"
+        - "optional"
+        - "version"
+        - "minimum"
+        - "constraint"
+

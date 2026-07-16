@@ -1,0 +1,58 @@
+system_id: python_hackathon
+domain: team-workflow
+scope: document
+kind: deterministic
+standard_version: "1.0"
+total_rules: 4
+total_weight: 3.5
+
+description: "Objective checks on the repository Git history, commit message quality, and GitFlow workflow practices."
+
+rules:
+  - id: tw-001
+    description: "Minimum 5 commits present"
+    condition: "repository has more than 5 commits"
+    message: "Repository lacks sufficient commit history to evaluate workflow."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: git_history
+      script: script/audit_git.py
+      check: meets_minimum_commits
+
+  - id: tw-002
+    description: "Multiple contributors"
+    condition: "repository has commits from more than one author"
+    message: "Only one contributor found; team collaboration cannot be objectively verified."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: git_history
+      script: script/audit_git.py
+      check: meets_multiple_authors
+
+  - id: tw-003
+    description: "Conventional commit message quality >= 50%"
+    condition: "at least 50% of analyzed commits follow Conventional Commits spec"
+    message: "Commit messages do not follow a consistent format (feat, fix, docs etc.)"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: git_history
+      script: script/audit_git.py
+      check: commit_message_quality.passes_threshold
+
+  - id: tw-004
+    description: "Pull request evidence found"
+    condition: "repository shows evidence of peer-reviewed pull requests via merge commits"
+    message: "No pull request merge commits detected; may indicate solo development."
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: git_history
+      script: script/audit_git.py
+      check: git_workflow.pull_request_evidence

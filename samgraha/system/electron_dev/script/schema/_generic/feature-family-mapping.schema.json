@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "script/schema/_generic/feature-family-mapping.schema.json",
+  "type": "object",
+  "required": ["check", "domain", "category", "status", "metrics", "executed_at", "repo_fingerprint"],
+  "properties": {
+    "check": { "const": "feature-family-mapping" },
+    "domain": { "const": "_generic" },
+    "category": { "const": "C" },
+    "status": { "enum": ["pass", "fail", "error", "not_applicable"] },
+    "metrics": {
+      "type": "object",
+      "required": ["features_count", "feature_designs_count", "feature_technicals_count", "valid_mappings", "orphans"],
+      "properties": {
+        "features_count": { "type": "integer", "minimum": 0 },
+        "feature_designs_count": { "type": "integer", "minimum": 0 },
+        "feature_technicals_count": { "type": "integer", "minimum": 0 },
+        "valid_mappings": { "type": "integer", "minimum": 0 },
+        "orphans": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "repo_fingerprint": { "type": "string" }
+  },
+  "if": { "properties": { "status": { "const": "not_applicable" } } },
+  "then": { "required": ["evidence"], "properties": { "evidence": { "minItems": 1 } } }
+}

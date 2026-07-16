@@ -1,0 +1,18 @@
+system_id: samgraha-documentation
+domain: engineering
+section: migration_strategy
+kind: deterministic
+
+rules:
+  - id: eng-sec-migration-001
+    description: "Template conformance: Migration Strategy"
+    condition: "section contains at least 1 paragraph and Deployment Constraints subsection"
+    message: "Section must contain at least 1 paragraph and Deployment Constraints subsection"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1
+      required_subsections:
+        - Deployment Constraints

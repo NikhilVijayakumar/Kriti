@@ -1,0 +1,57 @@
+system_id: samgraha-documentation
+domain: design
+section_type: design_principles
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: design-sec-dp-001
+    description: "Design principles section exists"
+    condition: "document has a section with semantic_type = 'design_principles'"
+    message: "Missing required 'Design Principles' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "design_principles"
+
+  - id: design-sec-dp-002
+    description: "Design principles are enumerated"
+    condition: "section lists at least two distinct design principles"
+    message: "Design principles are not enumerated"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_count: 2
+
+  - id: design-sec-dp-003
+    description: "Design principles are technology-independent"
+    condition: "principles describe design philosophy, not specific technologies"
+    message: "Design principles contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: design-sec-dp-004
+    description: "Design principles trace to philosophy"
+    condition: "principles reference upstream philosophy where applicable"
+    message: "Design principles do not trace back to philosophy"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: philosophy
+          direction: guided_by
+

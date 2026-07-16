@@ -1,0 +1,66 @@
+system_id: samgraha-documentation
+domain: external-context
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: ext-purpose-informs-engineering
+    from_section: purpose
+    type: informs
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: ext-purpose-informs-feature-technical
+    from_section: purpose
+    type: informs
+    target_domain: feature_technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: ext-integration-contract-informs-engineering
+    from_section: integration_contract
+    type: informs
+    target_domain: engineering
+    target_section: build_standards
+    owner: section
+
+  - id: ext-integration-contract-informs-feature-technical
+    from_section: integration_contract
+    type: informs
+    target_domain: feature_technical
+    target_section: communication_paths
+    owner: section
+
+  - id: ext-traceability-traces-external
+    from_section: traceability
+    type: traceable_to
+    target_domain: external
+    target_section: source
+    owner: section
+
+  - id: ext-traceability-informs-engineering
+    from_section: traceability
+    type: informs
+    target_domain: engineering
+    target_section: testing_standards
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: ext-section-consistency
+    type: section_consistency
+    description: "Sections within external context docs are mutually consistent — no contradictions between integration_contract, constraints, and dependencies"
+    owner: document
+
+  - id: ext-collection-coherence
+    type: collection_coherence
+    description: "All external context documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: ext-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all external context sections — same concept, same name"
+    owner: document

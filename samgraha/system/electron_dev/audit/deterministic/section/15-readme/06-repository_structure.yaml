@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: repository_structure
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-repo-001
+    description: "Repository structure section exists"
+    condition: "document has a section with semantic_type = 'repository_structure'"
+    message: "Missing required 'Repository Structure' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "repository_structure"
+
+  - id: readme-sec-repo-002
+    description: "Repository structure describes layout"
+    condition: "section contains a description of the repository directory layout"
+    message: "Repository structure section does not describe layout"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "directory"
+        - "folder"
+        - "structure"
+        - "layout"
+
+  - id: readme-sec-repo-003
+    description: "Repository structure lists key directories"
+    condition: "section lists at least three key directories or files"
+    message: "Repository structure does not list enough directories"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "src"
+        - "docs"
+        - "test"
+        - "lib"
+

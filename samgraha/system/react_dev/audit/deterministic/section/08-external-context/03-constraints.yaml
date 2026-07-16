@@ -1,0 +1,50 @@
+system_id: samgraha-documentation
+domain: external-context
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ext-sec-con-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing 'Constraints' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: ext-sec-con-002
+    description: "Constraints are clearly stated"
+    condition: "each constraint is a discrete, unambiguous restriction"
+    message: "Constraints are ambiguous or unclear"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "shall not"
+        - "must not"
+        - "limited to"
+        - "maximum"
+        - "minimum"
+
+  - id: ext-sec-con-003
+    description: "Constraints trace to external realities"
+    condition: "constraints reference real-world restrictions (regulations, vendor limits, physical constraints)"
+    message: "Constraints do not trace to external realities"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "regulation"
+        - "compliance"
+        - "vendor"
+        - "physical"
+        - "legal"

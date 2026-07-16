@@ -1,0 +1,82 @@
+system_id: samgraha-documentation
+domain: security
+section_type: data_classification
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: sec-sec-dc-001
+    description: "Data classification section exists"
+    condition: "document has a section with semantic_type = 'data_classification'"
+    message: "Missing required 'Data Classification' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "data_classification"
+
+  - id: sec-sec-dc-002
+    description: "Data types classified"
+    condition: "section identifies and classifies distinct data types handled by the system"
+    message: "No data types identified or classified"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: data_types_classified
+
+  - id: sec-sec-dc-003
+    description: "Handling requirements defined per classification"
+    condition: "each data classification level includes specific handling requirements"
+    message: "Data classifications lack corresponding handling requirements"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: handling_requirements_per_classification
+
+  - id: sec-sec-dc-004
+    description: "No implementation technology references"
+    condition: "section does not reference specific technologies, frameworks, or implementation details for data handling"
+    message: "Data classification contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: sec-sec-dc-005
+    description: "Data lifecycle covered"
+    condition: "classification addresses data at rest, in transit, and in use"
+    message: "Data classification does not cover all lifecycle states"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: lifecycle_coverage
+      states:
+        - at_rest
+        - in_transit
+        - in_use
+
+  - id: sec-sec-dc-006
+    description: "At least two classification levels defined"
+    condition: "section defines at least two distinct data classification levels"
+    message: "Fewer than two data classification levels defined"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 2
+

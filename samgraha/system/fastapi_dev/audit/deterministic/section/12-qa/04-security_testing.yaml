@@ -1,0 +1,62 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: security_testing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-security-001
+    description: "Security testing section exists"
+    condition: "document has a section with semantic_type = 'security_testing'"
+    message: "Missing required 'Security Testing' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "security_testing"
+
+  - id: qa-sec-security-002
+    description: "Security testing defines threat coverage"
+    condition: "section specifies which security threats or attack vectors are tested"
+    message: "Security testing section does not define threat coverage"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "threat"
+        - "vulnerability"
+        - "attack"
+        - "security"
+
+  - id: qa-sec-security-003
+    description: "Security testing defines test methods"
+    condition: "section specifies testing methods (SAST, DAST, penetration, etc.)"
+    message: "Security testing section does not define test methods"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "SAST"
+        - "DAST"
+        - "penetration"
+        - "static analysis"
+        - "dynamic analysis"
+
+  - id: qa-sec-security-004
+    description: "Security testing references security standard"
+    condition: "section references Security Documentation threat model"
+    message: "Security testing does not reference Security Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: security
+          direction: derives_from

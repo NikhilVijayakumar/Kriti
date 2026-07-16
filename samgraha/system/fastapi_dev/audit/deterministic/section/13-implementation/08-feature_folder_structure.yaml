@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: implementation
+section: feature_folder_structure
+kind: deterministic
+
+rules:
+  - id: impl-sec-folder-001
+    description: "Template conformance: Feature Folder Structure"
+    condition: "section contains a file tree"
+    message: "Section must contain a file tree codeblock"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_codeblocks: 1

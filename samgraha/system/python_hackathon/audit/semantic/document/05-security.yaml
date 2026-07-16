@@ -1,0 +1,33 @@
+system_id: python_hackathon
+domain: security
+scope: document
+kind: semantic
+
+description: "Semantic evaluation of secure engineering practices, threat awareness, and safe handling of credentials."
+
+metadata_fields:
+  - model_identifier
+  - provider
+  - prompt_version
+  - execution_timestamp
+  - standard_version
+
+ensemble:
+  required_models:
+    - claude-3-5-sonnet
+    - gemini-1.5-pro
+    - gpt-4o
+
+prompt_template: |
+  Analyze the repository for security awareness and safe engineering practices.
+  Does the README or code demonstrate awareness of common security risks (e.g. injection, secrets leakage)?
+  Are environment variables or secrets vaults used appropriately instead of hardcoded values?
+  Does the team show evidence of dependency vulnerability awareness?
+  Provide a score out of 100 based on the overall security posture of the project.
+
+evidence_requirements:
+  - type: json
+    schema:
+      score: number
+      reasoning: string
+      evidence: string

@@ -1,0 +1,19 @@
+system_id: samgraha-documentation
+domain: architecture
+section: crate_architecture
+kind: deterministic
+
+rules:
+  - id: sec-crate-architecture-001
+    description: "Template conformance: Crate Architecture"
+    condition: "section structurally matches the template requirements"
+    message: "Section fails structural validation"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 2
+      min_diagrams: 1
+      required_subsections:
+        - Dependency Direction

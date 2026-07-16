@@ -1,0 +1,12 @@
+id: score_bands_v1
+calculation: threshold_lookup
+bands:
+  - { min: 95, max: 100, rating: Excellent }
+  - { min: 90, max: 94,  rating: Very Good }
+  - { min: 80, max: 89,  rating: Good }
+  - { min: 70, max: 79,  rating: Acceptable }
+  - { min: 0,  max: 69,  rating: Needs Improvement }
+note: >
+  Bands apply to the final_score (the weighted_sum of 4 bucket scores).
+  Individual bucket scores use the same bands in their own trend displays
+  but the rating label only appears in the summary report.

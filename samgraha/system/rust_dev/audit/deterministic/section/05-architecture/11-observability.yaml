@@ -1,0 +1,33 @@
+﻿system_id: samgraha-documentation
+domain: architecture
+section_type: observability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-obs-001
+    description: "Observability section present"
+    condition: "document optionally has a section with semantic_type = 'observability'"
+    message: "Observability section is missing (recommended)"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "observability"
+
+  - id: arch-sec-obs-002
+    description: "Observability concerns documented"
+    condition: "if present, section covers at least: logging, metrics, tracing"
+    message: "Observability section is incomplete"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "logging"
+        - "metrics"
+        - "tracing"
+

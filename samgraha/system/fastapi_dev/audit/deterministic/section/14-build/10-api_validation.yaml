@@ -1,0 +1,16 @@
+system_id: samgraha-documentation
+domain: build
+section: api_validation
+kind: deterministic
+
+rules:
+  - id: build-sec-api-001
+    description: "Template conformance: API Validation"
+    condition: "section contains at least 1 paragraph"
+    message: "Section must contain at least 1 paragraph"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: structural_check
+      min_paragraphs: 1

@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: integration_points
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-integration-001
+    description: "Integration Points section exists"
+    condition: "document has a section with semantic_type = 'integration_points'"
+    message: "Missing optional 'Integration Points' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "integration_points"
+
+  - id: ft-sec-integration-002
+    description: "Integration Points defines integration points"
+    condition: "section contains descriptions of where the feature integrates with external systems or other features"
+    message: "Integration Points section does not define integration points"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "integrate"
+        - "integration"
+        - "external"
+        - "interface"
+        - "adapter"
+        - "bridge"
+
+  - id: ft-sec-integration-003
+    description: "Integration Points is technology-independent"
+    condition: "section does not reference specific external systems, APIs, or implementation technologies"
+    message: "Integration Points section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - api_references
+

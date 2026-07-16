@@ -1,0 +1,153 @@
+id: script_mapping_v1
+generated_from: audit/**/*.{yaml,md}   # rule_ref / criterion_ref scan, not hand-maintained
+note: |
+  Placeholder version. The rule_ids listed below (qa-doc-014, sec-doc-009, etc.)
+  are illustrative IDs from the proposal's examples, not real audit rules yet.
+  No audit rule currently has a rule_ref pointing into script/schema/ — that
+  wiring happens in Phase 6 (§8 retrofit), which adds script-sourced rules to
+  audit/deterministic/* and audit/semantic/*. Once Phase 6 is done, regenerate
+  this file by scanning all rule_ref values that resolve into script/schema/**.
+  The structure and check/domain entries below are correct; only the rule_ids
+  are placeholders awaiting real audit rules.
+mappings:
+  # Category C: generic cross-document checks (all 16 domains)
+  - check: traceability-refs-exist
+    domain: _generic
+    category: C
+    consumed_by:
+      - { audit_type: deterministic, domain: 01-vision, rule_id: vis-doc-006 }
+      - { audit_type: deterministic, domain: 02-philosophy, rule_id: phi-doc-003 }
+      - { audit_type: deterministic, domain: 03-security, rule_id: sec-doc-009 }
+      - { audit_type: deterministic, domain: 04-feature, rule_id: feat-doc-007 }
+      - { audit_type: deterministic, domain: 05-architecture, rule_id: arch-doc-008 }
+      - { audit_type: deterministic, domain: 07-engineering, rule_id: eng-doc-007 }
+      - { audit_type: deterministic, domain: 08-external-context, rule_id: ext-doc-005 }
+      - { audit_type: deterministic, domain: 10-feature-technical, rule_id: ft-doc-007 }
+      - { audit_type: deterministic, domain: 11-prototype, rule_id: prot-doc-005 }
+      - { audit_type: deterministic, domain: 12-qa, rule_id: qa-doc-008 }
+      - { audit_type: deterministic, domain: 13-implementation, rule_id: impl-doc-009 }
+      - { audit_type: deterministic, domain: 14-build, rule_id: build-doc-006 }
+      - { audit_type: deterministic, domain: 15-readme, rule_id: readme-doc-005 }
+      - { audit_type: deterministic, domain: 16-product-guide, rule_id: pg-doc-006 }
+
+  - check: feature-family-mapping
+    domain: _generic
+    category: C
+    consumed_by:
+      - { audit_type: deterministic, domain: 04-feature, rule_id: feat-doc-010 }
+      - { audit_type: deterministic, domain: 10-feature-technical, rule_id: ft-doc-010 }
+
+  # Category A: QA
+  - check: unit-test-coverage
+    domain: 12-qa
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 12-qa, rule_id: qa-doc-014 }
+      - { audit_type: semantic, domain: 12-qa, criterion_id: qa-sem-007 }
+
+  # Category A: Build
+  - check: build-succeeds
+    domain: 14-build
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 14-build, rule_id: build-doc-012 }
+      - { audit_type: semantic, domain: 14-build, criterion_id: build-sem-005 }
+
+  - check: artifact-exists
+    domain: 14-build
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 14-build, rule_id: build-doc-013 }
+
+  - check: openapi-schema-valid
+    domain: 14-build
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 14-build, rule_id: build-doc-fastapi-001 }
+
+  # Category A: Implementation
+  - check: folder-structure
+    domain: 13-implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 13-implementation, rule_id: impl-doc-015 }
+      - { audit_type: semantic, domain: 13-implementation, criterion_id: impl-sem-008 }
+
+  - check: lint-pass
+    domain: 13-implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 13-implementation, rule_id: impl-doc-016 }
+
+  - check: dependency-manifest
+    domain: 13-implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 13-implementation, rule_id: impl-doc-017 }
+
+  # Category A: Security
+  - check: secret-scan
+    domain: 03-security
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 03-security, rule_id: sec-doc-015 }
+      - { audit_type: semantic, domain: 03-security, criterion_id: sec-sem-009 }
+
+  - check: dependency-vuln-scan
+    domain: 03-security
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 03-security, rule_id: sec-doc-016 }
+
+  # Category A: Architecture
+  - check: module-boundary-diff
+    domain: 05-architecture
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 05-architecture, rule_id: arch-doc-014 }
+      - { audit_type: semantic, domain: 05-architecture, criterion_id: arch-sem-010 }
+
+  # Category A: Engineering
+  - check: lint-standards
+    domain: 07-engineering
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 07-engineering, rule_id: eng-doc-013 }
+
+  # Category A: External-Context
+  - check: dependency-reachable
+    domain: 08-external-context
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 08-external-context, rule_id: ext-doc-011 }
+      - { audit_type: semantic, domain: 08-external-context, criterion_id: ext-sem-006 }
+
+  # Category A: Prototype
+  - check: api-endpoint-reachable
+    domain: 11-prototype
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 11-prototype, rule_id: prot-doc-fastapi-001 }
+
+  # Category A: Product-Guide
+  - check: public-contract-diff
+    domain: 16-product-guide
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: 16-product-guide, rule_id: pg-doc-012 }
+      - { audit_type: semantic, domain: 16-product-guide, criterion_id: pg-sem-007 }
+
+  # Category B: Cross-domain
+  - check: integration-points-exist
+    domain: 10-feature-technical
+    category: B
+    consumed_by:
+      - { audit_type: deterministic, domain: 10-feature-technical, rule_id: ft-doc-015 }
+      - { audit_type: semantic, domain: 10-feature-technical, criterion_id: ft-sem-009 }
+
+  - check: mitigation-present-at-boundary
+    domain: 03-security
+    category: B
+    consumed_by:
+      - { audit_type: deterministic, domain: 03-security, rule_id: sec-doc-017 }
+      - { audit_type: semantic, domain: 03-security, criterion_id: sec-sem-010 }

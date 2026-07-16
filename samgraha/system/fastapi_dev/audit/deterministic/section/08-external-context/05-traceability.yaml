@@ -1,0 +1,50 @@
+system_id: samgraha-documentation
+domain: external-context
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ext-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing 'Traceability' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: ext-sec-trace-002
+    description: "Traceability links to internal artifacts"
+    condition: "section identifies which internal artifacts (Engineering, Feature Design, Feature Technical) are informed by this context"
+    message: "External context does not trace to internal artifacts"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: engineering
+          direction: informs
+        - domain: feature_design
+          direction: informs
+        - domain: feature_technical
+          direction: informs
+
+  - id: ext-sec-trace-003
+    description: "Traceability identifies external source"
+    condition: "section identifies the external source or authority for the context"
+    message: "External context does not identify its source"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "source"
+        - "from"
+        - "provided by"
+        - "authority"

@@ -1,0 +1,10 @@
+id: deterministic_04_documentation
+calculation: weighted_pass_rate
+scope: document
+inputs:
+  from: audit/deterministic/document/04-documentation.yaml
+  fields: [id, weight, mandatory, passed]
+formula: |
+  score = 100 * (sum(weight) where passed=true) / (sum(weight), all rules)
+rollup: null
+note: Specific deterministic calculation for documentation.

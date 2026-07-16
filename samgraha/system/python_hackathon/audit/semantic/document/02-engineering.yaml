@@ -1,0 +1,34 @@
+system_id: python_hackathon
+domain: engineering
+scope: document
+kind: semantic
+
+description: "Semantic evaluation of code quality, maintainability, and engineering practices."
+
+metadata_fields:
+  - model_identifier
+  - provider
+  - prompt_version
+  - execution_timestamp
+  - standard_version
+
+ensemble:
+  required_models:
+    - claude-3-5-sonnet
+    - gemini-1.5-pro
+    - gpt-4o
+
+prompt_template: |
+  Analyze the source code structure and engineering practices in this repository.
+  Is the code well-organized, readable, and maintainable?
+  Is there evidence of sound design principles (e.g. separation of concerns, modularity)?
+  Does the complexity of the codebase remain manageable for a hackathon project?
+  Are type annotations used consistently to improve code clarity?
+  Provide a score out of 100 based on the overall engineering quality.
+
+evidence_requirements:
+  - type: json
+    schema:
+      score: number
+      reasoning: string
+      evidence: string

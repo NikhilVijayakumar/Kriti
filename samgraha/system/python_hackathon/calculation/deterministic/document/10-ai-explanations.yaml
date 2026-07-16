@@ -1,0 +1,10 @@
+id: deterministic_10_ai_explanations
+calculation: weighted_pass_rate
+scope: document
+inputs:
+  from: audit/deterministic/document/10-ai-explanations.yaml
+  fields: [id, weight, mandatory, passed]
+formula: |
+  score = 100 * (sum(weight) where passed=true) / (sum(weight), all rules)
+rollup: null
+note: Specific deterministic calculation for ai-explanations.
