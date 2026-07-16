@@ -1,0 +1,15 @@
+id: final_score_v1
+calculation: weighted_sum
+inputs:
+  - { name: deterministic_whole,   weight: 25 }
+  - { name: deterministic_section, weight: 25 }
+  - { name: semantic_whole,        weight: 25 }
+  - { name: semantic_section,      weight: 25 }
+formula: |
+  final_score = sum(bucket_score / 100 * bucket_weight)
+note: >
+  Equal weighting by design — severity/mandatory gating happens inside each
+  of the 4 bucket calculations above, not here. This layer only scales and
+  sums already-correct scores. Changing the 25/25/25/25 split would require
+  updating all 80 summary templates' inline formula prose as well.
+  Final score is normalized to /20 for Python Hackathon presentation.

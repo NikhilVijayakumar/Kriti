@@ -1,0 +1,12 @@
+id: score_bands_v1
+calculation: threshold_lookup
+bands:
+  - { min: 19, max: 20, rating: Excellent }
+  - { min: 17, max: 18, rating: Very Good }
+  - { min: 15, max: 16, rating: Good }
+  - { min: 13, max: 14, rating: Acceptable }
+  - { min: 0,  max: 12, rating: Needs Improvement }
+note: >
+  Bands apply to the final_score (normalized to /20 for Python Hackathon).
+  Individual bucket scores use the same bands in their own trend displays
+  but the rating label only appears in the summary report.
