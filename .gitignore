@@ -230,3 +230,4 @@ __marimo__/
 /.samgraha/registry.db-shm
 /.samgraha/registry.db-wal
 /.samgraha/standards.db
+/.samgraha/sync-meta.json
