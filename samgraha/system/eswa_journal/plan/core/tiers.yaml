@@ -1,0 +1,28 @@
+id: eswa-paper-tiers
+source: SYSTEM.md
+
+tiers:
+  - tier: 1
+    domains: [problem_definition, related_work]
+  - tier: 2
+    domains: [methodology]
+  - tier: 3
+    domains: [experimental_setup, results, implications, limitations]
+  - tier: 4
+    domains: [introduction, abstract, conclusion, references]
+
+relationships:
+  - { from: problem_definition, type: requires, to: methodology }
+  - { from: related_work, type: guides, to: problem_definition }
+  - { from: methodology, type: requires, to: experimental_setup }
+  - { from: experimental_setup, type: validates, to: results }
+  - { from: results, type: informs, to: implications }
+  - { from: results, type: guides, to: conclusion }
+  - { from: methodology, type: informs, to: abstract }
+  - { from: results, type: informs, to: abstract }
+
+relationship_types:
+  - guides
+  - requires
+  - validates
+  - informs
