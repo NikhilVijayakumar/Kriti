@@ -1,0 +1,25 @@
+id: pcems-2026-tiers
+source: SYSTEM.md
+
+tiers:
+  - tier: 1
+    domains: [introduction, methodology]
+  - tier: 2
+    domains: [findings]
+  - tier: 3
+    domains: [conclusion, references]
+  - tier: 4
+    domains: [title_and_metadata]
+
+relationships:
+  - { from: introduction, type: requires, to: methodology }
+  - { from: methodology, type: requires, to: findings }
+  - { from: findings, type: validates, to: conclusion }
+  - { from: findings, type: informs, to: references }
+  - { from: conclusion, type: guides, to: title_and_metadata }
+
+relationship_types:
+  - guides
+  - requires
+  - validates
+  - informs
