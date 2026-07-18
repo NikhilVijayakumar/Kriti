@@ -223,11 +223,4 @@ __marimo__/
 /.idea/Kriti.iml
 /.idea/misc.xml
 /.idea/modules.xml
-/.samgraha/knowledge.db
-/.samgraha/knowledge.db-shm
-/.samgraha/knowledge.db-wal
-/.samgraha/registry.db
-/.samgraha/registry.db-shm
-/.samgraha/registry.db-wal
-/.samgraha/standards.db
-/.samgraha/sync-meta.json
+/.samgraha/
