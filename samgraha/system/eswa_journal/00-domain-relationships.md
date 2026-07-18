@@ -3,27 +3,27 @@ domain: eswa_journal
 type: domain-relationships
 tiers:
   - tier: 1
-    domains: [problem_definition, related_work]
+    domains: [problem-definition, related-work]
   - tier: 2
     domains: [methodology]
   - tier: 3
-    domains: [experimental_setup, results, implications, limitations]
+    domains: [experimental-setup, results, implications, limitations]
   - tier: 4
     domains: [introduction, abstract, conclusion, references]
 relationships:
-  - from: problem_definition
+  - from: problem-definition
     to: methodology
     type: requires
     mandatory: true
-  - from: related_work
-    to: problem_definition
+  - from: related-work
+    to: problem-definition
     type: guides
     mandatory: true
   - from: methodology
-    to: experimental_setup
+    to: experimental-setup
     type: requires
     mandatory: true
-  - from: experimental_setup
+  - from: experimental-setup
     to: results
     type: validates
     mandatory: true
