@@ -1,0 +1,10 @@
+id: final_score_v1
+calculation: weighted_sum
+inputs:
+  - { name: semantic_document, weight: 100 }
+formula: |
+  final_score = semantic_document_score
+note: >
+  Single-bucket standard — semantic_document is the only calculation
+  bucket pcems_2026 defines, so final_score passes it through unchanged
+  rather than splitting weight across buckets that don't exist here.

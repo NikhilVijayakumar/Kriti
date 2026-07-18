@@ -9,7 +9,7 @@ tiers:
   - tier: 3
     domains: [conclusion, references]
   - tier: 4
-    domains: [title_and_metadata]
+    domains: [title-and-metadata]
 relationships:
   - from: introduction
     to: methodology
@@ -28,7 +28,7 @@ relationships:
     type: informs
     mandatory: true
   - from: conclusion
-    to: title_and_metadata
+    to: title-and-metadata
     type: guides
     mandatory: true
 relationship_types:
