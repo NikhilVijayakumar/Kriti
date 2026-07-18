@@ -1,5 +1,5 @@
 [repository]
-kind = "repository"
+kind = "knowledge"
 dependencies = []
 id = "Kriti"
 name = "Kriti"
@@ -42,7 +42,7 @@ auto_refresh = true
 registry_type = "file"
 
 [knowledge]
-root = "system"
+root = "samgraha/system"
 dependencies = []
 interests = []
 
@@ -60,3 +60,4 @@ color = true
 
 [report]
 dir = "${SAMGRAHA_REPORT_DIR}"
+json = false
