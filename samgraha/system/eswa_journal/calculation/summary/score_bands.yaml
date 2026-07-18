@@ -1,0 +1,12 @@
+id: score_bands_v1
+calculation: threshold_lookup
+bands:
+  - { min: 95, max: 100, rating: Excellent }
+  - { min: 90, max: 94,  rating: Very Good }
+  - { min: 80, max: 89,  rating: Good }
+  - { min: 70, max: 79,  rating: Acceptable }
+  - { min: 0,  max: 69,  rating: Needs Improvement }
+note: >
+  Bands apply to final_score. Same rating vocabulary as the repo's other
+  standards, so plan/core/loop.yaml's default threshold ("Acceptable")
+  resolves without needing an explicit override.

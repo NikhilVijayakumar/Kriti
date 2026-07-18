@@ -1,0 +1,21 @@
+id: trend_v1
+calculation: trend_comparison
+inputs: [current_score, previous_score]
+tolerance:
+  method: stddev
+  k: 1.0
+  floor: 0.1
+  scope: per_standard
+  min_samples: 5
+  fallback_scope: global
+  fallback_min_samples: 5
+formula: |
+  if previous_score is null: "baseline"
+  elif current_score - previous_score > tolerance: "Improved"
+  elif previous_score - current_score > tolerance: "Regressed"
+  else: "Unchanged"
+note: >
+  Tolerance prevents float-noise flip-flopping across successive audits of
+  the same paper draft. Resolved independently for semantic_document and
+  final_score (here the same number, but tracked as separate scored
+  entities for consistency with the repo's other standards).
