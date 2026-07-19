@@ -1,0 +1,10 @@
+# System class definition for fastapi_dev
+# Inherits base_dev and drops design-focused domains.
+name: fastapi_dev
+extends: base_dev
+description: >
+  FastAPI backend development system. Drops design and feature-design
+  domains (server-side only — no UI/UX concerns).
+drops:
+  - 06-design
+  - 09-feature-design

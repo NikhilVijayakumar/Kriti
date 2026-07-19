@@ -1,0 +1,11 @@
+# System class definition for rust_dev
+# Inherits base_dev and drops design-focused domains.
+name: rust_dev
+extends: base_dev
+description: >
+  Rust systems development system. Drops design, feature-design,
+  and prototype domains (systems programming — no UI concerns).
+drops:
+  - 06-design
+  - 09-feature-design
+  - 11-prototype

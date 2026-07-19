@@ -1,0 +1,7 @@
+# System class definition for electron_dev
+# Inherits the full base_dev domain set — no drops needed.
+name: electron_dev
+extends: base_dev
+description: >
+  Electron desktop application development system. Inherits all 16
+  domains from base_dev. Adds Electron-specific templates on top.
