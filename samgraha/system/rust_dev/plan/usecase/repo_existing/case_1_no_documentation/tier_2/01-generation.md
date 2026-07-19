@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_existing/case_1_no_documentation`
 **Tier:** 2
@@ -47,5 +47,5 @@ Five documents, ready for stage 2 (audit). No scoring at this stage.
 ## Differs From Other Use Cases
 
 - **vs. `repo_new/case_1_no_documentation`:** Tier 2 generation there has no code — Architecture and Engineering invent a plausible design from the product idea. This use case has real code — generation describes what exists.
-- **vs. `repo_new/case_2_has_documention`:** No difference — neither has pre-existing docs at Tier 2.
-- **vs. `repo_existing/case_2_has_documention`:** Tier 2 there starts with existing non-conforming docs. This use case generates from scratch against real code.
+- **vs. `repo_new/case_2_has_documentation`:** No difference — neither has pre-existing docs at Tier 2.
+- **vs. `repo_existing/case_2_has_documentation`:** Tier 2 there starts with existing non-conforming docs. This use case generates from scratch against real code.

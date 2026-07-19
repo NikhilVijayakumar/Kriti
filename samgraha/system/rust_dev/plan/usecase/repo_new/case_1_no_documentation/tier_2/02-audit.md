@@ -1,4 +1,4 @@
-# Stage 2 — Audit
+﻿# Stage 2 — Audit
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 2
@@ -40,6 +40,6 @@ This stage never fixes anything — that's stage 3's job.
 
 ## Differs From Other Use Cases
 
-- **vs. `repo_new/case_2_has_documention`:** No difference — same audit files, same procedure.
+- **vs. `repo_new/case_2_has_documentation`:** No difference — same audit files, same procedure.
 - **vs. `repo_existing/case_1_no_documentation`:** No difference — same audit files, same procedure.
-- **vs. `repo_existing/case_2_has_documention`:** No difference — same audit files, same procedure.
+- **vs. `repo_existing/case_2_has_documentation`:** No difference — same audit files, same procedure.

@@ -1,0 +1,73 @@
+# {{ system_name }} — Execution Plan
+
+**Use Case:** {{ use_case }}
+**Generated at:** {{ generated_at }}
+
+## System Configuration
+
+- **Name:** {{ system_name }}
+- **Abstract:** {{ abstract }}
+- **Active domains:** {{ active_domain_count }}
+{% if drops %}
+- **Dropped domains:** {{ drops | join(', ') }}
+{% endif %}
+
+## Quality Gates
+
+- **Score threshold:** {{ threshold_score }}
+- **Rating target:** {{ threshold_rating }}
+- **Max fix iterations:** {{ max_iterations }}
+- **Fallback:** {{ fallback }}
+
+## Execution Plan
+
+{% for tier in tiers %}
+### Tier {{ tier.num }}
+
+**Domains:** {{ tier.domains | map('format_domain') | join(', ') }}
+
+{% if tier.ordering %}
+> **Ordering constraint:** {{ tier.ordering.rule }}
+
+{% endif %}
+{% if tier.upstream_deps %}
+**Upstream dependencies:**
+
+{% for dep in tier.upstream_deps %}
+- `{{ dep.from }}` —{{ dep.type }}→ `{{ dep.to }}` (tier-gating: {{ dep.gating }})
+{% endfor %}
+
+{% endif %}
+**Phases per domain:**
+
+{% for domain, path_info in tier.domain_paths.items() %}
+- `{{ domain }}`: {{ path_info.path }}
+{% for phase in path_info.phases %}
+  - {{ phase }}
+{% endfor %}
+{% endfor %}
+
+{% if not tier.is_last %}
+> **Tier gate:** All domains in tier {{ tier.num }} must reach `{{ threshold_rating }}` before tier {{ tier.num + 1 }} starts.
+
+{% endif %}
+---
+
+{% endfor %}
+{% if special_cases %}
+## Special Cases
+
+{% for case_name, case_info in special_cases.items() %}
+### {{ case_name | title }}
+
+{{ case_info.note }}
+- **Context:** {{ case_info.context }}
+
+{% endfor %}
+{% endif %}
+## Summary
+
+- **Total tiers:** {{ total_tiers }}
+- **Total domains:** {{ active_domain_count }}
+- **Relationships:** {{ relationship_count }}
+- **Max iterations:** {{ max_iterations }}

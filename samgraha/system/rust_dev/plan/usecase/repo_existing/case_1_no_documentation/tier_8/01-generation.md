@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_existing/case_1_no_documentation`
 **Tier:** 8
@@ -34,4 +34,4 @@ Two documents, ready for stage 2 (audit).
 ## Differs From Other Use Cases
 
 - **vs. `repo_new/case_1_no_documentation`:** Tier 8 there has no code — README and Product Guide describe the planned product. This use case has real code — both documents describe the actual product with real file paths and commands.
-- **vs. `repo_new/case_2_has_documention` / `repo_existing/case_2_has_documention`:** No difference — neither has pre-existing README/Product Guide docs.
+- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing README/Product Guide docs.

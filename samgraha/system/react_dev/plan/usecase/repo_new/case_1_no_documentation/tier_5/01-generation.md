@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 5
@@ -45,4 +45,4 @@ One document, ready for stage 2 (audit). No scoring at this stage.
 ## Differs From Other Use Cases
 
 - **vs. `repo_existing/case_1_no_documentation`:** Tier 5 generation there has real code available. Implementation should reflect the actual codebase — what exists, what needs to be added, what needs to change. This use case has no code — implementation describes the planned build from scratch.
-- **vs. `repo_new/case_2_has_documention` / `repo_existing/case_2_has_documention`:** No difference — neither has pre-existing implementation docs.
+- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing implementation docs.

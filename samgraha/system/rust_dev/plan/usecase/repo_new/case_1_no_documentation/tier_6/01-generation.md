@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 6
@@ -37,4 +37,4 @@ One document, ready for stage 2 (audit). No scoring at this stage.
 ## Differs From Other Use Cases
 
 - **vs. `repo_existing/case_1_no_documentation`:** Tier 6 generation there has real code and real test results available. QA should reflect actual test coverage, actual failures, actual gaps. This use case has no code — QA describes the planned test strategy.
-- **vs. `repo_new/case_2_has_documention` / `repo_existing/case_2_has_documention`:** No difference — neither has pre-existing QA docs.
+- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing QA docs.

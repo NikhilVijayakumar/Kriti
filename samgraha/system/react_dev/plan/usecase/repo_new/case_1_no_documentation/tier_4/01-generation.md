@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 4
@@ -44,4 +44,4 @@ One document, ready for stage 2 (audit). No scoring at this stage.
 ## Differs From Other Use Cases
 
 - **vs. `repo_existing/case_1_no_documentation`:** Tier 4 generation there has real code available. Prototype should reflect actual code structure and be buildable against the existing codebase.
-- **vs. `repo_new/case_2_has_documention` / `repo_existing/case_2_has_documention`:** No difference at Tier 4 — neither has pre-existing prototype docs.
+- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference at Tier 4 — neither has pre-existing prototype docs.

@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 8
@@ -38,6 +38,6 @@ Two documents, one per domain, ready for stage 2 (audit). No scoring at this sta
 
 ## Differs From Other Use Cases
 
-- **vs. `repo_new/case_2_has_documention`:** No difference at Tier 8 — neither case has pre-existing README or Product Guide docs.
+- **vs. `repo_new/case_2_has_documentation`:** No difference at Tier 8 — neither case has pre-existing README or Product Guide docs.
 - **vs. `repo_existing/case_1_no_documentation`:** Tier 8 generation there has real code available. README installation instructions and Product Guide examples should reflect actual code structure, actual commands, actual file paths. This use case has no code — README and Product Guide describe the planned product.
-- **vs. `repo_existing/case_2_has_documention`:** Tier 8 there starts with existing non-conforming README/Product Guide docs and migrates them. This use case generates from scratch.
+- **vs. `repo_existing/case_2_has_documentation`:** Tier 8 there starts with existing non-conforming README/Product Guide docs and migrates them. This use case generates from scratch.

@@ -1,0 +1,26 @@
+# System class definition for base_dev
+# This is the abstract base for all development-class systems.
+# Concrete systems inherit from this and selectively drop domains.
+name: base_dev
+abstract: true
+description: >
+  Base development system. Provides the full 16-domain knowledge hub
+  used by all development-class concrete systems. Not registered
+  directly — use a concrete system (electron_dev, fastapi_dev, etc.).
+domains:
+  - 01-vision
+  - 02-philosophy
+  - 03-security
+  - 04-feature
+  - 05-architecture
+  - 06-design
+  - 07-engineering
+  - 08-external-context
+  - 09-feature-design
+  - 10-feature-technical
+  - 11-prototype
+  - 12-qa
+  - 13-implementation
+  - 14-build
+  - 15-readme
+  - 16-product-guide

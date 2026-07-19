@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_existing/case_1_no_documentation`
 **Tier:** 1
@@ -37,5 +37,5 @@ Two documents, ready for stage 2 (audit). No scoring at this stage.
 ## Differs From Other Use Cases
 
 - **vs. `repo_new/case_1_no_documentation`:** No difference at Tier 1 — neither case references code. Vision and Philosophy are technology-independent; real code doesn't change how they're generated.
-- **vs. `repo_new/case_2_has_documention`:** No difference — no pre-existing docs at Tier 1.
-- **vs. `repo_existing/case_2_has_documention`:** No difference — no existing docs to migrate at Tier 1.
+- **vs. `repo_new/case_2_has_documentation`:** No difference — no pre-existing docs at Tier 1.
+- **vs. `repo_existing/case_2_has_documentation`:** No difference — no existing docs to migrate at Tier 1.

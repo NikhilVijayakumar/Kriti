@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 3
@@ -42,6 +42,6 @@ Two documents, one per domain, ready for stage 2 (audit). No scoring at this sta
 
 ## Differs From Other Use Cases
 
-- **vs. `repo_new/case_2_has_documention`:** No difference at Tier 3 — neither case has pre-existing docs for these domains.
+- **vs. `repo_new/case_2_has_documentation`:** No difference at Tier 3 — neither case has pre-existing docs for these domains.
 - **vs. `repo_existing/case_1_no_documentation`:** Tier 3 generation there has real code available. Feature Technical generation should reflect actual code patterns, not invent a design.
-- **vs. `repo_existing/case_2_has_documention`:** Tier 3 there starts with existing non-conforming docs. This use case generates from scratch.
+- **vs. `repo_existing/case_2_has_documentation`:** Tier 3 there starts with existing non-conforming docs. This use case generates from scratch.

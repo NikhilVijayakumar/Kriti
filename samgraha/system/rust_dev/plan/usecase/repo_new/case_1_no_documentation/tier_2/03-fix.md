@@ -1,4 +1,4 @@
-# Stage 3 → Fix
+﻿# Stage 3 → Fix
 
 **Use case:** `repo_new/case_1_no_documentation`
 **Tier:** 2
@@ -40,6 +40,6 @@ Once every domain in Tier 2 (security, feature, architecture, engineering, exter
 
 ## Differs From Other Use Cases
 
-- **vs. `repo_new/case_2_has_documention`:** No difference → same fix procedure.
+- **vs. `repo_new/case_2_has_documentation`:** No difference → same fix procedure.
 - **vs. `repo_existing/case_1_no_documentation`:** No difference → same fix procedure.
-- **vs. `repo_existing/case_2_has_documention`:** No difference → same fix procedure.
+- **vs. `repo_existing/case_2_has_documentation`:** No difference → same fix procedure.

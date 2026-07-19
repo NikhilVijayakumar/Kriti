@@ -1,4 +1,4 @@
-# Stage 1 — Generate or Migrate
+﻿# Stage 1 — Generate or Migrate
 
 **Use case:** `repo_existing/case_1_no_documentation`
 **Tier:** 7
@@ -31,4 +31,4 @@ One document, ready for stage 2 (audit).
 ## Differs From Other Use Cases
 
 - **vs. `repo_new/case_1_no_documentation`:** Tier 7 there has no code — Build describes planned infrastructure. This use case has real code — Build describes actual infrastructure and gaps.
-- **vs. `repo_new/case_2_has_documention` / `repo_existing/case_2_has_documention`:** No difference — neither has pre-existing Build docs.
+- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing Build docs.
