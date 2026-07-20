@@ -1,4 +1,4 @@
-# Team Final Aggregate Report
+﻿# Team Final Aggregate Report
 
 **Repository / Team:** `{{ repo_name }}`
 **Date:** `{{ evaluation_date }}`
@@ -14,9 +14,9 @@
 
 | Model Evaluator | Aggregate Mean Score |
 |-----------------|----------------------|
-{{#each model_aggregate_scores}}
-| `{{ this.model_name }}` | {{ this.mean_score }} |
-{{/each}}
+{{#model_aggregate_scores}}
+| `{{ model_name }}` | {{ mean_score }} |
+{{/model_aggregate_scores}}
 
 ## 3. Domain Mark Summary
 *The finalized scores for all 10 independent sections.*

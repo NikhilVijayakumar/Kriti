@@ -191,6 +191,40 @@ def _validate_output_contract(output):
     return True, "Output contract satisfied"
 
 
+def _validate_input_contract(repo_path, entrypoint):
+    """
+    Validates predict()'s input signature via inspect.signature().
+    Expected: exactly team_a and team_b as required params, no extra required args.
+    """
+    script = f"""
+import sys, json, inspect, importlib.util
+sys.path.insert(0, r'{repo_path}')
+
+spec = importlib.util.spec_from_file_location("entrypoint", r'{entrypoint}')
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+if not hasattr(mod, 'predict'):
+    print(json.dumps({{"valid": false, "message": "No predict() function found"}}))
+else:
+    sig = inspect.signature(mod.predict)
+    params = [name for name, p in sig.parameters.items() if p.default is inspect.Parameter.empty]
+    all_params = list(sig.parameters.keys())
+    print(json.dumps({{"valid": params == ['team_a', 'team_b'], "required_params": params, "all_params": all_params}}))
+"""
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True, text=True, timeout=10,
+            env={"PYTHONPATH": repo_path, "HEIMDALL_OFFLINE": "1"}
+        )
+        if proc.stdout.strip():
+            return json.loads(proc.stdout.strip())
+        return {"valid": False, "message": f"No output from signature check: {proc.stderr[:200]}"}
+    except Exception as e:
+        return {"valid": False, "message": f"Signature check failed: {e}"}
+
+
 def run_model_artifact_audit(repo_path, entrypoint=None):
     """
     Full model artifact audit: file presence, format, memory estimate, inference speed, API contract.
@@ -206,6 +240,8 @@ def run_model_artifact_audit(repo_path, entrypoint=None):
             "status": None,
             "elapsed_seconds": None,
             "within_time_limit": None,
+            "input_contract_valid": None,
+            "input_contract_message": None,
             "api_contract_valid": None,
             "api_contract_message": None,
         }
@@ -233,6 +269,11 @@ def run_model_artifact_audit(repo_path, entrypoint=None):
 
     # Inference check
     if entrypoint and os.path.exists(entrypoint):
+        # Input contract check (before running inference)
+        input_check = _validate_input_contract(repo_path, entrypoint)
+        result["inference"]["input_contract_valid"] = input_check.get("valid", False)
+        result["inference"]["input_contract_message"] = input_check.get("message", "")
+
         inference = _run_inference_sandbox(repo_path, entrypoint)
         result["inference"]["executed"] = True
         result["inference"]["status"] = inference.get("status")
@@ -252,13 +293,13 @@ def run_model_artifact_audit(repo_path, entrypoint=None):
         result["inference"]["status"] = "skipped"
         result["inference"]["api_contract_message"] = "No entrypoint specified or found"
 
-    # Log summary
-    print(f"[audit_model_artifact] memory method: {mem['method']}")
-    print(f"[audit_model_artifact] budget: {mem['budget_mb']:.0f} MB | used: {mem['used_mb']:.1f} MB")
+    # Log summary to stderr (stdout reserved for JSON output)
+    print(f"[audit_model_artifact] memory method: {mem['method']}", file=sys.stderr)
+    print(f"[audit_model_artifact] budget: {mem['budget_mb']:.0f} MB | used: {mem['used_mb']:.1f} MB", file=sys.stderr)
     if mem["detail"]:
         for line in mem["detail"].split("\n"):
-            print(f"[audit_model_artifact]{line}")
-    print(f"[audit_model_artifact] exceeds limit: {mem['exceeds']}")
+            print(f"[audit_model_artifact]{line}", file=sys.stderr)
+    print(f"[audit_model_artifact] exceeds limit: {mem['exceeds']}", file=sys.stderr)
 
     return result
 

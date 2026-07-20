@@ -3,8 +3,8 @@ domain: runtime
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 5
-total_weight: 9.0
+total_rules: 6
+total_weight: 11.0
 
 description: "Rules validating model artifact format, VRAM constraints, inference speed, offline execution, and API contract compliance per competition rules (Sections 17.1-17.3)."
 
@@ -70,4 +70,17 @@ rules:
       type: script_output
       script: script/audit_model_artifact.py
       check: inference.api_contract_valid
+      expected: true
+
+  - id: run-006
+    description: "predict() signature accepts only team_a/team_b, no extra required params"
+    condition: "predict() function signature has exactly the params team_a, team_b (no extra required args, no config/override params)"
+    message: "predict() has unexpected required parameters. Only team_a and team_b are allowed."
+    severity: error
+    weight: 2.0
+    mandatory: true
+    evidence:
+      type: script_output
+      script: script/audit_model_artifact.py
+      check: inference.input_contract_valid
       expected: true

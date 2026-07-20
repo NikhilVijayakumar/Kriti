@@ -3,7 +3,7 @@ domain: team-workflow
 scope: document
 kind: semantic
 
-description: "Semantic evaluation of team self-organization and task division."
+description: "Semantic evaluation of team self-organization, reliability, speed, and clean structuring."
 
 metadata_fields:
   - model_identifier
@@ -19,12 +19,14 @@ ensemble:
     - gpt-4o
 
 prompt_template: |
-  Analyze the README.md and project structure.
-  How effectively did the team self-organize? 
-  Did they divide tasks smoothly (e.g., separating data collection, model training, and API building)? 
-  Is there evidence of a clear workflow with peer-reviewed work, or did one person do all the heavy lifting?
-  Provide a score out of 100 based on the presence of collaborative evidence.
-  
+  Analyze the README.md, commit history, and project structure.
+  Evaluate three things explicitly:
+  (1) Reliability — does the project run without manual intervention, are dependencies pinned and reproducible;
+  (2) Speed — is there evidence the team worked efficiently (steady commit cadence rather than one late burst);
+  (3) Clean structuring — is the codebase organized into clear separations (data collection, model training, API serving) rather than one monolithic script.
+  Did the team divide tasks smoothly, and is there evidence of peer-reviewed pull requests rather than one person doing all the work?
+  Score based on all three dimensions.
+
 evidence_requirements:
   - type: json
     schema:

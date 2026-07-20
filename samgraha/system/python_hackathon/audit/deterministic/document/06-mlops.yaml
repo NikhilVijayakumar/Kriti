@@ -3,10 +3,10 @@ domain: mlops
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 2
-total_weight: 2.0
+total_rules: 4
+total_weight: 4.0
 
-description: "Rules checking MLOps tracking tools."
+description: "Rules checking MLOps tracking tools and pipeline quality."
 
 rules:
   - id: mlp-001
@@ -30,3 +30,27 @@ rules:
         - "mlflow.ini"
         - "mlflow.yaml"
         - "mlprojects/**"
+
+  - id: mlp-003
+    description: "DVC pipeline has real stages, not an empty/placeholder file"
+    condition: "dvc.yaml declares at least 1 pipeline stage"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: tool_execution
+      target: dvc_stage_count
+      threshold: 1
+      op: gte
+
+  - id: mlp-004
+    description: "MLflow has recorded at least one real run"
+    condition: "mlruns/ contains at least 1 run directory"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: tool_execution
+      target: mlflow_run_count
+      threshold: 1
+      op: gte

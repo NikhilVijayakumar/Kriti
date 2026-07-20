@@ -6,6 +6,7 @@ import subprocess
 import json
 import argparse
 import os
+import sys
 import glob
 
 
@@ -151,13 +152,13 @@ def run_testing_audit(repo_path):
     except subprocess.TimeoutExpired:
         result["error"] = "pytest timed out after 120 seconds"
 
-    # 5. Print summary
-    print(f"[audit_testing] pytest executed: {result['pytest_executed']}")
-    print(f"[audit_testing] JSON report: {'used' if result['json_report_used'] else 'skipped'}")
-    print(f"[audit_testing] Coverage: {'used' if result['coverage_used'] else 'skipped'}")
+    # 5. Print summary to stderr (stdout reserved for JSON output)
+    print(f"[audit_testing] pytest executed: {result['pytest_executed']}", file=sys.stderr)
+    print(f"[audit_testing] JSON report: {'used' if result['json_report_used'] else 'skipped'}", file=sys.stderr)
+    print(f"[audit_testing] Coverage: {'used' if result['coverage_used'] else 'skipped'}", file=sys.stderr)
     if result["data_skipped"]:
         for msg in result["data_skipped"]:
-            print(f"[audit_testing] SKIP: {msg}")
+            print(f"[audit_testing] SKIP: {msg}", file=sys.stderr)
 
     return result
 

@@ -1,0 +1,439 @@
+<title>Infrastructure — Domain Summary</title>
+<style>
+  :root{
+    --black:#000;
+    --white:#fff;
+    --gray-05:#f5f5f5;
+    --gray-10:#e5e5e5;
+    --gray-40:#888;
+    --gray-60:#555;
+    --line:#000;
+    --accent:#1a5fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--white);color:var(--black);}
+  body{
+    font-family:'Geist','Inter','Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{
+    font-family:'Geist Mono','JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+  }
+  .num{
+    font-family:'Geist Mono','JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  .sheet{
+    max-width:1280px;
+    margin:0 auto;
+    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
+    min-height:100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:end;
+    padding:28px 40px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .header-left .eyebrow{
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--gray-40);
+    margin-bottom:10px;
+  }
+  .header-left .eyebrow .sep{margin:0 8px;color:var(--gray-10);}
+  .header-left h1{
+    font-size:30px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .header-left .repo{
+    font-size:15px;
+    color:var(--gray-60);
+    margin-top:6px;
+  }
+  .header-right{
+    text-align:right;
+    font-size:11px;
+    color:var(--gray-40);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  .header-right .date-val{
+    display:block;
+    font-size:15px;
+    color:var(--black);
+    text-transform:none;
+    letter-spacing:0;
+    margin-top:4px;
+  }
+
+  /* ---------- metric strip ---------- */
+  .metrics{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    border-bottom:1px solid var(--line);
+  }
+  .metric{
+    padding:22px 24px;
+    border-right:1px solid var(--line);
+  }
+  .metric:last-child{border-right:none;}
+  .metric .label{
+    font-size:10.5px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--gray-40);
+    margin-bottom:10px;
+  }
+  .metric .value{
+    font-size:26px;
+    font-weight:500;
+  }
+  .metric .value .unit{
+    font-size:14px;
+    color:var(--gray-40);
+    margin-left:2px;
+  }
+  .metric.final{
+    background:var(--black);
+    color:var(--white);
+  }
+  .metric.final .label{color:#999;}
+  .metric.final .value{font-size:30px;font-weight:600;}
+  .metric .sub{
+    font-size:11px;
+    color:var(--gray-40);
+    margin-top:6px;
+  }
+  .metric.pos .value{color:var(--black);}
+  .metric.pos .delta{color:var(--black);}
+  .delta-up::before{content:"▲ ";font-size:10px;position:relative;top:-1px;}
+
+  /* ---------- section shell ---------- */
+  section{border-bottom:1px solid var(--line);}
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:18px 40px 0;
+  }
+  .section-head h2{
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .section-head .note{
+    font-size:11px;
+    color:var(--gray-40);
+  }
+
+  /* ---------- distribution chart ---------- */
+  .chart-wrap{
+    padding:16px 40px 32px;
+    display:grid;
+    grid-template-columns:1fr 220px;
+    gap:32px;
+  }
+  .chart-svg{width:100%;height:auto;display:block;}
+  .chart-legend{
+    border-left:1px solid var(--line);
+    padding-left:24px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .legend-item .swatch{
+    display:inline-block;
+    width:10px;height:10px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .legend-item .swatch.field{background:var(--gray-10);border:1px solid var(--gray-40);}
+  .legend-item .swatch.team{background:var(--black);}
+  .legend-item .swatch.mean{border-top:1px dashed var(--gray-40);width:10px;height:0;vertical-align:middle;}
+  .legend-item{font-size:12px;color:var(--gray-60);}
+  .legend-item strong{display:block;font-size:13px;color:var(--black);font-weight:500;margin-top:2px;}
+
+  /* ---------- stats table ---------- */
+  .stats-table{
+    padding:16px 40px 32px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:0;
+    border:1px solid var(--line);
+    margin:16px 40px 32px;
+    width:calc(100% - 80px);
+  }
+  .stat-cell{
+    padding:16px 20px;
+    border-right:1px solid var(--line);
+  }
+  .stat-cell:last-child{border-right:none;}
+  .stat-cell .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--gray-40);margin-bottom:8px;}
+  .stat-cell .value{font-size:20px;}
+  .stats-table{margin-top:0;}
+
+  /* ---------- narrative ---------- */
+  .narrative{
+    padding:20px 40px 44px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:40px;
+  }
+  .narrative h3{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:600;
+    margin-bottom:12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--gray-10);
+  }
+  .narrative p{
+    font-size:13.5px;
+    color:#1a1a1a;
+    margin-bottom:12px;
+  }
+  .narrative p:last-child{margin-bottom:0;}
+  .narrative .risk-list{
+    list-style:none;
+    font-size:13.5px;
+  }
+  .narrative .risk-list li{
+    padding:8px 0;
+    border-top:1px solid var(--gray-10);
+    display:grid;
+    grid-template-columns:16px 1fr;
+    gap:8px;
+  }
+  .narrative .risk-list li:first-child{border-top:none;}
+  .narrative .risk-list .sev{
+    font-family:'Geist Mono','JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--gray-40);
+    padding-top:1px;
+  }
+  .narrative .risk-list .sev.high{color:var(--black);font-weight:700;}
+
+  footer{
+    display:flex;
+    justify-content:space-between;
+    padding:16px 40px;
+    font-size:11px;
+    color:var(--gray-40);
+  }
+  footer .mono{color:var(--gray-40);}
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="header-left">
+      <div class="eyebrow mono">DOMAIN 01 / 10 — INFRASTRUCTURE<span class="sep">/</span>SUMMARY REPORT</div>
+      <h1 class="mono">infrastructure-summary</h1>
+      <div class="repo mono">repo_name: <strong style="color:#000">vertex-squad/kriti-2026-submission</strong></div>
+    </div>
+    <div class="header-right">
+      evaluation_date
+      <span class="date-val mono">2026-07-18</span>
+    </div>
+  </header>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">Deterministic</div>
+      <div class="value num">75.0<span class="unit">/100</span></div>
+      <div class="sub">rule-checker · weight 0.60</div>
+    </div>
+    <div class="metric">
+      <div class="label">Semantic</div>
+      <div class="value num">66.3<span class="unit">/100</span></div>
+      <div class="sub">LLM-judge avg · weight 0.40</div>
+    </div>
+    <div class="metric">
+      <div class="label">Raw Merge</div>
+      <div class="value num">71.5<span class="unit">/100</span></div>
+      <div class="sub">0.60 det + 0.40 sem</div>
+    </div>
+    <div class="metric">
+      <div class="label">Z-Score</div>
+      <div class="value num">+1.86<span class="unit">σ</span></div>
+      <div class="sub">vs. field, this domain</div>
+    </div>
+    <div class="metric pos">
+      <div class="label">Relative Bonus</div>
+      <div class="value num delta-up">+3.2</div>
+      <div class="sub">applied for standout standing</div>
+    </div>
+    <div class="metric final">
+      <div class="label">Final Domain Score</div>
+      <div class="value num">74.7<span class="unit">/100</span></div>
+      <div class="sub">counts toward leaderboard</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>Field Distribution — Infrastructure</h2>
+      <span class="note mono">n = 24 teams · μ = 65.0 · σ = 3.5</span>
+    </div>
+    <div class="chart-wrap">
+      <svg class="chart-svg" viewBox="0 0 760 260" preserveAspectRatio="xMidYMid meet">
+        <!-- axis -->
+        <line x1="40" y1="210" x2="740" y2="210" stroke="#000" stroke-width="1"/>
+        <!-- x ticks 0-100 -->
+        <!-- scale: x = 40 + score*7.0 -->
+        <g class="mono" font-size="10" fill="#888">
+          <text x="40" y="228">0</text>
+          <text x="180" y="228">20</text>
+          <text x="320" y="228">40</text>
+          <text x="460" y="228">60</text>
+          <text x="600" y="228">80</text>
+          <text x="732" y="228">100</text>
+        </g>
+        <g stroke="#e5e5e5" stroke-width="1">
+          <line x1="180" y1="30" x2="180" y2="210"/>
+          <line x1="320" y1="30" x2="320" y2="210"/>
+          <line x1="460" y1="30" x2="460" y2="210"/>
+          <line x1="600" y1="30" x2="600" y2="210"/>
+        </g>
+
+        <!-- bell curve: mean 65 -> x=495, stdev 3.5 -> ~24.5px -->
+        <path d="M 40,210
+                 C 300,210 400,210 430,205
+                 C 455,198 470,60 495,60
+                 C 520,60 535,198 560,205
+                 C 590,210 690,210 740,210"
+              fill="#f5f5f5" stroke="#888" stroke-width="1"/>
+
+        <!-- mean marker -->
+        <line x1="495" y1="30" x2="495" y2="210" stroke="#888" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="495" y="22" class="mono" font-size="10" fill="#888" text-anchor="middle">μ 65.0</text>
+
+        <!-- team raw_merge marker (71.5 -> x = 40+71.5*7=540.5) -->
+        <line x1="540" y1="55" x2="540" y2="210" stroke="#000" stroke-width="1.5"/>
+        <circle cx="540" cy="210" r="4" fill="#000"/>
+        <text x="528" y="49" class="mono" font-size="11" fill="#000" text-anchor="end" font-weight="600">71.5 raw</text>
+
+        <!-- final score marker (74.7 -> x=563) -->
+        <line x1="563" y1="40" x2="563" y2="210" stroke="#000" stroke-width="1" stroke-dasharray="1,3"/>
+        <circle cx="563" cy="210" r="3.5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+        <text x="575" y="34" class="mono" font-size="10" fill="#000" text-anchor="start">74.7 final</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="swatch field"></span>field distribution
+          <strong>μ 65.0 · σ 3.5</strong>
+        </div>
+        <div class="legend-item">
+          <span class="swatch team"></span>this team — raw merge
+          <strong>71.5 / 100 (+1.86σ)</strong>
+        </div>
+        <div class="legend-item">
+          raw merge + relative bonus
+          <strong>74.7 / 100 final</strong>
+        </div>
+        <div class="legend-item">
+          rank in domain
+          <strong>3rd of 24</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats-table">
+    <div class="stat-cell">
+      <div class="label">Global Domain Mean</div>
+      <div class="value num">65.0</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Global Domain Std Dev</div>
+      <div class="value num">3.5</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Team Z-Score</div>
+      <div class="value num">+1.86</div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Relative Bonus Applied</div>
+      <div class="value num">+3.2</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>Agent Narrative</h2>
+      <span class="note mono">standard_narratives · infrastructure</span>
+    </div>
+    <div class="narrative">
+      <div>
+        <h3>Summary</h3>
+        <p>
+          vertex-squad's infrastructure layer scores 75.0 on deterministic
+          rule checks and 66.3 on semantic review, merging to a raw score
+          of 71.5 — 1.86 standard deviations above the 24-team field mean
+          of 65.0. The deterministic checker found a complete
+          multi-stage Dockerfile, pinned base images, and a working
+          docker-compose stack for local development, which accounts for
+          most of the deterministic strength. The semantic reviewers were
+          more measured: they credit the CI pipeline for running tests on
+          every push but flag that the pipeline has no separate build
+          artifact stage, so the same install runs three times across
+          jobs.
+        </p>
+        <p>
+          The +3.2 relative bonus reflects that this team's raw merge sits
+          well clear of the pack rather than clustered near the mean —
+          only two other teams score higher in this domain. The final
+          domain score of 74.7 is the number carried into the weighted
+          leaderboard total.
+        </p>
+      </div>
+      <div>
+        <h3>Key Risks</h3>
+        <ul class="risk-list">
+          <li>
+            <span class="sev high">HIGH</span>
+            <span>No IaC state locking configured — the Terraform
+            backend uses local state, which will corrupt on any
+            concurrent apply during judging re-runs.</span>
+          </li>
+          <li>
+            <span class="sev">MED</span>
+            <span>Secrets are passed as plain environment variables in
+            docker-compose.yml rather than via a secrets file or vault
+            reference; acceptable for a hackathon, flagged for realism.</span>
+          </li>
+          <li>
+            <span class="sev">MED</span>
+            <span>CI pipeline reinstalls dependencies in every job with
+            no cache step, adding roughly four minutes to each run.</span>
+          </li>
+          <li>
+            <span class="sev">LOW</span>
+            <span>Dockerfile does not set a non-root USER, so the
+            container runs as root by default.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="mono">generated_by: samgraha · report-pipeline v0.3</span>
+    <span class="mono">page 4 / 31 · team-final-summary deck</span>
+  </footer>
+
+</div>

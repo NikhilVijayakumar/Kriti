@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Infrastructure Domain Summary — nighthawk-ml-pipeline</title>
+<style>
+  :root{
+    --bg:#f7f8fa;
+    --panel:#ffffff;
+    --border:#dde1e6;
+    --border-strong:#c3c9d1;
+    --text:#1a1f28;
+    --text-mute:#5b6472;
+    --text-faint:#8891a0;
+    --accent:#2f5fd6;
+    --accent-soft:#e8edfc;
+    --good:#1a7f4e;
+    --warn:#a35a00;
+    --bad:#b13434;
+    --mono: "SFMono-Regular", "Consolas", "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{font-size:14px;line-height:1.5;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 32px 80px;}
+
+  /* ---- top bar ---- */
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--text);padding-bottom:14px;margin-bottom:22px;}
+  .crumb{font-size:12px;color:var(--text-faint);letter-spacing:.02em;margin-bottom:6px;}
+  .crumb b{color:var(--text-mute);font-weight:600;}
+  .title-row{display:flex;align-items:baseline;gap:10px;}
+  h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .domain-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--accent-soft);color:var(--accent);border:1px solid #c6d4f7;border-radius:3px;padding:2px 7px;}
+  .meta-right{text-align:right;font-size:12px;color:var(--text-mute);}
+  .meta-right .repo{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600;}
+
+  /* ---- score header ---- */
+  .score-hero{display:grid;grid-template-columns:220px 1fr;gap:0;border:1px solid var(--border);background:var(--panel);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+  .score-hero .final{background:#12203f;color:#fff;padding:22px 24px;display:flex;flex-direction:column;justify-content:center;}
+  .final .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9fb3e0;margin-bottom:6px;}
+  .final .num{font-family:var(--mono);font-size:46px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;}
+  .final .sub{font-size:11px;color:#9fb3e0;margin-top:8px;}
+  .breakdown{display:grid;grid-template-columns:repeat(5,1fr);}
+  .breakdown .cell{padding:16px 18px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;}
+  .breakdown .cell:first-child{border-left:none;}
+  .breakdown .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin-bottom:5px;}
+  .breakdown .v{font-family:var(--mono);font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .breakdown .v.pos{color:var(--good);}
+  .breakdown .w{font-size:10.5px;color:var(--text-faint);margin-top:3px;}
+
+  /* ---- section shell ---- */
+  section{margin-bottom:26px;}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border-strong);padding-bottom:6px;margin-bottom:12px;}
+  .sec-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin:0;color:var(--text-mute);font-weight:700;}
+  .sec-head .note{font-size:11px;color:var(--text-faint);}
+
+  /* ---- stats table ---- */
+  table.stats{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  table.stats th, table.stats td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;}
+  table.stats th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:600;background:#fafbfc;}
+  table.stats tr:last-child td{border-bottom:none;}
+  table.stats td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:600;}
+  table.stats td.desc{color:var(--text-mute);font-size:12.5px;}
+
+  /* ---- chart ---- */
+  .chart-panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:18px 20px 12px;}
+  .chart-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--text-mute);margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
+  .chart-legend .item{display:flex;align-items:center;gap:6px;}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;flex:none;}
+  .swatch.band{background:#d7e2fb;border:1px solid #b7c8f2;}
+  .swatch.mean{background:var(--text-faint);}
+  .swatch.raw{background:#8a94a6;border:2px solid #556074;border-radius:50%;}
+  .swatch.final{background:var(--accent);border-radius:50%;}
+
+  /* ---- narrative ---- */
+  .narrative .block{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;padding:14px 18px;margin-bottom:12px;}
+  .narrative .block.risk{border-left-color:var(--bad);}
+  .narrative .block.rec{border-left-color:var(--good);}
+  .narrative h3{font-size:13px;margin:0 0 8px;font-weight:700;}
+  .narrative p{margin:0 0 8px;color:#333a45;font-size:13.5px;line-height:1.65;}
+  .narrative p:last-child{margin-bottom:0;}
+  .narrative ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:#333a45;}
+  .narrative li{margin-bottom:4px;}
+
+  footer{margin-top:32px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);display:flex;justify-content:space-between;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <div class="crumb">Python Hackathon Audit &nbsp;/&nbsp; Team Report &nbsp;/&nbsp; <b>Infrastructure</b></div>
+      <div class="title-row">
+        <h1>Infrastructure — Domain Summary</h1>
+        <span class="domain-tag">Domain 01 / 10</span>
+      </div>
+    </div>
+    <div class="meta-right">
+      <div>Repository</div>
+      <div class="repo" id="repo-name">nighthawk-ml-pipeline</div>
+      <div>Evaluated 2026-07-18</div>
+    </div>
+  </div>
+
+  <div class="score-hero">
+    <div class="final">
+      <div class="label">Final Domain Score</div>
+      <div class="num">73.5</div>
+      <div class="sub">/ 100 · counts toward leaderboard aggregate</div>
+    </div>
+    <div class="breakdown">
+      <div class="cell">
+        <div class="k">Deterministic</div>
+        <div class="v">74.5</div>
+        <div class="w">weight 0.60</div>
+      </div>
+      <div class="cell">
+        <div class="k">Semantic (LLM avg)</div>
+        <div class="v">64.0</div>
+        <div class="w">weight 0.40</div>
+      </div>
+      <div class="cell">
+        <div class="k">Raw Merged Score</div>
+        <div class="v">70.3</div>
+        <div class="w">0.60·det + 0.40·sem</div>
+      </div>
+      <div class="cell">
+        <div class="k">Z-Score</div>
+        <div class="v">+0.83</div>
+        <div class="w">vs. field, σ units</div>
+      </div>
+      <div class="cell">
+        <div class="k">Relative Bonus</div>
+        <div class="v pos">+3.2</div>
+        <div class="w">applied to raw merge</div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Aggregation</h2>
+      <span class="note">rule-checker (60%) + multi-model semantic judgment (40%)</span>
+    </div>
+    <table class="stats">
+      <thead><tr><th>Metric</th><th>Description</th><th style="text-align:right;">Value</th></tr></thead>
+      <tbody>
+        <tr><td>Deterministic Score</td><td class="desc">Static rule-checks: Dockerfile presence, pinned dependencies, CI config validity, IaC lint</td><td class="num">74.5</td></tr>
+        <tr><td>Semantic Score</td><td class="desc">Averaged judgment across 3 LLM evaluators on config quality &amp; reproducibility intent</td><td class="num">64.0</td></tr>
+        <tr><td>Raw Merged Score</td><td class="desc">0.60 × 74.5 + 0.40 × 64.0</td><td class="num">70.3</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Hackathon Competition Stats</h2>
+      <span class="note">how this team compares to the field, this domain only</span>
+    </div>
+    <table class="stats">
+      <thead><tr><th>Metric</th><th>Description</th><th style="text-align:right;">Value</th></tr></thead>
+      <tbody>
+        <tr><td>Global Domain Mean</td><td class="desc">Mean infrastructure score across all 24 evaluated teams</td><td class="num">63.6</td></tr>
+        <tr><td>Global Domain Std Dev</td><td class="desc">Spread of infrastructure scores across all 24 teams</td><td class="num">8.1</td></tr>
+        <tr><td>Team Z-Score</td><td class="desc">(70.3 − 63.6) / 8.1</td><td class="num">+0.83</td></tr>
+        <tr><td>Relative Bonus Applied</td><td class="desc">Standout-performance adjustment added to raw merge</td><td class="num" style="color:var(--good);">+3.2</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Score vs. Field Distribution</h2>
+      <span class="note">infrastructure domain, all 24 teams</span>
+    </div>
+    <div class="chart-panel">
+      <svg id="dist-chart" viewBox="0 0 800 210" width="100%" role="img" aria-label="Distribution of infrastructure scores across the field, with this team's raw and final score marked"></svg>
+      <div class="chart-legend">
+        <span class="item"><span class="swatch band"></span> ±1 σ field band (55.5 – 71.7)</span>
+        <span class="item"><span class="swatch mean"></span> field mean (63.6)</span>
+        <span class="item"><span class="swatch raw"></span> raw merged score (70.3)</span>
+        <span class="item"><span class="swatch final"></span> final score after bonus (73.5)</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="sec-head">
+      <h2>Agent Narrative</h2>
+      <span class="note">generated from deterministic findings + semantic transcripts</span>
+    </div>
+
+    <div class="block">
+      <h3>Summary</h3>
+      <p>nighthawk-ml-pipeline lands above the field median in infrastructure, driven primarily by strong deterministic hygiene rather than semantic polish. The repository ships a multi-stage Dockerfile with a pinned base image (<code>python:3.11.4-slim</code>), a fully locked dependency tree via <code>requirements.lock</code>, and a working GitHub Actions pipeline that runs lint, type-check, and build on every push. These are exactly the checks the rule-based pass rewards, and it shows: the deterministic score of 74.5 sits comfortably in the top third of submissions.</p>
+      <p>The semantic score of 64.0 pulls the raw merge down. The LLM evaluators consistently flagged that infrastructure choices are correct but under-explained — no ADRs, no comments in the CI YAML justifying job ordering, no README section on local environment setup. The gap between deterministic and semantic (74.5 vs. 64.0, a 10.5-point spread) is the widest of any team in the top quartile, suggesting the infrastructure works but wasn't built to be legible to a reviewer or a new teammate.</p>
+    </div>
+
+    <div class="block risk">
+      <h3>Key Risks</h3>
+      <p>Two risks recur across the deterministic and semantic passes:</p>
+      <ul>
+        <li><b>No environment parity check.</b> The Dockerfile pins the base image but not the OS-level apt packages installed inside it; a rebuild six months from now is not guaranteed to be bit-identical. This is a common latent-drift risk that the rule-checker cannot fully catch and the semantic reviewers flagged independently in two of three transcripts.</li>
+        <li><b>Secrets handling is implicit.</b> The CI workflow references the API key correctly via <code>secrets.MODEL_API_KEY</code>, but there is no documented rotation policy or scoping note, and the same key appears to be used across both the training and inference jobs rather than being scoped per job.</li>
+      </ul>
+    </div>
+
+    <div class="block rec">
+      <h3>Recommendations</h3>
+      <p>Closing the deterministic–semantic gap is the highest-leverage move available: a short <code>docs/infra.md</code> covering the container build strategy, CI job dependency graph, and secret scopes would likely move the semantic score into the high 70s without touching a single config file. Pinning apt packages via a lockfile (e.g. <code>apt-get install -y --no-install-recommends $(cat apt-packages.lock)</code>) would close the reproducibility gap flagged above and is a same-day fix.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Infrastructure Domain Summary · 01-infrastructure-summary</span>
+    <span>Design demo — Arena-reference direction · sample data, no hackathon has run yet</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  // Plot geometry
+  var vbW = 800, vbH = 210;
+  var padL = 46, padR = 30, baseline = 168, peak = 128;
+  var xMin = 0, xMax = 100;
+  var mean = 63.6, stdev = 8.1;
+  var rawScore = 70.3, finalScore = 73.5;
+
+  function xToPx(x){ return padL + (x - xMin) / (xMax - xMin) * (vbW - padL - padR); }
+  function gauss(x){ return Math.exp(-0.5 * Math.pow((x - mean) / stdev, 2)); }
+  function yToPx(g){ return baseline - g * peak; }
+
+  var svg = document.getElementById('dist-chart');
+  var ns = 'http://www.w3.org/2000/svg';
+
+  // axis
+  var axis = document.createElementNS(ns, 'line');
+  axis.setAttribute('x1', padL); axis.setAttribute('x2', vbW - padR);
+  axis.setAttribute('y1', baseline); axis.setAttribute('y2', baseline);
+  axis.setAttribute('stroke', '#c3c9d1'); axis.setAttribute('stroke-width', '1');
+  svg.appendChild(axis);
+
+  // tick marks + labels every 20
+  for (var t = 0; t <= 100; t += 20) {
+    var px = xToPx(t);
+    var tick = document.createElementNS(ns, 'line');
+    tick.setAttribute('x1', px); tick.setAttribute('x2', px);
+    tick.setAttribute('y1', baseline); tick.setAttribute('y2', baseline + 5);
+    tick.setAttribute('stroke', '#c3c9d1');
+    svg.appendChild(tick);
+    var lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('x', px); lbl.setAttribute('y', baseline + 18);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('font-size', '10.5'); lbl.setAttribute('fill', '#8891a0');
+    lbl.setAttribute('font-family', 'SFMono-Regular, Consolas, monospace');
+    lbl.textContent = t;
+    svg.appendChild(lbl);
+  }
+
+  // ±1 stdev band
+  var bandX0 = xToPx(mean - stdev), bandX1 = xToPx(mean + stdev);
+  var band = document.createElementNS(ns, 'rect');
+  band.setAttribute('x', bandX0); band.setAttribute('y', 8);
+  band.setAttribute('width', bandX1 - bandX0); band.setAttribute('height', baseline - 8);
+  band.setAttribute('fill', '#e8edfc');
+  svg.appendChild(band);
+
+  // gaussian curve (fill + stroke)
+  var pts = [];
+  for (var x = xMin; x <= xMax; x += 1) {
+    pts.push(xToPx(x) + ',' + yToPx(gauss(x)));
+  }
+  var areaPath = 'M ' + xToPx(xMin) + ',' + baseline + ' L ' + pts.join(' L ') + ' L ' + xToPx(xMax) + ',' + baseline + ' Z';
+  var area = document.createElementNS(ns, 'path');
+  area.setAttribute('d', areaPath);
+  area.setAttribute('fill', '#eef1f6');
+  area.setAttribute('stroke', 'none');
+  svg.appendChild(area);
+
+  var curve = document.createElementNS(ns, 'polyline');
+  curve.setAttribute('points', pts.join(' '));
+  curve.setAttribute('fill', 'none');
+  curve.setAttribute('stroke', '#8891a0');
+  curve.setAttribute('stroke-width', '1.5');
+  svg.appendChild(curve);
+
+  // mean line
+  var meanX = xToPx(mean);
+  var meanLine = document.createElementNS(ns, 'line');
+  meanLine.setAttribute('x1', meanX); meanLine.setAttribute('x2', meanX);
+  meanLine.setAttribute('y1', baseline); meanLine.setAttribute('y2', yToPx(gauss(mean)));
+  meanLine.setAttribute('stroke', '#8891a0'); meanLine.setAttribute('stroke-dasharray', '3,3');
+  svg.appendChild(meanLine);
+
+  // raw score marker
+  var rawX = xToPx(rawScore);
+  var rawY = yToPx(gauss(rawScore));
+  var rawLine = document.createElementNS(ns, 'line');
+  rawLine.setAttribute('x1', rawX); rawLine.setAttribute('x2', rawX);
+  rawLine.setAttribute('y1', baseline); rawLine.setAttribute('y2', rawY);
+  rawLine.setAttribute('stroke', '#556074'); rawLine.setAttribute('stroke-width', '1.5');
+  svg.appendChild(rawLine);
+  var rawDot = document.createElementNS(ns, 'circle');
+  rawDot.setAttribute('cx', rawX); rawDot.setAttribute('cy', rawY); rawDot.setAttribute('r', '4.5');
+  rawDot.setAttribute('fill', '#8a94a6'); rawDot.setAttribute('stroke', '#556074'); rawDot.setAttribute('stroke-width', '2');
+  svg.appendChild(rawDot);
+
+  // final (bonus-adjusted) score marker + connecting arrow
+  var finalX = xToPx(finalScore);
+  var arrowY = baseline + 18;
+  var arrow = document.createElementNS(ns, 'line');
+  arrow.setAttribute('x1', rawX); arrow.setAttribute('x2', finalX - 6);
+  arrow.setAttribute('y1', arrowY); arrow.setAttribute('y2', arrowY);
+  arrow.setAttribute('stroke', '#2f5fd6'); arrow.setAttribute('stroke-width', '1.5');
+  arrow.setAttribute('marker-end', 'url(#arrowhead)');
+  svg.appendChild(arrow);
+
+  var defs = document.createElementNS(ns, 'defs');
+  defs.innerHTML = '<marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2f5fd6"/></marker>';
+  svg.insertBefore(defs, svg.firstChild);
+
+  var bonusLbl = document.createElementNS(ns, 'text');
+  bonusLbl.setAttribute('x', (rawX + finalX) / 2); bonusLbl.setAttribute('y', arrowY - 5);
+  bonusLbl.setAttribute('text-anchor', 'middle'); bonusLbl.setAttribute('font-size', '10.5');
+  bonusLbl.setAttribute('fill', '#2f5fd6'); bonusLbl.setAttribute('font-weight', '700');
+  bonusLbl.textContent = '+3.2 bonus';
+  svg.appendChild(bonusLbl);
+
+  var finalDot = document.createElementNS(ns, 'circle');
+  finalDot.setAttribute('cx', finalX); finalDot.setAttribute('cy', arrowY); finalDot.setAttribute('r', '5');
+  finalDot.setAttribute('fill', '#2f5fd6');
+  svg.appendChild(finalDot);
+
+  var finalLbl = document.createElementNS(ns, 'text');
+  finalLbl.setAttribute('x', finalX); finalLbl.setAttribute('y', arrowY + 16);
+  finalLbl.setAttribute('text-anchor', 'middle'); finalLbl.setAttribute('font-size', '11');
+  finalLbl.setAttribute('font-weight', '700'); finalLbl.setAttribute('fill', '#12203f');
+  finalLbl.setAttribute('font-family', 'SFMono-Regular, Consolas, monospace');
+  finalLbl.textContent = '73.5 final';
+  svg.appendChild(finalLbl);
+
+})();
+</script>
+</body>
+</html>

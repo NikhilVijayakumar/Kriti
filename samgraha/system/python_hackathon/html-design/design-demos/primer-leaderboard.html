@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Global Leaderboard · Python Hackathon</title>
+<style>
+  :root{
+    --canvas: #ffffff;
+    --canvas-subtle: #f6f8fa;
+    --canvas-inset: #eaeef2;
+    --border-default: #d0d7de;
+    --border-muted: #d8dee4;
+    --fg-default: #1f2328;
+    --fg-muted: #656d76;
+    --fg-subtle: #6e7781;
+    --accent-fg: #0969da;
+    --accent-subtle: #ddf4ff;
+    --success-fg: #1a7f37;
+    --success-subtle: #dafbe1;
+    --success-emphasis: #2da44e;
+    --danger-fg: #cf222e;
+    --danger-subtle: #ffebe9;
+    --danger-emphasis: #cf222e;
+    --attention-fg: #9a6700;
+    --attention-subtle: #fff8c5;
+    --attention-emphasis: #bf8700;
+    --neutral-subtle: #eaeef2;
+    --shadow-sm: 0 1px 0 rgba(31,35,40,0.04);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--canvas-subtle);
+    color:var(--fg-default);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono, code, .num{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  .page{
+    max-width:1240px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+  }
+
+  .page-header{
+    background:var(--canvas);
+    border:1px solid var(--border-default);
+    border-radius:6px;
+    padding:20px 24px;
+    margin-bottom:24px;
+    box-shadow:var(--shadow-sm);
+  }
+  .eyebrow{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--fg-muted);
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:24px;
+    font-weight:600;
+    margin:0 0 14px;
+    letter-spacing:-0.01em;
+  }
+  .meta-row{
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+    padding-top:12px;
+    border-top:1px solid var(--border-muted);
+  }
+  .meta-item{display:flex; flex-direction:column; gap:2px;}
+  .meta-label{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--fg-muted);}
+  .meta-value{font-size:13px; color:var(--fg-default);}
+
+  section{
+    background:var(--canvas);
+    border:1px solid var(--border-default);
+    border-radius:6px;
+    margin-bottom:24px;
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+  }
+  .section-header{
+    padding:12px 20px;
+    border-bottom:1px solid var(--border-muted);
+    background:var(--canvas-subtle);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .section-header h2{
+    font-size:14px;
+    font-weight:600;
+    margin:0;
+  }
+  .section-header .hint{font-size:12px; color:var(--fg-muted);}
+  .section-body{padding:20px;}
+
+  /* ---------- badges ---------- */
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:2px 8px;
+    border-radius:2em;
+    font-size:12px;
+    font-weight:500;
+    line-height:18px;
+    white-space:nowrap;
+  }
+  .badge::before{content:""; width:8px; height:8px; border-radius:50%;}
+  .badge.success{background:var(--success-subtle); color:var(--success-fg);}
+  .badge.success::before{background:var(--success-emphasis);}
+  .badge.attention{background:var(--attention-subtle); color:var(--attention-fg);}
+  .badge.attention::before{background:var(--attention-emphasis);}
+  .badge.danger{background:var(--danger-subtle); color:var(--danger-fg);}
+  .badge.danger::before{background:var(--danger-emphasis);}
+
+  /* ---------- leaderboard table ---------- */
+  .table-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; min-width:1080px;}
+  .leaderboard th, .leaderboard td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--border-muted);
+    font-size:12.5px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .leaderboard thead th{
+    text-align:center;
+    color:var(--fg-muted);
+    font-weight:600;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    background:var(--canvas-subtle);
+    border-bottom:1px solid var(--border-default);
+    cursor:help;
+  }
+  .leaderboard th.col-rank, .leaderboard td.col-rank{text-align:center; width:44px;}
+  .leaderboard th.col-team, .leaderboard td.col-team{text-align:left; width:230px;}
+  .leaderboard th.col-final, .leaderboard td.col-final{text-align:right; padding-right:16px;}
+  .leaderboard tbody tr:hover{background:var(--canvas-subtle);}
+  .leaderboard tbody tr.rank-1{background:var(--success-subtle);}
+  .leaderboard tbody tr.rank-1:hover{background:#c9f6d5;}
+  .rank-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%;
+    font-weight:700; font-size:12px;
+    background:var(--canvas-inset); color:var(--fg-muted);
+  }
+  .rank-num.top{background:#1a7f37; color:#fff;}
+  .team-name{font-weight:500;}
+  .team-repo{display:block; color:var(--fg-muted); font-size:11.5px; margin-top:1px;}
+  .final-score{font-weight:700; font-size:14px;}
+
+  .cell-score{
+    display:inline-block;
+    min-width:44px;
+    padding:2px 6px;
+    border-radius:4px;
+    font-weight:600;
+  }
+  .cell-score.success{background:var(--success-subtle); color:var(--success-fg);}
+  .cell-score.attention{background:var(--attention-subtle); color:var(--attention-fg);}
+  .cell-score.danger{background:var(--danger-subtle); color:var(--danger-fg);}
+
+  .legend-row{
+    padding:12px 20px;
+    border-top:1px solid var(--border-muted);
+    font-size:11.5px;
+    color:var(--fg-muted);
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 18px;
+    background:var(--canvas-subtle);
+  }
+  .legend-row b{color:var(--fg-default); font-weight:600;}
+  .status-key{
+    padding:12px 20px 4px;
+    display:flex;
+    gap:20px;
+    font-size:12px;
+    color:var(--fg-muted);
+    flex-wrap:wrap;
+  }
+  .status-key .item{display:flex; align-items:center; gap:6px;}
+  .status-key .swatch{width:10px; height:10px; border-radius:2px;}
+
+  /* ---------- rank distribution chart ---------- */
+  .rank-chart{padding:4px 0;}
+  .rank-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .rank-row:last-child{margin-bottom:0;}
+  .rank-row .rlabel{width:210px; flex-shrink:0; font-size:12.5px; display:flex; align-items:center; gap:8px;}
+  .rank-row .rlabel .team-repo-inline{color:var(--fg-muted); font-size:11px;}
+  .rank-row .bar-track{flex:1; background:var(--canvas-inset); border-radius:3px; height:18px; position:relative;}
+  .rank-row .bar-fill{height:100%; border-radius:3px;}
+  .rank-row .bar-fill.success{background:var(--success-emphasis);}
+  .rank-row .bar-fill.attention{background:var(--attention-emphasis);}
+  .rank-row .bar-fill.danger{background:var(--danger-emphasis);}
+  .rank-row .rvalue{width:56px; text-align:right; font-weight:600; font-size:12.5px; flex-shrink:0;}
+
+  /* ---------- statistical overview ---------- */
+  .stat-table{width:100%; border-collapse:collapse;}
+  .stat-table th, .stat-table td{
+    padding:8px 10px;
+    border-bottom:1px solid var(--border-muted);
+    font-size:12.5px;
+  }
+  .stat-table thead th{
+    text-align:left; color:var(--fg-muted); font-weight:600; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .stat-table td.domain-name{font-weight:500; width:150px;}
+  .stat-table td.num{width:70px;}
+  .stat-table td.spread{width:auto;}
+
+  /* ---------- narrative ---------- */
+  .narrative h3{
+    font-size:14px; font-weight:600; margin:0 0 8px;
+    padding-bottom:6px; border-bottom:1px solid var(--border-muted);
+  }
+  .narrative .block{margin-bottom:22px;}
+  .narrative .block:last-child{margin-bottom:0;}
+  .narrative p{margin:0; font-size:13.5px; line-height:1.65;}
+  .narrative code{background:var(--canvas-inset); padding:1px 5px; border-radius:4px; font-size:12.5px;}
+
+  footer{text-align:center; font-size:12px; color:var(--fg-subtle); padding-top:8px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Cross-Team Report</div>
+    <h1>Python Hackathon — Global Leaderboard</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Report Date</span>
+        <span class="meta-value mono">2026-07-19</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Total Teams Evaluated</span>
+        <span class="meta-value mono">7</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Domains Scored</span>
+        <span class="meta-value mono">10</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Score Basis</span>
+        <span class="meta-value">weighted 0–100 per domain, rescaled to /20 final</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header">
+      <h2>Final Competition Results</h2>
+      <span class="hint">column headers abbreviated — hover for full domain name, legend below</span>
+    </div>
+    <div class="table-scroll">
+      <table class="leaderboard">
+        <thead>
+          <tr>
+            <th class="col-rank">Rank</th>
+            <th class="col-team">Team / Repo</th>
+            <th class="col-final">Total /20</th>
+            <th title="Infrastructure">Infra</th>
+            <th title="Engineering">Eng</th>
+            <th title="Testing">Test</th>
+            <th title="Documentation">Doc</th>
+            <th title="Security">Sec</th>
+            <th title="MLOps">MLOps</th>
+            <th title="Runtime">Run</th>
+            <th title="Team Workflow">T-W</th>
+            <th title="Data Quality">D-Q</th>
+            <th title="AI Explanations">AI-Expl</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="rank-1">
+            <td class="col-rank"><span class="rank-num top">1</span></td>
+            <td class="col-team"><span class="team-name">Vision Stack</span><span class="team-repo mono">neural-forge/vision-stack</span></td>
+            <td class="col-final"><span class="final-score num">17.1</span></td>
+            <td><span class="cell-score success num">88.2</span></td>
+            <td><span class="cell-score success num">85.0</span></td>
+            <td><span class="cell-score success num">91.4</span></td>
+            <td><span class="cell-score attention num">76.3</span></td>
+            <td><span class="cell-score success num">82.7</span></td>
+            <td><span class="cell-score success num">89.5</span></td>
+            <td><span class="cell-score success num">84.0</span></td>
+            <td><span class="cell-score attention num">79.8</span></td>
+            <td><span class="cell-score success num">87.1</span></td>
+            <td><span class="cell-score success num">90.2</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">2</span></td>
+            <td class="col-team"><span class="team-name">Data Forge</span><span class="team-repo mono">quantum-stack/data-forge</span></td>
+            <td class="col-final"><span class="final-score num">15.8</span></td>
+            <td><span class="cell-score success num">82.0</span></td>
+            <td><span class="cell-score attention num">79.5</span></td>
+            <td><span class="cell-score attention num">75.8</span></td>
+            <td><span class="cell-score success num">88.2</span></td>
+            <td><span class="cell-score attention num">71.0</span></td>
+            <td><span class="cell-score attention num">66.4</span></td>
+            <td><span class="cell-score attention num">78.9</span></td>
+            <td><span class="cell-score success num">84.1</span></td>
+            <td><span class="cell-score success num">91.7</span></td>
+            <td><span class="cell-score attention num">73.5</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">3</span></td>
+            <td class="col-team"><span class="team-name">Pyorbit Infra</span><span class="team-repo mono">kestrel-labs/pyorbit-infra</span></td>
+            <td class="col-final"><span class="final-score num">13.9</span></td>
+            <td><span class="cell-score attention num">74.7</span></td>
+            <td><span class="cell-score attention num">70.5</span></td>
+            <td><span class="cell-score attention num">68.2</span></td>
+            <td><span class="cell-score attention num">72.0</span></td>
+            <td><span class="cell-score attention num">65.8</span></td>
+            <td><span class="cell-score attention num">60.3</span></td>
+            <td><span class="cell-score attention num">71.4</span></td>
+            <td><span class="cell-score attention num">77.9</span></td>
+            <td><span class="cell-score attention num">69.6</span></td>
+            <td><span class="cell-score attention num">63.1</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">4</span></td>
+            <td class="col-team"><span class="team-name">Stream Proc</span><span class="team-repo mono">redshift-crew/stream-proc</span></td>
+            <td class="col-final"><span class="final-score num">13.3</span></td>
+            <td><span class="cell-score attention num">68.9</span></td>
+            <td><span class="cell-score attention num">72.3</span></td>
+            <td><span class="cell-score attention num">70.1</span></td>
+            <td><span class="cell-score attention num">64.7</span></td>
+            <td><span class="cell-score attention num">69.5</span></td>
+            <td><span class="cell-score danger num">58.8</span></td>
+            <td><span class="cell-score attention num">73.2</span></td>
+            <td><span class="cell-score attention num">66.4</span></td>
+            <td><span class="cell-score danger num">61.9</span></td>
+            <td><span class="cell-score danger num">59.3</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">5</span></td>
+            <td class="col-team"><span class="team-name">ML Pipeline</span><span class="team-repo mono">byte-brigade/ml-pipeline</span></td>
+            <td class="col-final"><span class="final-score num">12.3</span></td>
+            <td><span class="cell-score danger num">60.1</span></td>
+            <td><span class="cell-score danger num">58.4</span></td>
+            <td><span class="cell-score attention num">62.9</span></td>
+            <td><span class="cell-score danger num">55.0</span></td>
+            <td><span class="cell-score danger num">59.7</span></td>
+            <td><span class="cell-score attention num">71.2</span></td>
+            <td><span class="cell-score attention num">64.3</span></td>
+            <td><span class="cell-score attention num">60.8</span></td>
+            <td><span class="cell-score danger num">57.5</span></td>
+            <td><span class="cell-score attention num">66.0</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">6</span></td>
+            <td class="col-team"><span class="team-name">Edge AI</span><span class="team-repo mono">synapse-collective/edge-ai</span></td>
+            <td class="col-final"><span class="final-score num">11.6</span></td>
+            <td><span class="cell-score danger num">55.3</span></td>
+            <td><span class="cell-score attention num">61.7</span></td>
+            <td><span class="cell-score danger num">49.8</span></td>
+            <td><span class="cell-score danger num">58.1</span></td>
+            <td><span class="cell-score danger num">52.4</span></td>
+            <td><span class="cell-score attention num">60.0</span></td>
+            <td><span class="cell-score danger num">57.6</span></td>
+            <td><span class="cell-score attention num">63.9</span></td>
+            <td><span class="cell-score danger num">54.2</span></td>
+            <td><span class="cell-score attention num">68.5</span></td>
+          </tr>
+          <tr>
+            <td class="col-rank"><span class="rank-num">7</span></td>
+            <td class="col-team"><span class="team-name">API Mesh</span><span class="team-repo mono">voltaic-systems/api-mesh</span></td>
+            <td class="col-final"><span class="final-score num">9.7</span></td>
+            <td><span class="cell-score danger num">45.2</span></td>
+            <td><span class="cell-score danger num">51.8</span></td>
+            <td><span class="cell-score danger num">47.3</span></td>
+            <td><span class="cell-score attention num">60.5</span></td>
+            <td><span class="cell-score danger num">43.9</span></td>
+            <td><span class="cell-score danger num">38.6</span></td>
+            <td><span class="cell-score danger num">52.1</span></td>
+            <td><span class="cell-score danger num">55.4</span></td>
+            <td><span class="cell-score danger num">48.7</span></td>
+            <td><span class="cell-score danger num">41.0</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend-row">
+      <span><b>Inf</b> Infrastructure</span>
+      <span><b>Eng</b> Engineering</span>
+      <span><b>Test</b> Testing</span>
+      <span><b>Doc</b> Documentation</span>
+      <span><b>Sec</b> Security</span>
+      <span><b>MLOps</b> MLOps</span>
+      <span><b>Run</b> Runtime</span>
+      <span><b>T-W</b> Team Workflow</span>
+      <span><b>D-Q</b> Data Quality</span>
+      <span><b>AI-Expl</b> AI Explanations</span>
+    </div>
+    <div class="status-key">
+      <span class="item"><span class="swatch" style="background:#dafbe1; border:1px solid #1a7f37;"></span>&ge; 80 · Success</span>
+      <span class="item"><span class="swatch" style="background:#fff8c5; border:1px solid #9a6700;"></span>60–79.9 · Attention</span>
+      <span class="item"><span class="swatch" style="background:#ffebe9; border:1px solid #cf222e;"></span>&lt; 60 · Danger</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header">
+      <h2>Rank Distribution</h2>
+      <span class="hint">final score /20, all 7 teams</span>
+    </div>
+    <div class="section-body">
+      <div class="rank-chart">
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num top">1</span> Vision Stack <span class="team-repo-inline mono">neural-forge/vision-stack</span></div>
+          <div class="bar-track"><div class="bar-fill success" style="width:85.5%;"></div></div>
+          <div class="rvalue num">17.1</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">2</span> Data Forge <span class="team-repo-inline mono">quantum-stack/data-forge</span></div>
+          <div class="bar-track"><div class="bar-fill attention" style="width:79%;"></div></div>
+          <div class="rvalue num">15.8</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">3</span> Pyorbit Infra <span class="team-repo-inline mono">kestrel-labs/pyorbit-infra</span></div>
+          <div class="bar-track"><div class="bar-fill attention" style="width:69.5%;"></div></div>
+          <div class="rvalue num">13.9</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">4</span> Stream Proc <span class="team-repo-inline mono">redshift-crew/stream-proc</span></div>
+          <div class="bar-track"><div class="bar-fill attention" style="width:66.5%;"></div></div>
+          <div class="rvalue num">13.3</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">5</span> ML Pipeline <span class="team-repo-inline mono">byte-brigade/ml-pipeline</span></div>
+          <div class="bar-track"><div class="bar-fill attention" style="width:61.5%;"></div></div>
+          <div class="rvalue num">12.3</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">6</span> Edge AI <span class="team-repo-inline mono">synapse-collective/edge-ai</span></div>
+          <div class="bar-track"><div class="bar-fill attention" style="width:58%;"></div></div>
+          <div class="rvalue num">11.6</div>
+        </div>
+        <div class="rank-row">
+          <div class="rlabel"><span class="rank-num">7</span> API Mesh <span class="team-repo-inline mono">voltaic-systems/api-mesh</span></div>
+          <div class="bar-track"><div class="bar-fill danger" style="width:48.5%;"></div></div>
+          <div class="rvalue num">9.7</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header">
+      <h2>Statistical Overview</h2>
+      <span class="hint">global mean / std dev per domain, with per-team spread (n=7)</span>
+    </div>
+    <div class="section-body" style="padding:0;">
+      <table class="stat-table">
+        <thead>
+          <tr>
+            <th style="width:150px;">Domain</th>
+            <th style="width:70px;">Mean</th>
+            <th style="width:70px;">Std Dev</th>
+            <th>Spread across teams (0–100)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Infra: 88.2,82.0,74.7,68.9,60.1,55.3,45.2 mean 67.8 stdev 14.1 -->
+          <tr>
+            <td class="domain-name">Infrastructure</td>
+            <td class="num">67.8</td>
+            <td class="num">14.1</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="135.6" y1="2" x2="135.6" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="176.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="164.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="149.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="137.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="120.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="110.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="90.4"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- Eng: 85.0,79.5,70.5,72.3,58.4,61.7,51.8 mean 68.5 stdev 10.9 -->
+          <tr>
+            <td class="domain-name">Engineering</td>
+            <td class="num">68.5</td>
+            <td class="num">10.9</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="137.0" y1="2" x2="137.0" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="170.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="159.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="141.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="144.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="116.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="123.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="103.6" cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- Test: 91.4,75.8,68.2,70.1,62.9,49.8,47.3 mean 66.5 stdev 14.1 -->
+          <tr>
+            <td class="domain-name">Testing</td>
+            <td class="num">66.5</td>
+            <td class="num">14.1</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="133.0" y1="2" x2="133.0" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="182.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="151.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="136.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="140.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="125.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="99.6"  cy="10" r="3" fill="#656d76"/>
+                <circle cx="94.6"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- Doc: 76.3,88.2,72.0,64.7,55.0,58.1,60.5 mean 67.8 stdev 10.9 -->
+          <tr>
+            <td class="domain-name">Documentation</td>
+            <td class="num">67.8</td>
+            <td class="num">10.9</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="135.6" y1="2" x2="135.6" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="152.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="176.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="144.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="129.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="110.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="116.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="121.0" cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- Sec: 82.7,71.0,65.8,69.5,59.7,52.4,43.9 mean 63.6 stdev 11.9 -->
+          <tr>
+            <td class="domain-name">Security</td>
+            <td class="num">63.6</td>
+            <td class="num">11.9</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="127.2" y1="2" x2="127.2" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="165.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="142.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="131.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="139.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="119.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="104.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="87.8"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- MLOps: 89.5,66.4,60.3,58.8,71.2,60.0,38.6 mean 63.5 stdev 14.2 -->
+          <tr>
+            <td class="domain-name">MLOps</td>
+            <td class="num">63.5</td>
+            <td class="num">14.2</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="127.0" y1="2" x2="127.0" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="179.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="132.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="120.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="117.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="142.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="120.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="77.2"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- Run: 84.0,78.9,71.4,73.2,64.3,57.6,52.1 mean 68.8 stdev 10.6 -->
+          <tr>
+            <td class="domain-name">Runtime</td>
+            <td class="num">68.8</td>
+            <td class="num">10.6</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="137.6" y1="2" x2="137.6" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="168.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="157.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="142.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="146.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="128.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="115.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="104.2" cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- T-W: 79.8,84.1,77.9,66.4,60.8,63.9,55.4 mean 69.8 stdev 10.0 -->
+          <tr>
+            <td class="domain-name">Team Workflow</td>
+            <td class="num">69.8</td>
+            <td class="num">10.0</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="139.6" y1="2" x2="139.6" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="159.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="168.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="155.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="132.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="121.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="127.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="110.8" cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- D-Q: 87.1,91.7,69.6,61.9,57.5,54.2,48.7 mean 67.2 stdev 15.3 -->
+          <tr>
+            <td class="domain-name">Data Quality</td>
+            <td class="num">67.2</td>
+            <td class="num">15.3</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="134.4" y1="2" x2="134.4" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="174.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="183.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="139.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="123.8" cy="10" r="3" fill="#656d76"/>
+                <circle cx="115.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="108.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="97.4"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+          <!-- AI-E: 90.2,73.5,63.1,59.3,66.0,68.5,41.0 mean 65.9 stdev 13.8 -->
+          <tr>
+            <td class="domain-name">AI Explanations</td>
+            <td class="num">65.9</td>
+            <td class="num">13.8</td>
+            <td class="spread">
+              <svg viewBox="0 0 220 20" width="220" height="20">
+                <line x1="131.8" y1="2" x2="131.8" y2="18" stroke="#0969da" stroke-width="2"/>
+                <circle cx="180.4" cy="10" r="3" fill="#656d76"/>
+                <circle cx="147.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="126.2" cy="10" r="3" fill="#656d76"/>
+                <circle cx="118.6" cy="10" r="3" fill="#656d76"/>
+                <circle cx="132.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="137.0" cy="10" r="3" fill="#656d76"/>
+                <circle cx="82.0"  cy="10" r="3" fill="#656d76"/>
+              </svg>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="section-header"><h2>Competition-Wide Narrative</h2></div>
+    <div class="section-body">
+      <div class="block">
+        <h3>Summary</h3>
+        <p>
+          Seven teams cleared the full 10-domain evaluation this round, with final scores spanning 9.7 to 17.1
+          out of 20 — a 7.4-point spread that separates clean production-grade submissions from prototypes that
+          still function but weren't hardened for review. <code>neural-forge/vision-stack</code> takes first with
+          the only submission to clear "Success" status in more than half its domains (7 of 10 ≥ 80), driven by
+          disciplined testing (91.4) and MLOps practice (89.5). The middle of the table — ranks 3 through 6, a
+          span of just 4.2 points — is dominated by the Attention band: deterministic checks pass, CI is green,
+          but semantic review consistently docks teams for missing operational detail (rollback plans, drift
+          detection, load-tested runtime paths). <code>voltaic-systems/api-mesh</code> finishes last with 8 of
+          10 domains in Danger, reflecting an incomplete submission rather than a poorly executed one.
+        </p>
+      </div>
+      <div class="block">
+        <h3>Key Trends</h3>
+        <p>
+          Security and MLOps carry the lowest field-wide means (63.6 and 63.5) and the widest std devs (11.9 and
+          14.2), making them the two domains where a strong showing separates a team from the pack fastest — a
+          team that clears 80+ in either is virtually guaranteed a top-3 finish, and both correlate more strongly
+          with final rank than any other domain this round. Team Workflow, by contrast, has the tightest spread
+          (std dev 10.0) and the highest floor: even the last-place team clears 55.4, suggesting collaboration
+          hygiene (PR review discipline, commit cadence, issue tracking) is the one dimension nearly every team
+          got right regardless of technical outcome. Documentation remains the most bimodal domain — teams either
+          treat it as a first-class deliverable (88.2, 76.3) or an afterthought (55.0) — with almost no middle
+          ground, unlike the other nine domains which cluster more continuously around their means.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>Global leaderboard · generated report demo · Primer design direction</footer>
+
+</div>
+</body>
+</html>

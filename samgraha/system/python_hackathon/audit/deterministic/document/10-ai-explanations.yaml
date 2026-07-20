@@ -3,30 +3,48 @@ domain: ai-explanations
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 2
-total_weight: 2.0
+total_rules: 3
+total_weight: 3.0
 
-description: "Objective checks for AI text generation capabilities and prompts."
+description: "Rules checking ML explainability documentation and prediction capability coverage."
 
 rules:
   - id: ai-001
-    description: "LLM SDK dependencies present"
-    condition: "requirements.txt or pyproject.toml contains openai, anthropic, or google-generativeai"
-    message: "No standard AI/LLM SDK dependencies found."
+    description: "README documents an explainability/interpretability method"
+    condition: "README.md mentions a recognized interpretability technique"
     severity: warning
     weight: 1.0
     mandatory: false
     evidence:
-      type: dependency_presence
-      packages: [openai, anthropic, google-generativeai, langchain, llama-index]
+      type: regex_match
+      target: README.md
+      patterns: ["SHAP", "LIME", "feature importance", "permutation importance",
+                 "attention weight", "interpretab", "explainab"]
 
   - id: ai-002
-    description: "Prompt templates exist"
-    condition: "repository contains files indicative of prompt engineering (e.g., prompts.py, *.prompt, system_instructions.txt)"
-    message: "No isolated prompt templates found; prompts may be hardcoded or missing."
+    description: "README documents specific prediction capabilities"
+    condition: "README.md mentions match prediction or player prediction capabilities"
     severity: warning
     weight: 1.0
     mandatory: false
     evidence:
-      type: file_presence
-      patterns: ["*prompt*", "system_instructions*", "instructions*"]
+      type: regex_match
+      target: README.md
+      patterns: ["match winner", "win probability", "draw probability",
+                 "scoreline", "first team to score", "total goals",
+                 "both teams score", "goal scoring", "expected goals",
+                 "assist probability", "clean sheet", "player predict"]
+
+  - id: ai-003
+    description: "Prediction methodology documented in README"
+    condition: "README.md explains how predictions are generated (model type, features, or approach)"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: regex_match
+      target: README.md
+      patterns: ["prediction method", "model approach", "feature set",
+                 "training data", "algorithm", "ensemble", "regression",
+                 "classification", "neural network", "random forest",
+                 "gradient boost", "xgboost", "lightgbm"]

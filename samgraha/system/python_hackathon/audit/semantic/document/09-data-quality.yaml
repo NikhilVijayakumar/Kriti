@@ -3,7 +3,7 @@ domain: data-quality
 scope: document
 kind: semantic
 
-description: "Semantic evaluation of the data sources and collection methodology."
+description: "Semantic evaluation of data sources, collection methodology, and model development practices."
 
 metadata_fields:
   - model_identifier
@@ -23,8 +23,13 @@ prompt_template: |
   Verify the quality of the data sources used by the team.
   Is the source of the data clearly stated and trustworthy?
   Do they explain their data collection, cleaning, or preprocessing methods?
-  Provide a score out of 100 based on the clarity and quality of their data methodology.
-  
+  Does the team document their model development methodology?
+  - How did they split data (train/test, cross-validation, held-out set)?
+  - What feature engineering decisions did they make?
+  - Did they take steps to avoid data leakage?
+  - How did they validate their model's performance?
+  Provide a score out of 100 based on the clarity and quality of their data methodology and model development practices.
+
 evidence_requirements:
   - type: json
     schema:

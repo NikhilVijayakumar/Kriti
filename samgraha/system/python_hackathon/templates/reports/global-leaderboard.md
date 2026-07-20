@@ -11,9 +11,9 @@ The following leaderboard represents the final grading of all hackathon submissi
 
 | Rank | Team / Repo | Total Score | Inf | Eng | Tst | Doc | Sec | MLOps | Run | T-W | D-Q | AI-E |
 |------|-------------|-------------|-----|-----|-----|-----|-----|-------|-----|-----|-----|------|
-{{#each teams as |team|}}
-| **{{ team.rank }}** | `{{ team.repo_name }}` | **{{ team.final_score }}/20** | {{ team.scores.infrastructure }} | {{ team.scores.engineering }} | {{ team.scores.testing }} | {{ team.scores.documentation }} | {{ team.scores.security }} | {{ team.scores.mlops }} | {{ team.scores.runtime }} | {{ team.scores.team_workflow }} | {{ team.scores.data_quality }} | {{ team.scores.ai_explanations }} |
-{{/each}}
+{{#teams}}
+| **{{ rank }}** | `{{ repo_name }}` | **{{ final_score }}/20** | {{ scores.infrastructure }} | {{ scores.engineering }} | {{ scores.testing }} | {{ scores.documentation }} | {{ scores.security }} | {{ scores.mlops }} | {{ scores.runtime }} | {{ scores.team_workflow }} | {{ scores.data_quality }} | {{ scores.ai_explanations }} |
+{{/teams}}
 
 ---
 

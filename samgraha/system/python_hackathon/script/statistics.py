@@ -19,10 +19,30 @@ Algorithm:
     5. domain_adjusted_score = raw_score + bonus (capped 0-100)
 """
 import json
-import statistics
 import math
 import argparse
 import os
+
+
+def _median(values):
+    s = sorted(values)
+    n = len(s)
+    if n == 0:
+        return 0
+    if n % 2 == 1:
+        return s[n // 2]
+    return (s[n // 2 - 1] + s[n // 2]) / 2
+
+
+def _mean(values):
+    return sum(values) / len(values) if values else 0
+
+
+def _stdev(values):
+    if len(values) < 2:
+        return 0
+    m = _mean(values)
+    return math.sqrt(sum((x - m) ** 2 for x in values) / (len(values) - 1))
 
 MAX_DOMAIN_BONUS = 10.0   # Max bonus/penalty per domain in raw points
 
@@ -50,14 +70,14 @@ def calculate_domain_stats(aggregated_scores, domain):
         return {}, {}
 
     values = list(team_scores.values())
-    median_val = statistics.median(values)
-    mad = statistics.median([abs(v - median_val) for v in values])
+    median_val = _median(values)
+    mad = _median([abs(v - median_val) for v in values])
 
     stats = {
         "global_median": median_val,
         "global_mad": mad,
-        "global_mean": statistics.mean(values),
-        "global_stdev": statistics.stdev(values) if len(values) > 1 else 0.0,
+        "global_mean": _mean(values),
+        "global_stdev": _stdev(values),
         "team_count": len(values),
     }
 

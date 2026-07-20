@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Infrastructure — Domain Summary · kestrel-labs/pyorbit-infra</title>
+<style>
+  :root{
+    --canvas: #ffffff;
+    --canvas-subtle: #f6f8fa;
+    --canvas-inset: #eaeef2;
+    --border-default: #d0d7de;
+    --border-muted: #d8dee4;
+    --fg-default: #1f2328;
+    --fg-muted: #656d76;
+    --fg-subtle: #6e7781;
+    --accent-fg: #0969da;
+    --accent-subtle: #ddf4ff;
+    --success-fg: #1a7f37;
+    --success-subtle: #dafbe1;
+    --success-emphasis: #2da44e;
+    --danger-fg: #cf222e;
+    --danger-subtle: #ffebe9;
+    --danger-emphasis: #cf222e;
+    --attention-fg: #9a6700;
+    --attention-subtle: #fff8c5;
+    --attention-emphasis: #bf8700;
+    --neutral-subtle: #eaeef2;
+    --shadow-sm: 0 1px 0 rgba(31,35,40,0.04);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--canvas-subtle);
+    color:var(--fg-default);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono, code, .num{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  .page{
+    max-width:960px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+  }
+
+  /* ---------- header ---------- */
+  .page-header{
+    background:var(--canvas);
+    border:1px solid var(--border-default);
+    border-radius:6px;
+    padding:20px 24px;
+    margin-bottom:24px;
+    box-shadow:var(--shadow-sm);
+  }
+  .eyebrow{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--fg-muted);
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:24px;
+    font-weight:600;
+    margin:0 0 14px;
+    letter-spacing:-0.01em;
+  }
+  .meta-row{
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+    padding-top:12px;
+    border-top:1px solid var(--border-muted);
+  }
+  .meta-item{display:flex; flex-direction:column; gap:2px;}
+  .meta-label{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--fg-muted);}
+  .meta-value{font-size:13px; color:var(--fg-default);}
+
+  /* ---------- section shell ---------- */
+  section{
+    background:var(--canvas);
+    border:1px solid var(--border-default);
+    border-radius:6px;
+    margin-bottom:24px;
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+  }
+  .section-header{
+    padding:12px 20px;
+    border-bottom:1px solid var(--border-muted);
+    background:var(--canvas-subtle);
+  }
+  .section-header h2{
+    font-size:14px;
+    font-weight:600;
+    margin:0;
+  }
+  .section-body{padding:20px;}
+
+  /* ---------- scorecards ---------- */
+  .scorecards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--border-muted);
+  }
+  .scorecard{
+    background:var(--canvas);
+    padding:18px 20px;
+  }
+  .scorecard .label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--fg-muted);
+    margin-bottom:8px;
+  }
+  .scorecard .value{
+    font-size:28px;
+    font-weight:600;
+    letter-spacing:-0.02em;
+  }
+  .scorecard .sub{
+    font-size:12px;
+    color:var(--fg-subtle);
+    margin-top:4px;
+  }
+  .scorecard.final{background:var(--canvas-subtle);}
+  .scorecard.final .value{color:var(--attention-fg);}
+
+  /* ---------- badges ---------- */
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:2px 8px;
+    border-radius:2em;
+    font-size:12px;
+    font-weight:500;
+    line-height:18px;
+  }
+  .badge::before{
+    content:"";
+    width:8px;
+    height:8px;
+    border-radius:50%;
+  }
+  .badge.success{background:var(--success-subtle); color:var(--success-fg);}
+  .badge.success::before{background:var(--success-emphasis);}
+  .badge.attention{background:var(--attention-subtle); color:var(--attention-fg);}
+  .badge.attention::before{background:var(--attention-emphasis);}
+  .badge.danger{background:var(--danger-subtle); color:var(--danger-fg);}
+  .badge.danger::before{background:var(--danger-emphasis);}
+  .badge.neutral{background:var(--neutral-subtle); color:var(--fg-muted);}
+  .badge.neutral::before{background:var(--fg-subtle);}
+
+  /* ---------- stats table ---------- */
+  table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  .stats-table th, .stats-table td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border-muted);
+    font-size:13px;
+  }
+  .stats-table th{
+    color:var(--fg-muted);
+    font-weight:500;
+    width:38%;
+  }
+  .stats-table tr:last-child th, .stats-table tr:last-child td{border-bottom:none;}
+  .stats-table td.num{font-weight:600; font-size:14px;}
+  .stats-table td .delta-pos{color:var(--success-fg);}
+  .stats-table td .delta-neg{color:var(--danger-fg);}
+
+  /* ---------- chart ---------- */
+  .chart-wrap{padding:8px 4px 0;}
+  .chart-legend{
+    display:flex;
+    gap:20px;
+    margin-top:10px;
+    padding-top:12px;
+    border-top:1px solid var(--border-muted);
+    font-size:12px;
+    color:var(--fg-muted);
+    flex-wrap:wrap;
+  }
+  .chart-legend .item{display:flex; align-items:center; gap:6px;}
+  .swatch{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+  /* ---------- narrative ---------- */
+  .narrative h3{
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--border-muted);
+  }
+  .narrative .block{margin-bottom:22px;}
+  .narrative .block:last-child{margin-bottom:0;}
+  .narrative p{
+    margin:0;
+    color:var(--fg-default);
+    font-size:13.5px;
+    line-height:1.65;
+  }
+  .narrative code{
+    background:var(--canvas-inset);
+    padding:1px 5px;
+    border-radius:4px;
+    font-size:12.5px;
+  }
+
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--fg-subtle);
+    padding-top:8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Domain Summary · Infrastructure</div>
+    <h1>Infrastructure — Domain Summary</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Repository</span>
+        <span class="meta-value mono">kestrel-labs/pyorbit-infra</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Evaluation Date</span>
+        <span class="meta-value mono">2026-07-18</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Domain Status</span>
+        <span class="badge attention">Attention</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header"><h2>Aggregation</h2></div>
+    <div class="scorecards">
+      <div class="scorecard">
+        <div class="label">Deterministic</div>
+        <div class="value num">78.5</div>
+        <div class="sub">rule-checker · weight 0.60</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Semantic</div>
+        <div class="value num">61.0</div>
+        <div class="sub">LLM panel avg · weight 0.40</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Raw Merged Score</div>
+        <div class="value num">71.5</div>
+        <div class="sub">0.60 × det + 0.40 × sem</div>
+      </div>
+      <div class="scorecard final">
+        <div class="label">Final Domain Score</div>
+        <div class="value num">74.7</div>
+        <div class="sub">raw merge + relative bonus</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header"><h2>Score vs. Field Distribution</h2></div>
+    <div class="section-body">
+      <div class="chart-wrap">
+        <svg viewBox="0 0 800 130" width="100%" height="150" role="img" aria-label="Team score plotted against the infrastructure domain's global mean and standard-deviation band">
+          <!-- axis -->
+          <line x1="40" y1="104" x2="760" y2="104" stroke="#d0d7de" stroke-width="1"/>
+          <text x="40" y="122" font-size="11" fill="#656d76" font-family="ui-monospace,Menlo,Consolas,monospace">0</text>
+          <text x="220" y="122" font-size="11" fill="#656d76" font-family="ui-monospace,Menlo,Consolas,monospace">25</text>
+          <text x="393" y="122" font-size="11" fill="#656d76" font-family="ui-monospace,Menlo,Consolas,monospace">50</text>
+          <text x="566" y="122" font-size="11" fill="#656d76" font-family="ui-monospace,Menlo,Consolas,monospace">75</text>
+          <text x="740" y="122" font-size="11" fill="#656d76" font-family="ui-monospace,Menlo,Consolas,monospace">100</text>
+          <line x1="40" y1="104" x2="40" y2="100" stroke="#d0d7de"/>
+          <line x1="220" y1="104" x2="220" y2="100" stroke="#d0d7de"/>
+          <line x1="393" y1="104" x2="393" y2="100" stroke="#d0d7de"/>
+          <line x1="566" y1="104" x2="566" y2="100" stroke="#d0d7de"/>
+          <line x1="740" y1="104" x2="740" y2="100" stroke="#d0d7de"/>
+
+          <!-- mean +/- 1 stdev band : mean 67.8, stdev 14.1 -> [53.7, 81.9] -->
+          <rect x="426.6" y="46" width="203.0" height="44" fill="#ddf4ff" opacity="0.7"/>
+          <text x="428" y="40" font-size="11" fill="#0969da" font-family="ui-monospace,Menlo,Consolas,monospace">mean ± 1σ (53.7–81.9)</text>
+
+          <!-- mean line : 67.8 -->
+          <line x1="528.2" y1="40" x2="528.2" y2="98" stroke="#656d76" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="528.2" y="112" font-size="11" fill="#656d76" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">mean 67.8</text>
+
+          <!-- raw merge marker : 71.5 -->
+          <circle cx="554.8" cy="68" r="6" fill="#0969da" stroke="#ffffff" stroke-width="2"/>
+          <text x="554.8" y="52" font-size="11" fill="#0969da" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">raw 71.5</text>
+
+          <!-- final score marker : 74.7 -->
+          <circle cx="577.8" cy="68" r="7" fill="#bf8700" stroke="#ffffff" stroke-width="2"/>
+          <text x="577.8" y="30" font-size="11" fill="#9a6700" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">final 74.7</text>
+          <text x="577.8" y="18" font-size="10" fill="#9a6700" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">(+3.2 bonus)</text>
+        </svg>
+      </div>
+      <div class="chart-legend">
+        <span class="item"><span class="swatch" style="background:#ddf4ff;"></span>field mean ± 1 standard deviation</span>
+        <span class="item"><span class="swatch" style="background:#0969da; border-radius:50%;"></span>raw merged score (pre-bonus)</span>
+        <span class="item"><span class="swatch" style="background:#bf8700; border-radius:50%;"></span>final domain score (post-bonus)</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header"><h2>Hackathon Competition Stats</h2></div>
+    <div class="section-body" style="padding:0;">
+      <table class="stats-table">
+        <tbody>
+          <tr>
+            <th>Global Domain Mean</th>
+            <td class="num">67.8</td>
+          </tr>
+          <tr>
+            <th>Global Domain Std Dev</th>
+            <td class="num">14.1</td>
+          </tr>
+          <tr>
+            <th>Team Z-Score</th>
+            <td class="num"><span class="delta-pos">+0.26</span></td>
+          </tr>
+          <tr>
+            <th>Relative Bonus Applied</th>
+            <td class="num"><span class="delta-pos">+3.2</span></td>
+          </tr>
+          <tr>
+            <th>Final Domain Score</th>
+            <td class="num" style="font-size:16px;">74.7 <span class="badge attention" style="margin-left:6px;">Attention</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="section-header"><h2>Agent Narrative</h2></div>
+    <div class="section-body">
+      <div class="block">
+        <h3>Summary</h3>
+        <p>
+          <code>kestrel-labs/pyorbit-infra</code> clears the infrastructure baseline comfortably: a complete
+          CI/CD pipeline (GitHub Actions, three-stage build → test → deploy), a multi-stage <code>Dockerfile</code>
+          pinned to a non-root user, and Terraform-managed provisioning for both target environments account
+          for the strong 78.5 deterministic score. Where the domain loses ground is semantic judgment (61.0) —
+          the reviewing model panel rated the deployment story as functional but under-hardened: no documented
+          rollback procedure, a single-region topology with no disaster-recovery plan, and infrastructure-as-code
+          that provisions correctly but is not reviewed for state drift. The raw merge of 71.5, combined with a
+          modest but positive standing versus the field (z = +0.26, +3.2 relative bonus), lands the team's final
+          infrastructure score at 74.7 — solidly mid-pack, ahead of the field median (67.8) but short of the
+          top infrastructure submissions this round.
+        </p>
+      </div>
+      <div class="block">
+        <h3>Key Risks</h3>
+        <p>
+          The most consequential gap is the absence of a rollback path: the deploy job pushes directly to
+          production with no blue/green or canary step, so a bad release has no fast-revert lever short of a
+          manual redeploy of the previous tag. Secrets are read from plaintext <code>.env</code> files stored in
+          a private bucket rather than a managed secrets service — this satisfies the deterministic
+          "secrets are externalized from source" check but does not meet the semantic bar for least-privilege
+          access control. Terraform state is stored remotely but unlocked, leaving concurrent applies free to
+          corrupt shared state under parallel CI runs. None of these surface in a green CI pipeline; they only
+          appear under judgment-based review, which is exactly why the domain's semantic component sits 17.5
+          points below its deterministic counterpart and why this score carries an Attention rather than
+          Success status.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>Infrastructure domain summary · generated report demo · Primer design direction</footer>
+
+</div>
+</body>
+</html>

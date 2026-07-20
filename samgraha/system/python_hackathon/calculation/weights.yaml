@@ -12,7 +12,7 @@ id: python_hackathon_weights
 version: "1.0"
 base_total: 100
 max_semantic_bonus: 15
-final_scale: 150
+final_scale: 20
 
 domains:
   infrastructure:

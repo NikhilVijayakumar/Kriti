@@ -3,10 +3,10 @@ domain: data-quality
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 2
-total_weight: 2.0
+total_rules: 4
+total_weight: 4.0
 
-description: "Objective checks for data artifacts and source references."
+description: "Objective checks for data artifacts, source references, and model development methodology."
 
 rules:
   - id: dq-001
@@ -32,3 +32,30 @@ rules:
       type: regex_match
       target: README.md
       patterns: ["kaggle\\.com", "huggingface\\.co/datasets", "drive\\.google\\.com"]
+
+  - id: dq-003
+    description: "Train/test split or cross-validation evidenced in code"
+    condition: "codebase contains train_test_split, cross-validation, or k-fold references"
+    message: "No evidence of data splitting methodology found in code."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: regex_match
+      target: README.md
+      patterns: ["train_test_split", "cross.validation", "k.fold", "validation set",
+                 "train.test.split", "model_selection", "StratifiedKFold", "TimeSeriesSplit"]
+
+  - id: dq-004
+    description: "Feature engineering or validation methodology documented in README"
+    condition: "README.md describes feature engineering decisions or validation approach"
+    message: "No methodology documentation found for feature engineering or validation."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: regex_match
+      target: README.md
+      patterns: ["feature engineering", "feature selection", "data leakage",
+                 "cross.validation", "held.out", "validation set", "train.test",
+                 "preprocessing", "normalization", "scaling", "encoding"]

@@ -1,0 +1,565 @@
+<title>Global Leaderboard — Kriti 2026</title>
+<style>
+  :root{
+    --black:#000;
+    --white:#fff;
+    --gray-05:#f5f5f5;
+    --gray-10:#e5e5e5;
+    --gray-40:#888;
+    --gray-60:#555;
+    --accent:#1a5fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--white);color:var(--black);}
+  body{
+    font-family:'Geist','Inter','Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'Geist Mono','JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;}
+  .num{
+    font-family:'Geist Mono','JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  a{color:var(--accent);text-decoration:none;}
+
+  .sheet{
+    max-width:1320px;
+    margin:0 auto;
+    border-left:1px solid #000;
+    border-right:1px solid #000;
+    min-height:100vh;
+  }
+
+  header{
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    align-items:end;
+    padding:28px 40px 20px;
+    border-bottom:1px solid #000;
+    gap:32px;
+  }
+  .header-left .eyebrow{
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--gray-40);margin-bottom:10px;
+  }
+  .header-left h1{font-size:30px;font-weight:600;letter-spacing:-0.01em;}
+  .header-stat{text-align:right;font-size:11px;color:var(--gray-40);text-transform:uppercase;letter-spacing:.06em;}
+  .header-stat .v{display:block;font-size:20px;color:#000;text-transform:none;letter-spacing:0;margin-top:4px;}
+
+  section{border-bottom:1px solid #000;}
+  .section-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:18px 40px 14px;
+  }
+  .section-head h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;}
+  .section-head .note{font-size:11px;color:var(--gray-40);}
+
+  /* ---------- table ---------- */
+  .table-wrap{overflow-x:auto;padding:0 40px 28px;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1100px;
+  }
+  thead th{
+    text-align:right;
+    font-size:10.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--gray-40);
+    font-weight:600;
+    padding:0 10px 10px;
+    border-bottom:1px solid #000;
+    cursor:default;
+  }
+  thead th.left{text-align:left;}
+  thead th abbr{text-decoration:none;border-bottom:1px dotted var(--gray-40);cursor:help;}
+  tbody td{
+    padding:11px 10px;
+    text-align:right;
+    border-bottom:1px solid var(--gray-10);
+    font-size:13.5px;
+  }
+  tbody td.left{text-align:left;}
+  tbody tr:hover{background:var(--gray-05);}
+  tbody tr.featured{background:#f5f5f5;}
+  tbody tr.featured td{font-weight:600;}
+  .rank{font-size:14px;}
+  .rank .n{font-weight:700;}
+  .rank .medal{display:inline-block;width:16px;color:var(--gray-40);font-size:11px;}
+  .team-name{font-weight:500;}
+  .team-name .tag{
+    display:inline-block;
+    margin-left:8px;
+    font-size:9.5px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:#fff;
+    background:#000;
+    padding:2px 6px;
+  }
+  .total-score{font-weight:700;font-size:15px;}
+  .total-score .unit{font-weight:400;color:var(--gray-40);font-size:11px;}
+  td.dom-lead{color:#000;}
+  td.dom-mid{color:#333;}
+  td.dom-low{color:var(--gray-40);}
+
+  tfoot td{
+    padding:10px 10px;
+    border-top:1px solid #000;
+    font-size:11.5px;
+    color:var(--gray-40);
+  }
+  tfoot td.left{text-align:left;font-weight:600;color:#000;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;}
+  tfoot tr.stdev td{color:var(--gray-40);border-top:none;padding-top:2px;}
+
+  /* ---------- legend ---------- */
+  .legend-row{
+    display:flex;flex-wrap:wrap;gap:0;
+    padding:0 40px 24px;
+    font-size:11.5px;
+    border-bottom:1px solid #000;
+  }
+  .legend-row .item{
+    padding:4px 14px 4px 0;
+    color:var(--gray-60);
+  }
+  .legend-row .item b{color:#000;font-family:'Geist Mono','JetBrains Mono',monospace;margin-right:4px;}
+
+  /* ---------- distribution strips ---------- */
+  .strip-block{padding:16px 40px 32px;}
+  .strip-row{
+    display:grid;
+    grid-template-columns:140px 1fr;
+    align-items:center;
+    border-top:1px solid var(--gray-10);
+    padding:6px 0;
+  }
+  .strip-row:first-child{border-top:none;}
+  .strip-row .dlabel{
+    font-size:12px;
+    font-weight:500;
+  }
+  .strip-row .dlabel .full{
+    display:block;
+    font-size:10px;
+    color:var(--gray-40);
+    font-weight:400;
+  }
+  .strip-svg{width:100%;height:32px;display:block;}
+  .strip-legend{
+    display:flex;gap:24px;
+    padding:14px 0 0;
+    font-size:11.5px;
+    color:var(--gray-60);
+  }
+  .strip-legend .sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .strip-legend .sw.field{background:#bbb;}
+  .strip-legend .sw.team{background:#000;}
+
+  /* ---------- narrative ---------- */
+  .narrative{padding:20px 40px 44px;display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+  .narrative h3{
+    font-size:13px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+    margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--gray-10);
+  }
+  .narrative p{font-size:13.5px;color:#1a1a1a;margin-bottom:12px;}
+  .narrative p:last-child{margin-bottom:0;}
+
+  footer{
+    display:flex;justify-content:space-between;padding:16px 40px;
+    font-size:11px;color:var(--gray-40);
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="header-left">
+      <div class="eyebrow mono">SHARED REPORT — ALL TEAMS</div>
+      <h1 class="mono">global-leaderboard</h1>
+    </div>
+    <div class="header-stat">
+      report_date
+      <span class="v mono">2026-07-19</span>
+    </div>
+    <div class="header-stat">
+      total_teams
+      <span class="v mono">24</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-head">
+      <h2>Final Competition Results</h2>
+      <span class="note mono">final_score /20 · domain columns 0–100 raw · showing 8 of 24</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="left">Rank</th>
+            <th class="left">Team / Repo</th>
+            <th>Total</th>
+            <th><abbr title="Infrastructure">Infra</abbr></th>
+            <th><abbr title="Engineering">Eng</abbr></th>
+            <th><abbr title="Testing">Test</abbr></th>
+            <th><abbr title="Documentation">Doc</abbr></th>
+            <th><abbr title="Security">Sec</abbr></th>
+            <th><abbr title="MLOps">MLOps</abbr></th>
+            <th><abbr title="Runtime">Run</abbr></th>
+            <th><abbr title="Team Workflow">T-W</abbr></th>
+            <th><abbr title="Data Quality">D-Q</abbr></th>
+            <th><abbr title="AI Explanations">AI-E</abbr></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="left rank num"><span class="medal">1</span></td>
+            <td class="left team-name">glacier-run/kriti-2026-submission</td>
+            <td class="total-score num">18.1<span class="unit">/20</span></td>
+            <td class="num dom-lead">92.0</td><td class="num dom-lead">94.0</td><td class="num dom-lead">88.0</td>
+            <td class="num dom-lead">85.0</td><td class="num dom-lead">96.0</td><td class="num dom-lead">90.0</td>
+            <td class="num dom-lead">93.0</td><td class="num dom-lead">89.0</td><td class="num dom-lead">87.0</td>
+            <td class="num dom-lead">91.0</td>
+          </tr>
+          <tr class="featured">
+            <td class="left rank num"><span class="medal">2</span></td>
+            <td class="left team-name">vertex-squad/kriti-2026-submission<span class="tag">featured</span></td>
+            <td class="total-score num">16.9<span class="unit">/20</span></td>
+            <td class="num dom-mid">74.7</td><td class="num dom-lead">88.2</td><td class="num dom-mid">82.4</td>
+            <td class="num dom-mid">79.6</td><td class="num dom-lead">90.1</td><td class="num dom-lead">85.3</td>
+            <td class="num dom-mid">83.7</td><td class="num dom-lead">91.4</td><td class="num dom-mid">78.9</td>
+            <td class="num dom-lead">90.7</td>
+          </tr>
+          <tr>
+            <td class="left rank num"><span class="medal">3</span></td>
+            <td class="left team-name">northwind-ai/kriti-2026-submission</td>
+            <td class="total-score num">15.4<span class="unit">/20</span></td>
+            <td class="num dom-mid">79.5</td><td class="num dom-mid">81.2</td><td class="num dom-mid">74.8</td>
+            <td class="num dom-mid">70.3</td><td class="num dom-mid">83.6</td><td class="num dom-mid">76.9</td>
+            <td class="num dom-mid">78.4</td><td class="num dom-mid">72.1</td><td class="num dom-mid">75.7</td>
+            <td class="num dom-mid">77.5</td>
+          </tr>
+          <tr>
+            <td class="left rank num">4</td>
+            <td class="left team-name">cascade-devs/kriti-2026-submission</td>
+            <td class="total-score num">14.2<span class="unit">/20</span></td>
+            <td class="num dom-mid">68.4</td><td class="num dom-mid">75.9</td><td class="num dom-mid">69.2</td>
+            <td class="num dom-mid">66.8</td><td class="num dom-mid">77.3</td><td class="num dom-mid">70.1</td>
+            <td class="num dom-mid">72.6</td><td class="num dom-mid">68.9</td><td class="num dom-mid">65.4</td>
+            <td class="num dom-mid">75.4</td>
+          </tr>
+          <tr>
+            <td class="left rank num">5</td>
+            <td class="left team-name">ironclad-py/kriti-2026-submission</td>
+            <td class="total-score num">12.8<span class="unit">/20</span></td>
+            <td class="num dom-mid">60.5</td><td class="num dom-mid">68.3</td><td class="num dom-mid">62.7</td>
+            <td class="num dom-low">58.9</td><td class="num dom-mid">70.2</td><td class="num dom-mid">61.4</td>
+            <td class="num dom-mid">65.8</td><td class="num dom-low">59.6</td><td class="num dom-mid">63.1</td>
+            <td class="num dom-mid">69.5</td>
+          </tr>
+          <tr>
+            <td class="left rank num">6</td>
+            <td class="left team-name">solstice-labs/kriti-2026-submission</td>
+            <td class="total-score num">11.3<span class="unit">/20</span></td>
+            <td class="num dom-low">52.1</td><td class="num dom-mid">60.4</td><td class="num dom-low">54.8</td>
+            <td class="num dom-low">50.2</td><td class="num dom-mid">63.7</td><td class="num dom-low">55.9</td>
+            <td class="num dom-low">58.3</td><td class="num dom-low">51.6</td><td class="num dom-low">57.0</td>
+            <td class="num dom-mid">61.0</td>
+          </tr>
+          <tr>
+            <td class="left rank num">7</td>
+            <td class="left team-name">driftwood-eng/kriti-2026-submission</td>
+            <td class="total-score num">9.7<span class="unit">/20</span></td>
+            <td class="num dom-low">44.2</td><td class="num dom-low">52.6</td><td class="num dom-low">46.9</td>
+            <td class="num dom-low">41.8</td><td class="num dom-low">55.3</td><td class="num dom-low">47.1</td>
+            <td class="num dom-low">50.4</td><td class="num dom-low">43.7</td><td class="num dom-low">49.2</td>
+            <td class="num dom-low">53.8</td>
+          </tr>
+          <tr>
+            <td class="left rank num">8</td>
+            <td class="left team-name">lowtide-collective/kriti-2026-submission</td>
+            <td class="total-score num">8.1<span class="unit">/20</span></td>
+            <td class="num dom-low">36.8</td><td class="num dom-low">44.3</td><td class="num dom-low">38.5</td>
+            <td class="num dom-low">34.9</td><td class="num dom-low">47.2</td><td class="num dom-low">39.1</td>
+            <td class="num dom-low">42.6</td><td class="num dom-low">35.7</td><td class="num dom-low">41.4</td>
+            <td class="num dom-low">44.5</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="left" colspan="2">global_stats · mean</td>
+            <td></td>
+            <td class="num">65.0</td><td class="num">68.2</td><td class="num">61.4</td>
+            <td class="num">58.9</td><td class="num">70.5</td><td class="num">62.8</td>
+            <td class="num">66.1</td><td class="num">59.7</td><td class="num">63.3</td>
+            <td class="num">68.0</td>
+          </tr>
+          <tr class="stdev">
+            <td class="left" colspan="2">global_stats · stdev</td>
+            <td></td>
+            <td class="num">3.5</td><td class="num">12.1</td><td class="num">10.8</td>
+            <td class="num">13.5</td><td class="num">11.2</td><td class="num">9.7</td>
+            <td class="num">10.4</td><td class="num">14.0</td><td class="num">10.9</td>
+            <td class="num">11.6</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="legend-row">
+      <span class="item"><b>Infra</b>Infrastructure</span>
+      <span class="item"><b>Eng</b>Engineering</span>
+      <span class="item"><b>Test</b>Testing</span>
+      <span class="item"><b>Doc</b>Documentation</span>
+      <span class="item"><b>Sec</b>Security</span>
+      <span class="item"><b>MLOps</b>MLOps</span>
+      <span class="item"><b>Run</b>Runtime</span>
+      <span class="item"><b>T-W</b>Team Workflow</span>
+      <span class="item"><b>D-Q</b>Data Quality</span>
+      <span class="item"><b>AI-E</b>AI Explanations</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Score Spread per Domain</h2>
+      <span class="note mono">0–100 scale · shaded band = μ ± 1σ (n=24) · dots = the 8 teams above</span>
+    </div>
+    <div class="strip-block">
+
+      <div class="strip-row">
+        <div class="dlabel">Infra<span class="full">Infrastructure</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="409" y="6" width="42" height="18" fill="#f5f5f5"/>
+          <line x1="430" y1="4" x2="430" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="592" cy="15" r="3" fill="#bbb"/>
+          <circle cx="488.2" cy="15" r="4.5" fill="#000"/>
+          <circle cx="517" cy="15" r="3" fill="#bbb"/>
+          <circle cx="450.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="403" cy="15" r="3" fill="#bbb"/>
+          <circle cx="352.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="305.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="260.8" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">Eng<span class="full">Engineering</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="376.6" y="6" width="145.2" height="18" fill="#f5f5f5"/>
+          <line x1="449.2" y1="4" x2="449.2" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="604" cy="15" r="3" fill="#bbb"/>
+          <circle cx="569.2" cy="15" r="4.5" fill="#000"/>
+          <circle cx="527.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="495.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="449.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="402.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="355.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="305.8" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">Test<span class="full">Testing</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="343.6" y="6" width="129.6" height="18" fill="#f5f5f5"/>
+          <line x1="408.4" y1="4" x2="408.4" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="568" cy="15" r="3" fill="#bbb"/>
+          <circle cx="534.4" cy="15" r="4.5" fill="#000"/>
+          <circle cx="488.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="455.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="416.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="368.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="321.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="271" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">Doc<span class="full">Documentation</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="312.4" y="6" width="162" height="18" fill="#f5f5f5"/>
+          <line x1="393.4" y1="4" x2="393.4" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="550" cy="15" r="3" fill="#bbb"/>
+          <circle cx="517.6" cy="15" r="4.5" fill="#000"/>
+          <circle cx="461.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="440.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="393.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="341.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="290.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="249.4" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">Sec<span class="full">Security</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="395.8" y="6" width="134.4" height="18" fill="#f5f5f5"/>
+          <line x1="463" y1="4" x2="463" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="616" cy="15" r="3" fill="#bbb"/>
+          <circle cx="580.6" cy="15" r="4.5" fill="#000"/>
+          <circle cx="541.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="503.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="461.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="422.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="371.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="323.2" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">MLOps<span class="full">MLOps</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="358.6" y="6" width="116.4" height="18" fill="#f5f5f5"/>
+          <line x1="416.8" y1="4" x2="416.8" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="580" cy="15" r="3" fill="#bbb"/>
+          <circle cx="551.8" cy="15" r="4.5" fill="#000"/>
+          <circle cx="501.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="460.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="408.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="375.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="322.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="274.6" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">Run<span class="full">Runtime</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="374.2" y="6" width="124.8" height="18" fill="#f5f5f5"/>
+          <line x1="436.6" y1="4" x2="436.6" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="598" cy="15" r="3" fill="#bbb"/>
+          <circle cx="542.2" cy="15" r="4.5" fill="#000"/>
+          <circle cx="510.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="475.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="434.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="389.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="342.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="295.6" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">T-W<span class="full">Team Workflow</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="314.2" y="6" width="168" height="18" fill="#f5f5f5"/>
+          <line x1="398.2" y1="4" x2="398.2" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="574" cy="15" r="3" fill="#bbb"/>
+          <circle cx="588.4" cy="15" r="4.5" fill="#000"/>
+          <circle cx="472.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="453.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="397.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="349.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="302.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="254.2" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">D-Q<span class="full">Data Quality</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="354.4" y="6" width="130.8" height="18" fill="#f5f5f5"/>
+          <line x1="419.8" y1="4" x2="419.8" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="562" cy="15" r="3" fill="#bbb"/>
+          <circle cx="513.4" cy="15" r="4.5" fill="#000"/>
+          <circle cx="494.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="432.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="418.6" cy="15" r="3" fill="#bbb"/>
+          <circle cx="382" cy="15" r="3" fill="#bbb"/>
+          <circle cx="335.2" cy="15" r="3" fill="#bbb"/>
+          <circle cx="288.4" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-row">
+        <div class="dlabel">AI-E<span class="full">AI Explanations</span></div>
+        <svg class="strip-svg" viewBox="0 0 680 30" preserveAspectRatio="none">
+          <line x1="40" y1="15" x2="640" y2="15" stroke="#e5e5e5"/>
+          <rect x="378.4" y="6" width="139.2" height="18" fill="#f5f5f5"/>
+          <line x1="448" y1="4" x2="448" y2="26" stroke="#888" stroke-dasharray="2,2"/>
+          <circle cx="586" cy="15" r="3" fill="#bbb"/>
+          <circle cx="584.2" cy="15" r="4.5" fill="#000"/>
+          <circle cx="505" cy="15" r="3" fill="#bbb"/>
+          <circle cx="492.4" cy="15" r="3" fill="#bbb"/>
+          <circle cx="457" cy="15" r="3" fill="#bbb"/>
+          <circle cx="406" cy="15" r="3" fill="#bbb"/>
+          <circle cx="362.8" cy="15" r="3" fill="#bbb"/>
+          <circle cx="307" cy="15" r="3" fill="#bbb"/>
+        </svg>
+      </div>
+
+      <div class="strip-legend">
+        <span><span class="sw field"></span>other team in domain</span>
+        <span><span class="sw team"></span>vertex-squad (featured, rank 2)</span>
+        <span>shaded band = global mean ± 1 stdev</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Competition Narrative</h2>
+      <span class="note mono">agent-written · cross-domain</span>
+    </div>
+    <div class="narrative">
+      <div>
+        <h3>Summary</h3>
+        <p>
+          24 teams were evaluated across the 10 domains. The field splits
+          into a clear top tier and a long tail: glacier-run leads at
+          18.1/20 with the only near-uniform 90+ profile in the
+          competition, while vertex-squad holds second at 16.9/20 on the
+          strength of Engineering (88.2), Team Workflow (91.4), and AI
+          Explanations (90.7) despite a comparatively average
+          Infrastructure score (74.7) that the domain-level z-score bonus
+          still ranks 3rd-best overall.
+        </p>
+        <p>
+          Security and Engineering carry the highest global means (70.5
+          and 68.2) — most teams shipped working CI and reasonable
+          dependency hygiene. Team Workflow and Documentation carry the
+          widest spread (stdev 14.0 and 13.5), meaning commit hygiene and
+          README quality are the sharpest differentiators between a
+          top-half and bottom-half finish this year.
+        </p>
+      </div>
+      <div>
+        <h3>Notable Trends</h3>
+        <p>
+          Data Quality is the domain every team, including the leader,
+          scored lowest on relative to their own average — no submission
+          exceeded 96 here and the bottom four teams cluster below 45,
+          suggesting the rubric's checks for schema validation and data
+          versioning were widely under-addressed rather than
+          inconsistently graded.
+        </p>
+        <p>
+          The bottom three teams (solstice-labs, driftwood-eng,
+          lowtide-collective) show a consistent domain ordering —
+          Security highest, Documentation lowest — matching the pattern
+          seen across the full 24-team field: teams running out of time
+          finish infrastructure and security work (often scaffolded early)
+          but leave documentation for last.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="mono">generated_by: samgraha · report-pipeline v0.3</span>
+    <span class="mono">shared report · not duplicated per team</span>
+  </footer>
+
+</div>

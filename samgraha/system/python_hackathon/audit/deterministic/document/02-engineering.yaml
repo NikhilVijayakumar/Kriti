@@ -3,10 +3,10 @@ domain: engineering
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 5
-total_weight: 5.0
+total_rules: 8
+total_weight: 8.0
 
-description: "Rules checking code quality configurations and type hinting."
+description: "Rules checking code quality configurations, type hinting, and code metrics."
 
 rules:
   - id: eng-001
@@ -62,3 +62,38 @@ rules:
     check:
       file_globs:
         - ".pre-commit-config.yaml"
+
+  - id: eng-006
+    description: "No high-complexity functions (radon grade C or worse)"
+    condition: "radon_high_complexity_count == 0"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: tool_execution
+      target: radon_high_complexity_count
+      threshold: 0
+      op: eq
+
+  - id: eng-007
+    description: "No mypy type errors"
+    condition: "mypy_error_count == 0"
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: tool_execution
+      target: mypy_error_count
+      threshold: 0
+      op: eq
+
+  - id: eng-008
+    description: "CI/CD pipeline configured"
+    condition: "repository contains .github/workflows/*.yml or .gitlab-ci.yml with real pipeline content"
+    message: "No CI/CD pipeline found. Teams should have automated testing or build workflows."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: file_presence
+      targets: [.github/workflows/*.yml, .gitlab-ci.yml]

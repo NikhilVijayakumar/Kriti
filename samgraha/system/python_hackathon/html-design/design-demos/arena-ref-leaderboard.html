@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hackathon Global Leaderboard</title>
+<style>
+  :root{
+    --bg:#f7f8fa;
+    --panel:#ffffff;
+    --border:#dde1e6;
+    --border-strong:#c3c9d1;
+    --text:#1a1f28;
+    --text-mute:#5b6472;
+    --text-faint:#8891a0;
+    --accent:#2f5fd6;
+    --accent-soft:#e8edfc;
+    --gold:#8a6d1a; --gold-bg:#fbf1d3;
+    --silver:#5c6470; --silver-bg:#eef0f3;
+    --bronze:#8a4a26; --bronze-bg:#f7e3d3;
+    --good:#1a7f4e;
+    --mono: "SFMono-Regular","Consolas","Liberation Mono",Menlo,monospace;
+    --sans: -apple-system, BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{font-size:14px;line-height:1.5;}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 32px 80px;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--text);padding-bottom:14px;margin-bottom:20px;}
+  h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em;}
+  .crumb{font-size:12px;color:var(--text-faint);}
+  .meta-right{display:flex;gap:22px;text-align:right;}
+  .meta-item .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);}
+  .meta-item .v{font-family:var(--mono);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;}
+
+  section{margin-bottom:28px;}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border-strong);padding-bottom:6px;margin-bottom:12px;}
+  .sec-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin:0;color:var(--text-mute);font-weight:700;}
+  .sec-head .note{font-size:11px;color:var(--text-faint);}
+
+  /* ---- leaderboard table ---- */
+  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel);}
+  table.board{width:100%;border-collapse:collapse;min-width:960px;}
+  table.board thead th{position:sticky;top:0;background:#fafbfc;z-index:2;}
+  table.board th, table.board td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;white-space:nowrap;}
+  table.board th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:700;text-align:right;cursor:pointer;user-select:none;border-bottom:2px solid var(--border-strong);}
+  table.board th.left{text-align:left;}
+  table.board th:hover{color:var(--accent);}
+  table.board th .arrow{font-size:9px;opacity:.5;margin-left:2px;}
+  table.board td{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  table.board td.left{text-align:left;font-family:var(--sans);}
+  table.board tbody tr:hover{background:#f4f6fb;}
+  table.board tbody tr.featured{background:var(--accent-soft);}
+  table.board tbody tr.featured:hover{background:#dfe8fb;}
+
+  .rank-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;border-radius:4px;font-weight:700;font-size:12.5px;}
+  .rank-chip.r1{background:var(--gold-bg);color:var(--gold);}
+  .rank-chip.r2{background:var(--silver-bg);color:var(--silver);}
+  .rank-chip.r3{background:var(--bronze-bg);color:var(--bronze);}
+  .rank-chip.rn{color:var(--text-mute);}
+
+  .team-name{font-weight:600;}
+  .team-tag{font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:6px;}
+
+  .final-score{font-weight:700;font-size:14px;}
+
+  td.dscore{position:relative;}
+  td.dscore .bg{position:absolute;inset:2px 4px;border-radius:2px;z-index:0;}
+  td.dscore span{position:relative;z-index:1;}
+
+  .table-foot{padding:9px 14px;font-size:11px;color:var(--text-faint);border-top:1px solid var(--border);background:#fafbfc;}
+
+  /* ---- legend ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:14px 22px;margin-top:10px;font-size:11.5px;color:var(--text-mute);}
+  .legend span b{color:var(--text);}
+
+  /* ---- stats table ---- */
+  table.stats{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  table.stats th, table.stats td{padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:12.5px;}
+  table.stats th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;background:#fafbfc;text-align:right;}
+  table.stats th.left{text-align:left;}
+  table.stats tr:last-child td{border-bottom:none;}
+  table.stats td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:600;}
+
+  /* ---- distribution strip chart ---- */
+  .chart-panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px 20px;}
+  .strip-row{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:12px;padding:5px 0;border-bottom:1px dashed var(--border);}
+  .strip-row:last-child{border-bottom:none;}
+  .strip-row .dname{font-size:11.5px;color:var(--text-mute);font-weight:600;}
+  .chart-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--text-mute);margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+  .chart-legend .item{display:flex;align-items:center;gap:6px;}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;flex:none;}
+  .swatch.band{background:#e8edfc;border:1px solid #c6d4f7;}
+  .swatch.dot{background:#8a94a6;border-radius:50%;}
+  .swatch.feat{background:var(--accent);border-radius:50%;}
+
+  /* ---- narrative ---- */
+  .narrative .block{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;padding:14px 18px;margin-bottom:12px;}
+  .narrative .block.alt{border-left-color:#8a94a6;}
+  .narrative h3{font-size:13px;margin:0 0 8px;font-weight:700;}
+  .narrative p{margin:0 0 8px;color:#333a45;font-size:13.5px;line-height:1.65;}
+  .narrative p:last-child{margin-bottom:0;}
+
+  footer{margin-top:32px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);display:flex;justify-content:space-between;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <div class="crumb">Python Hackathon Audit &nbsp;/&nbsp; Shared Report</div>
+      <h1>Global Leaderboard</h1>
+    </div>
+    <div class="meta-right">
+      <div class="meta-item">
+        <div class="k">Report Date</div>
+        <div class="v">2026-07-19</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Total Teams</div>
+        <div class="v">24</div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Final Competition Results</h2>
+      <span class="note">top 8 of 24 shown · click a column header to sort · scores standardized (z-score applied), bounded /20</span>
+    </div>
+    <div class="table-scroll">
+      <table class="board" id="board">
+        <thead>
+          <tr>
+            <th class="left" data-key="rank" data-type="num">Rank<span class="arrow">▲</span></th>
+            <th class="left" data-key="team" data-type="str">Team / Repo</th>
+            <th data-key="final" data-type="num">Score /20</th>
+            <th data-key="infra" data-type="num" title="Infrastructure">Infra</th>
+            <th data-key="eng" data-type="num" title="Engineering">Eng</th>
+            <th data-key="test" data-type="num" title="Testing">Test</th>
+            <th data-key="doc" data-type="num" title="Documentation">Doc</th>
+            <th data-key="sec" data-type="num" title="Security">Sec</th>
+            <th data-key="mlops" data-type="num" title="MLOps">MLOps</th>
+            <th data-key="run" data-type="num" title="Runtime">Run</th>
+            <th data-key="tw" data-type="num" title="Team Workflow">T-W</th>
+            <th data-key="dq" data-type="num" title="Data Quality">D-Q</th>
+            <th data-key="aie" data-type="num" title="AI Explanations">AI-Expl</th>
+          </tr>
+        </thead>
+        <tbody id="board-body">
+          <!-- rows injected by script -->
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b>Infra</b> Infrastructure</span>
+      <span><b>Eng</b> Engineering</span>
+      <span><b>Test</b> Testing</span>
+      <span><b>Doc</b> Documentation</span>
+      <span><b>Sec</b> Security</span>
+      <span><b>MLOps</b> MLOps</span>
+      <span><b>Run</b> Runtime</span>
+      <span><b>T-W</b> Team Workflow</span>
+      <span><b>D-Q</b> Data Quality</span>
+      <span><b>AI-Expl</b> AI Explanations</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Statistical Overview</h2>
+      <span class="note">mean / std dev per domain, all 24 teams</span>
+    </div>
+    <table class="stats">
+      <thead><tr><th class="left">Domain</th><th>Global Mean</th><th>Global Std Dev</th></tr></thead>
+      <tbody id="stats-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Rank Distribution</h2>
+      <span class="note">score spread per domain — shaded band is ±1σ, dots are the 8 teams above</span>
+    </div>
+    <div class="chart-panel">
+      <div id="strip-chart"></div>
+      <div class="chart-legend">
+        <span class="item"><span class="swatch band"></span> ±1 σ field band</span>
+        <span class="item"><span class="swatch dot"></span> team score</span>
+        <span class="item"><span class="swatch feat"></span> nighthawk-ml-pipeline (featured)</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="sec-head">
+      <h2>Competition Narrative</h2>
+      <span class="note">generated across all 24 submissions</span>
+    </div>
+    <div class="block">
+      <h3>Overview</h3>
+      <p>Across 24 submissions, the field separates into three loose tiers. The top four teams — led by polaris-datacore at 16.5/20 — cleared 15/20 by combining high deterministic compliance (pinned dependencies, working CI, containerized builds) with semantic scores above 75 in at least six of ten domains, indicating the underlying engineering choices were both correct and well-explained. A middle tier of eleven teams clusters between 10 and 15, typically strong in one or two domains (most often team workflow or documentation) but inconsistent elsewhere. The remaining teams fall below 10/20, generally due to missing or broken CI pipelines dragging the infrastructure and testing domains down together.</p>
+      <p>Security and AI Explanations are the two weakest domains competition-wide, with global means of 55.9 and 57.8 respectively — both more than 6 points below the next-lowest domain. This is consistent with prior hackathon cohorts: security hardening and model-decision documentation are usually the first things cut under a 48-hour deadline.</p>
+    </div>
+    <div class="block alt">
+      <h3>Notable Trends</h3>
+      <p>Team Workflow has the tightest spread of any domain (σ = 6.9), suggesting most teams converged on similar practices — regular commits, PR-based review, issue tracking — regardless of overall skill level, likely because these are process habits rather than technical implementation choices. By contrast, Security has the widest spread (σ = 12.6): a handful of teams implemented secret scanning, dependency vulnerability checks, and least-privilege CI tokens, while most did none of it, producing a bimodal rather than normal distribution in that domain.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Global Leaderboard · global-leaderboard</span>
+    <span>Design demo — Arena-reference direction · sample data, no hackathon has run yet</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var domains = [
+    {key:'infra', name:'Infrastructure', mean:63.6, stdev:8.1},
+    {key:'eng',   name:'Engineering',    mean:67.2, stdev:9.0},
+    {key:'test',  name:'Testing',        mean:58.4, stdev:11.2},
+    {key:'doc',   name:'Documentation',  mean:70.1, stdev:7.5},
+    {key:'sec',   name:'Security',       mean:55.9, stdev:12.6},
+    {key:'mlops', name:'MLOps',          mean:61.0, stdev:10.4},
+    {key:'run',   name:'Runtime',        mean:68.7, stdev:8.8},
+    {key:'tw',    name:'Team Workflow',  mean:74.3, stdev:6.9},
+    {key:'dq',    name:'Data Quality',   mean:62.5, stdev:9.7},
+    {key:'aie',   name:'AI Explanations',mean:57.8, stdev:11.9}
+  ];
+
+  var teams = [
+    {rank:1, team:'polaris-datacore',       final:16.5, infra:88.0, eng:84.0, test:79.0, doc:91.0, sec:76.0, mlops:80.0, run:85.0, tw:89.0, dq:78.0, aie:74.0, featured:false},
+    {rank:2, team:'vector-forge',           final:15.1, infra:81.0, eng:78.0, test:70.0, doc:83.0, sec:68.0, mlops:75.0, run:79.0, tw:85.0, dq:72.0, aie:66.0, featured:false},
+    {rank:3, team:'nighthawk-ml-pipeline',  final:13.6, infra:73.5, eng:69.0, test:61.5, doc:77.0, sec:58.0, mlops:66.0, run:70.0, tw:82.0, dq:64.0, aie:59.5, featured:true},
+    {rank:4, team:'quantacode',             final:12.2, infra:66.0, eng:64.0, test:55.0, doc:68.0, sec:52.0, mlops:58.0, run:63.0, tw:71.0, dq:60.0, aie:54.0, featured:false},
+    {rank:5, team:'byteloom',               final:11.1, infra:60.0, eng:58.0, test:50.0, doc:62.0, sec:48.0, mlops:53.0, run:57.0, tw:65.0, dq:55.0, aie:49.0, featured:false},
+    {rank:6, team:'solstice-ai',            final: 9.9, infra:54.0, eng:50.0, test:44.0, doc:57.0, sec:41.0, mlops:47.0, run:51.0, tw:60.0, dq:49.0, aie:43.0, featured:false},
+    {rank:7, team:'driftwood-labs',         final: 8.6, infra:47.0, eng:44.0, test:38.0, doc:50.0, sec:35.0, mlops:41.0, run:45.0, tw:53.0, dq:42.0, aie:37.0, featured:false},
+    {rank:8, team:'cinderpath-systems',     final: 7.0, infra:39.0, eng:36.0, test:30.0, doc:41.0, sec:28.0, mlops:33.0, run:37.0, tw:44.0, dq:34.0, aie:29.0, featured:false}
+  ];
+
+  var domainKeys = domains.map(function(d){return d.key;});
+
+  function scoreColor(v){
+    // muted heatmap: low -> soft red tint, high -> soft blue tint, informative not decorative
+    if (v >= 75) return '#dce8fb';
+    if (v >= 60) return '#eef1f6';
+    if (v >= 45) return '#f7f0e3';
+    return '#f9e6e0';
+  }
+
+  function rankChipClass(r){
+    if (r === 1) return 'rank-chip r1';
+    if (r === 2) return 'rank-chip r2';
+    if (r === 3) return 'rank-chip r3';
+    return 'rank-chip rn';
+  }
+
+  function renderBoard(rows){
+    var tbody = document.getElementById('board-body');
+    tbody.innerHTML = '';
+    rows.forEach(function(t){
+      var tr = document.createElement('tr');
+      if (t.featured) tr.className = 'featured';
+      var cells = '';
+      cells += '<td class="left"><span class="' + rankChipClass(t.rank) + '">' + t.rank + '</span></td>';
+      cells += '<td class="left"><span class="team-name">' + t.team + '</span>' + (t.featured ? '<span class="team-tag">featured</span>' : '') + '</td>';
+      cells += '<td class="final-score">' + t.final.toFixed(1) + '</td>';
+      domainKeys.forEach(function(k){
+        var v = t[k];
+        cells += '<td class="dscore"><span class="bg" style="background:' + scoreColor(v) + '"></span><span>' + v.toFixed(1) + '</span></td>';
+      });
+      tr.innerHTML = cells;
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderBoard(teams);
+
+  // sorting
+  var sortState = {key:'rank', dir:1};
+  document.querySelectorAll('#board thead th').forEach(function(th){
+    th.addEventListener('click', function(){
+      var key = th.getAttribute('data-key');
+      var type = th.getAttribute('data-type');
+      if (sortState.key === key) { sortState.dir *= -1; } else { sortState = {key:key, dir:1}; }
+      document.querySelectorAll('#board thead th .arrow').forEach(function(a){ a.textContent=''; });
+      var arrow = th.querySelector('.arrow');
+      if (!arrow) { arrow = document.createElement('span'); arrow.className='arrow'; th.appendChild(arrow); }
+      arrow.textContent = sortState.dir === 1 ? '▲' : '▼';
+      var sorted = teams.slice().sort(function(a,b){
+        var av = a[key], bv = b[key];
+        if (type === 'str') { return sortState.dir * String(av).localeCompare(String(bv)); }
+        return sortState.dir * (av - bv);
+      });
+      renderBoard(sorted);
+    });
+  });
+
+  // stats table
+  var statsBody = document.getElementById('stats-body');
+  domains.forEach(function(d){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="left">' + d.name + '</td><td class="num">' + d.mean.toFixed(1) + '</td><td class="num">' + d.stdev.toFixed(1) + '</td>';
+    statsBody.appendChild(tr);
+  });
+
+  // rank distribution strip chart (pure SVG, generated)
+  var chartHost = document.getElementById('strip-chart');
+  var ns = 'http://www.w3.org/2000/svg';
+  var vbW = 900, rowH = 34;
+  var padL = 10, padR = 10;
+  var xMin = 0, xMax = 100;
+  function xToPx(x){ return padL + (x - xMin) / (xMax - xMin) * (vbW - padL - padR); }
+
+  domains.forEach(function(d){
+    var row = document.createElement('div');
+    row.className = 'strip-row';
+    var label = document.createElement('div');
+    label.className = 'dname';
+    label.textContent = d.name;
+    row.appendChild(label);
+
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + vbW + ' ' + rowH);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', rowH);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', d.name + ' score distribution across teams');
+
+    // axis line
+    var axis = document.createElementNS(ns, 'line');
+    axis.setAttribute('x1', xToPx(xMin)); axis.setAttribute('x2', xToPx(xMax));
+    axis.setAttribute('y1', rowH/2); axis.setAttribute('y2', rowH/2);
+    axis.setAttribute('stroke', '#dde1e6');
+    svg.appendChild(axis);
+
+    // band
+    var bx0 = xToPx(Math.max(0, d.mean - d.stdev));
+    var bx1 = xToPx(Math.min(100, d.mean + d.stdev));
+    var band = document.createElementNS(ns, 'rect');
+    band.setAttribute('x', bx0); band.setAttribute('y', 4);
+    band.setAttribute('width', bx1 - bx0); band.setAttribute('height', rowH - 8);
+    band.setAttribute('fill', '#e8edfc');
+    svg.appendChild(band);
+
+    // mean tick
+    var meanX = xToPx(d.mean);
+    var meanTick = document.createElementNS(ns, 'line');
+    meanTick.setAttribute('x1', meanX); meanTick.setAttribute('x2', meanX);
+    meanTick.setAttribute('y1', 4); meanTick.setAttribute('y2', rowH - 4);
+    meanTick.setAttribute('stroke', '#8891a0'); meanTick.setAttribute('stroke-dasharray', '2,2');
+    svg.appendChild(meanTick);
+
+    // team dots
+    teams.forEach(function(t){
+      var v = t[d.key];
+      var cx = xToPx(v);
+      var dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', cx); dot.setAttribute('cy', rowH/2); dot.setAttribute('r', t.featured ? 5.5 : 4);
+      dot.setAttribute('fill', t.featured ? '#2f5fd6' : '#8a94a6');
+      dot.setAttribute('stroke', t.featured ? '#12203f' : '#ffffff');
+      dot.setAttribute('stroke-width', t.featured ? 1.5 : 1);
+      dot.setAttribute('opacity', t.featured ? 1 : 0.85);
+      var title = document.createElementNS(ns, 'title');
+      title.textContent = t.team + ': ' + v.toFixed(1);
+      dot.appendChild(title);
+      svg.appendChild(dot);
+    });
+
+    row.appendChild(svg);
+    chartHost.appendChild(row);
+  });
+
+})();
+</script>
+</body>
+</html>
