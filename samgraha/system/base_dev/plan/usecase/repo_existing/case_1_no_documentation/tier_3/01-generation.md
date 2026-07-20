@@ -1,39 +1,58 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 3 — Generation (Path A)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 3
-**Domains:** feature-design, feature-technical
+**Use case:** Existing repo with code, no docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code but no documentation. Tiers 1–2 have completed. Tier 3 generation uses all upstream outputs plus real code as context.
+- `feature-design`
+- `feature-technical`
 
-**Key difference from `repo_new`:** Real code exists. Feature Technical generation should reflect actual code patterns, actual module interfaces, actual data models. Feature Design generation should reflect actual UI components and user flows visible in code.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-For each domain in this tier, generate a complete document from scratch using the document-level generation template.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Upstream Context
+## Upstream Dependencies
 
-All Tier 1–2 documents plus the real codebase.
+- `external-context` —informs→ `feature-design` (tier-gating: none)
+- `external-context` —informs→ `feature-technical` (tier-gating: none)
+- `feature` —derives→ `feature-design` (tier-gating: strict)
+- `design` —derives→ `feature-design` (tier-gating: strict)
+- `feature` —derives→ `feature-technical` (tier-gating: strict)
+- `engineering` —derives→ `feature-technical` (tier-gating: strict)
+- `architecture` —derives→ `feature-technical` (tier-gating: strict)
+- `prototype` —validates→ `feature-design` (tier-gating: strict)
+- `prototype` —validates→ `feature-technical` (tier-gating: strict)
 
-### Per-Domain Generation
+## Tier Gate
 
-| Domain | Template | Key code-specific context |
-|---|---|---|
-| feature-design | `templates/generation/document/09-feature-design.md` | Existing UI components, user flows visible in code |
-| feature-technical | `templates/generation/document/10-feature-technical.md` | Actual module interfaces, data models, API contracts |
+All domains in tier 3 must reach `Acceptable` before tier 4 starts.
 
-## Within-Tier Ordering
+## Domain-Specific Notes
 
-No ordering constraint — both domains generate in parallel.
+### feature-design
 
-## Output
+- Scaffold reads `templates/generation/document/feature-design.md` + `templates/generation/section/feature-design/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature-design.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-Two documents, ready for stage 2 (audit).
+### feature-technical
 
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Tier 3 there has no code — Feature Technical invents interfaces. This use case has real code — generation describes actual interfaces.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing feature-design/feature-technical docs.
+- Scaffold reads `templates/generation/document/feature-technical.md` + `templates/generation/section/feature-technical/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature-technical.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

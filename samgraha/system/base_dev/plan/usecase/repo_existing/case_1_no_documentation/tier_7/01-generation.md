@@ -1,34 +1,44 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 7 — Generation (Path A)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 7
-**Domains:** build
+**Use case:** Existing repo with code, no docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code but no documentation. Tiers 1–6 have completed. Tier 7 generation uses all upstream outputs plus real code as context.
+- `build`
 
-**Key difference from `repo_new`:** Real code exists. Build should reference actual CI/CD configuration files, actual build scripts, actual deployment targets. The document describes the real build infrastructure — what's configured, what's missing, what needs to change.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-Generate a complete Build document from scratch using the document-level generation template.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Generation
+## Upstream Dependencies
 
-| Domain | Template | Key code-specific context |
-|---|---|---|
-| build | `templates/generation/document/14-build.md` | Actual CI/CD config, build scripts, deployment targets |
+- `qa` —informs→ `build` (tier-gating: none)
+- `implementation` —derives→ `build` (tier-gating: strict)
+- `readme` —requires→ `build` (tier-gating: strict)
 
-## Within-Tier Ordering
+## Tier Gate
 
-Single domain — no ordering constraint.
+All domains in tier 7 must reach `Acceptable` before tier 8 starts.
 
-## Output
+## Domain-Specific Notes
 
-One document, ready for stage 2 (audit).
+### build
 
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Tier 7 there has no code — Build describes planned infrastructure. This use case has real code — Build describes actual infrastructure and gaps.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing Build docs.
+- Scaffold reads `templates/generation/document/build.md` + `templates/generation/section/build/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/build.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

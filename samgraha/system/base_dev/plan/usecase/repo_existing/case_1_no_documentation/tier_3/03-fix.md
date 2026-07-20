@@ -1,30 +1,30 @@
-# Stage 3 → Fix
+# Tier 3 — Fix Loop
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 3
-**Domains:** feature-design, feature-technical
+**Use case:** Existing repo with code, no docs
+**Max iterations:** 5
+**Threshold:** `Acceptable`
+**Fallback:** human_review
 
-## Input
+## Fix Procedure
 
-Reports from stage 2 (`02-audit.md`).
+For each domain in this tier that scores below threshold:
 
-## Procedure
+1. Identify failing sections from audit findings
+2. Re-run content-fill with expanded context (all completed domains)
+3. Re-validate and re-calculate
+4. Repeat until threshold met or max iterations reached
+5. If max iterations exceeded: flag for human review
 
-Check score against threshold (the Acceptable band minimum). Below threshold → decide fix scope, apply, re-run stage 2. Loop until gate clears or fallback triggers.
+## Domains
 
-### Fix Scope Decision
+- `feature-design`
+- `feature-technical`
 
-- **Section-level fix** if failures isolated to ≤2 sections AND no whole-document criterion failed.
-- **Whole-document regeneration** otherwise.
+## Iteration Tracking
 
-### Fix Loop
+Each iteration is logged to console with:
+- Current score vs threshold
+- Which sections were re-filled
+- Re-scored result after fix
 
-`max_iterations: 5`, then `human_review` fallback. Tier gate stays hard.
-
-### Tier Gate
-
-Once every domain in Tier 3 has final score ≥ the Acceptable band minimum, the tier clears and Tier 4 can begin.
-
-## Differs From Other Use Cases
-
-No difference → same fix procedure.
+Score history persisted to `score_history.json` after each successful calculate.

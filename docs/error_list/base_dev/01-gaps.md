@@ -6,7 +6,7 @@ Things the plan/usecase layer implies (or requires to actually run) but does not
 
 ## GAP-001 — Audit stage never names the executor script
 - **Severity:** HIGH
-- **Status:** 🔴 **OPEN**
+- **Status:** ✅ **FIXED** — re-ran `render_usecase_docs.py`; all 32 `02-audit.md` files now name executor scripts (`evaluate_rules.py`, `evaluate_semantic.py`, `validate.py`, `calculate.py`, `report.py`, `analyze.py`, `visualize.py`, `report_html.py`)
 
 **Evidence:**
 `plan/usecase/repo_existing/case_1_no_documentation/tier_1/02-audit.md:19-22`:
@@ -95,7 +95,7 @@ The slot the fix loop is supposed to feed a finding into is a literal placeholde
 
 ## GAP-004 — No single doc states the full pipeline order + CLI chain
 - **Severity:** MEDIUM
-- **Status:** 🔴 **OPEN**
+- **Status:** ✅ **FIXED** — `plan/core/README.md` now documents `init.py` as canonical entry point, full 11-script chain with CLI args, and data flow diagram
 
 **Evidence:**
 The real, working chain — confirmed by reading each script's CLI args — is:

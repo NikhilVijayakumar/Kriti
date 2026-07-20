@@ -1,32 +1,48 @@
-﻿# Stage 2 — Audit
+# Tier 1 — Audit (Path B)
 
-**Use case:** `repo_new/case_2_has_documentation`
-**Tier:** 1
-**Domains:** vision, philosophy
+**Use case:** New repo, some pre-existing docs
+**Path:** B (audit existing documentation — docs already present)
 
-## Input
+## Domains
 
-Documents produced by stage 1 (`01-generation.md`): `vision.md` and `philosophy.md` — either migrated from existing docs or generated from scratch.
+- `vision`
+- `philosophy`
 
-## Procedure
+## Pipeline per Domain
 
-0. **Run applicable scripts:** for domains with scripts (Scripts column below), run each per its manifest's `depends_on` order, reusing a cached result where `script/policy.yaml`'s policy allows, else executing fresh. Capture JSON per check-name.
+Each domain in this tier follows the Path B pipeline (no scaffold/content phase):
 
-For each domain, run the real audit files unmodified against the document. Produce a report per domain.
+1. **Pre-hook: staleness check** — skip if doc unchanged since last audit
+2. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against existing docs
+3. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+4. **Validate** (`scripts/validate.py`) — run 18 deterministic check scripts
+5. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+6. **Report** (`scripts/report.py`) — render markdown report
+7. **Analyze** (`scripts/analyze.py`) — generate structured fix plan
+8. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+9. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report
+10. **Fix** (semantic, conditional) — only if score < threshold; modify existing sections
 
-### Per-Domain Audit Files
+## Upstream Dependencies
 
-| Domain | Scripts (check-name) | Deterministic doc | Deterministic section | Semantic doc | Semantic section |
-|---|---|---|---|---|---|
-| vision |  | `audit/deterministic/document/01-vision.yaml` | `audit/deterministic/section/01-vision/*.yaml` | `audit/semantic/document/01-vision.md` | `audit/semantic/section/01-vision/*.md` |
-| philosophy |  | `audit/deterministic/document/02-philosophy.yaml` | `audit/deterministic/section/02-philosophy/*.yaml` | `audit/semantic/document/02-philosophy.md` | `audit/semantic/section/02-philosophy/*.md` |
+- `vision` —inspires→ `philosophy` (tier-gating: strict)
+- `readme` —references→ `vision` (tier-gating: none)
 
-Score via `calculation/summary/final_score.yaml` — 4 equal buckets (25% each).
+## Tier Gate
 
-## Output
+All domains in tier 1 must reach `Acceptable` before tier 2 starts.
 
-A report per domain. This stage never fixes anything.
+## Domain-Specific Notes
 
-## Differs From Other Use Cases
+### vision
 
-No difference — same audit files, same procedure across all use cases.
+- Existing doc detected at `docs/vision.md` or `vision.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### philosophy
+
+- Existing doc detected at `docs/philosophy.md` or `philosophy.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)

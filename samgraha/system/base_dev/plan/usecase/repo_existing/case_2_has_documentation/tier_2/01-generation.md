@@ -1,47 +1,96 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 2 — Generation (Path A)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 2
-**Domains:** security, feature, architecture, design, engineering, external-context
+**Use case:** Existing repo, existing docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code and existing non-conforming documentation. Tier 1 has completed. Stage 1 is migration — restructure existing prose into template shape. Real code is available as additional context.
+- `security`
+- `feature`
+- `architecture`
+- `design`
+- `engineering`
+- `external-context`
 
-**Key difference:** Every domain has existing docs (Path B) AND real code context (from Tier 2). Migration can reference actual code to verify content accuracy — if the existing Architecture doc describes a microservices design but the code is a monolith, the migration should flag this discrepancy.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-For each domain, migrate the existing document into the template shape, using real code as verification context.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Per-Domain Migration
+## Upstream Dependencies
 
-| Domain | Target template | Code verification |
-|---|---|---|
-| security | `templates/generation/document/06-security.md` | Check auth/permissions against actual code |
-| feature | `templates/generation/document/04-feature.md` | Check feature list against actual functionality |
-| architecture | `templates/generation/document/05-architecture.md` | Verify structure against actual directory layout |
-| design | `templates/generation/document/07-design.md` | Verify UI against actual components |
-| engineering | `templates/generation/document/08-engineering.md` | Verify practices against actual config |
-| external-context | `templates/generation/document/15-external-context.md` | Not code-dependent |
-
-### Migration Process
-
-1. Read existing document.
-2. Map content to template's required sections.
-3. Cross-reference with real code where applicable — flag discrepancies.
-4. Restructure: correct order, fill gaps, resolve discrepancies.
-5. Output: template-shaped document with content preserved and verified.
+- `vision` —derives→ `feature` (tier-gating: strict)
+- `philosophy` —derives→ `feature` (tier-gating: strict)
+- `vision` —derives→ `security` (tier-gating: strict)
+- `philosophy` —derives→ `security` (tier-gating: strict)
+- `philosophy` —guides→ `architecture` (tier-gating: strict)
+- `philosophy` —guides→ `design` (tier-gating: strict)
+- `philosophy` —guides→ `engineering` (tier-gating: strict)
+- `security` —guides→ `architecture` (tier-gating: strict)
+- `security` —guides→ `engineering` (tier-gating: strict)
+- `architecture` —soft_aligns_with→ `engineering` (tier-gating: none)
+- `external-context` —informs→ `engineering` (tier-gating: none)
 
 ## Within-Tier Ordering
 
-**External Context must complete before Engineering starts.** All other domains migrate in parallel.
+- `external-context` must complete before `engineering` starts
 
-## Output
+## Tier Gate
 
-Six documents, ready for stage 2 (audit).
+All domains in tier 2 must reach `Acceptable` before tier 3 starts.
 
-## Differs From Other Use Cases
+## Domain-Specific Notes
 
-- **vs. `repo_existing/case_1_no_documentation`:** Stage 1 is migration, not generation. Existing docs change the starting point.
-- **vs. `repo_new/case_2_has_documentation`:** Real code context available for verification.
+### security
+
+- Scaffold reads `templates/generation/document/security.md` + `templates/generation/section/security/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/security.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### feature
+
+- Scaffold reads `templates/generation/document/feature.md` + `templates/generation/section/feature/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### architecture
+
+- Scaffold reads `templates/generation/document/architecture.md` + `templates/generation/section/architecture/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/architecture.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### design
+
+- Scaffold reads `templates/generation/document/design.md` + `templates/generation/section/design/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/design.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### engineering
+
+- Scaffold reads `templates/generation/document/engineering.md` + `templates/generation/section/engineering/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/engineering.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### external-context
+
+- Scaffold reads `templates/generation/document/external-context.md` + `templates/generation/section/external-context/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/external-context.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

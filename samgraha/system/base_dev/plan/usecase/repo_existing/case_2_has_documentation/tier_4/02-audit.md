@@ -1,31 +1,36 @@
-﻿# Stage 2 — Audit
+# Tier 4 — Audit (Path B)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 4
-**Domains:** prototype
+**Use case:** Existing repo, existing docs
+**Path:** B (audit existing documentation — docs already present)
 
-## Input
+## Domains
 
-Document produced by stage 1 (`01-generation.md`).
+- `prototype`
 
-## Procedure
+## Pipeline per Domain
 
-0. **Run applicable scripts:** for domains with scripts (Scripts column below), run each per its manifest's `depends_on` order, reusing a cached result where `script/policy.yaml`'s policy allows, else executing fresh. Capture JSON per check-name.
+Each domain in this tier follows the Path B pipeline (no scaffold/content phase):
 
-Run the real audit files unmodified.
+1. **Pre-hook: staleness check** — skip if doc unchanged since last audit
+2. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against existing docs
+3. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+4. **Validate** (`scripts/validate.py`) — run 18 deterministic check scripts
+5. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+6. **Report** (`scripts/report.py`) — render markdown report
+7. **Analyze** (`scripts/analyze.py`) — generate structured fix plan
+8. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+9. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report
+10. **Fix** (semantic, conditional) — only if score < threshold; modify existing sections
 
-### Per-Domain Audit Files
+## Tier Gate
 
-| Domain | Scripts (check-name) | Deterministic doc | Semantic doc |
-|---|---|---|---|
-| prototype | `mock-api-runs` | `audit/deterministic/document/11-prototype.yaml` | `audit/semantic/document/11-prototype.md` |
+All domains in tier 4 must reach `Acceptable` before tier 5 starts.
 
-Plus section-level audits. Score via `calculation/summary/final_score.yaml` — 4 equal buckets.
+## Domain-Specific Notes
 
-## Output
+### prototype
 
-A report. This stage never fixes anything.
-
-## Differs From Other Use Cases
-
-No difference — same audit files, same procedure.
+- Existing doc detected at `docs/prototype.md` or `prototype.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)

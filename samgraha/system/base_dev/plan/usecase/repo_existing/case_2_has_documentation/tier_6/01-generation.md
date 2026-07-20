@@ -1,27 +1,38 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 6 — Generation (Path A)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 6
-**Domains:** qa
+**Use case:** Existing repo, existing docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code and existing non-conforming documentation. Tiers 1–5 have completed. Stage 1 is migration with real code verification.
+- `qa`
 
-## Procedure
+## Pipeline per Domain
 
-| Domain | Target template | Code verification |
-|---|---|---|
-| qa | `templates/generation/document/12-qa.md` | Verify test coverage claims against actual test files |
+Each domain in this tier follows the Path A pipeline:
 
-## Within-Tier Ordering
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-Single domain — no ordering constraint.
+## Tier Gate
 
-## Output
+All domains in tier 6 must reach `Acceptable` before tier 7 starts.
 
-One document, ready for stage 2 (audit).
+## Domain-Specific Notes
 
-## Differs From Other Use Cases
+### qa
 
-- **vs. `repo_existing/case_1_no_documentation`:** Stage 1 is migration, not generation.
+- Scaffold reads `templates/generation/document/qa.md` + `templates/generation/section/qa/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/qa.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

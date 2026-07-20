@@ -1,29 +1,58 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 3 — Generation (Path A)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 3
-**Domains:** feature-design, feature-technical
+**Use case:** Existing repo, existing docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code and existing non-conforming documentation. Tiers 1–2 have completed. Stage 1 is migration with real code verification.
+- `feature-design`
+- `feature-technical`
 
-## Procedure
+## Pipeline per Domain
 
-| Domain | Target template | Code verification |
-|---|---|---|
-| feature-design | `templates/generation/document/09-feature-design.md` | Check specs against actual UI components |
-| feature-technical | `templates/generation/document/10-feature-technical.md` | Check specs against actual module interfaces |
+Each domain in this tier follows the Path A pipeline:
 
-## Within-Tier Ordering
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-No ordering constraint — both domains migrate in parallel.
+## Upstream Dependencies
 
-## Output
+- `external-context` —informs→ `feature-design` (tier-gating: none)
+- `external-context` —informs→ `feature-technical` (tier-gating: none)
+- `feature` —derives→ `feature-design` (tier-gating: strict)
+- `design` —derives→ `feature-design` (tier-gating: strict)
+- `feature` —derives→ `feature-technical` (tier-gating: strict)
+- `engineering` —derives→ `feature-technical` (tier-gating: strict)
+- `architecture` —derives→ `feature-technical` (tier-gating: strict)
+- `prototype` —validates→ `feature-design` (tier-gating: strict)
+- `prototype` —validates→ `feature-technical` (tier-gating: strict)
 
-Two documents, ready for stage 2 (audit).
+## Tier Gate
 
-## Differs From Other Use Cases
+All domains in tier 3 must reach `Acceptable` before tier 4 starts.
 
-- **vs. `repo_existing/case_1_no_documentation`:** Stage 1 is migration, not generation.
-- **vs. `repo_new/case_2_has_documentation`:** Real code context for verification.
+## Domain-Specific Notes
+
+### feature-design
+
+- Scaffold reads `templates/generation/document/feature-design.md` + `templates/generation/section/feature-design/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature-design.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### feature-technical
+
+- Scaffold reads `templates/generation/document/feature-technical.md` + `templates/generation/section/feature-technical/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature-technical.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

@@ -1,47 +1,38 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 4 — Generation (Path A)
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 4
-**Domains:** prototype
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-New repo, no documentation, no code. Tiers 1–3 have completed — all upstream documents exist and have cleared their tier gates. Tier 4 generation uses all upstream outputs as context.
+- `prototype`
 
-## Procedure
+## Pipeline per Domain
 
-Generate a complete Prototype document from scratch using the document-level generation template.
+Each domain in this tier follows the Path A pipeline:
 
-### Upstream Context (from completed tiers)
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-- **Vision** — what to build and why
-- **Philosophy** — principles, values, trade-offs
-- **Feature** — feature list, priorities
-- **Architecture** — system design, component boundaries
-- **Design** — user experience, interaction patterns
-- **Engineering** — technical practices
-- **External Context** — market landscape, constraints
-- **Security** — threat model, requirements
-- **Feature Design** — detailed feature specifications
-- **Feature Technical** — technical feature specifications
+## Tier Gate
 
-### Generation
+All domains in tier 4 must reach `Acceptable` before tier 5 starts.
 
-| Domain | Template | Key upstream inputs |
-|---|---|---|
-| prototype | `templates/generation/document/11-prototype.md` | Feature Design, Feature Technical, Design |
+## Domain-Specific Notes
 
-Prototype validates Feature Design and Feature Technical — its generation should produce a prototype plan that exercises the most critical feature paths.
+### prototype
 
-## Within-Tier Ordering
-
-Single domain — no ordering constraint.
-
-## Output
-
-One document, ready for stage 2 (audit). No scoring at this stage.
-
-## Differs From Other Use Cases
-
-- **vs. `repo_existing/case_1_no_documentation`:** Tier 4 generation there has real code available. Prototype should reflect actual code structure and be buildable against the existing codebase.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference at Tier 4 — neither has pre-existing prototype docs.
+- Scaffold reads `templates/generation/document/prototype.md` + `templates/generation/section/prototype/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/prototype.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

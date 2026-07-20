@@ -1,34 +1,38 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 4 — Generation (Path A)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 4
-**Domains:** prototype
+**Use case:** Existing repo with code, no docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code but no documentation. Tiers 1–3 have completed. Tier 4 generation uses all upstream outputs plus real code as context.
+- `prototype`
 
-**Key difference from `repo_new`:** Real code exists. Prototype should be buildable against the actual codebase — it should exercise real module interfaces, real data flows, real entry points. The prototype plan describes what to build against what exists, not a standalone exercise.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-Generate a complete Prototype document from scratch using the document-level generation template.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Generation
+## Tier Gate
 
-| Domain | Template | Key code-specific context |
-|---|---|---|
-| prototype | `templates/generation/document/11-prototype.md` | Actual entry points, module interfaces, data flows |
+All domains in tier 4 must reach `Acceptable` before tier 5 starts.
 
-## Within-Tier Ordering
+## Domain-Specific Notes
 
-Single domain — no ordering constraint.
+### prototype
 
-## Output
-
-One document, ready for stage 2 (audit).
-
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Tier 4 there has no code — Prototype invents a buildable exercise. This use case has real code — Prototype describes validation against actual modules.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing prototype docs.
+- Scaffold reads `templates/generation/document/prototype.md` + `templates/generation/section/prototype/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/prototype.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

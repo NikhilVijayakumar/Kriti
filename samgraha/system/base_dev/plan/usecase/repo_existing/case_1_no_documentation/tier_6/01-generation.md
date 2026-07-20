@@ -1,34 +1,38 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 6 — Generation (Path A)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 6
-**Domains:** qa
+**Use case:** Existing repo with code, no docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code but no documentation. Tiers 1–5 have completed. Tier 6 generation uses all upstream outputs plus real code as context.
+- `qa`
 
-**Key difference from `repo_new`:** Real code exists. QA should reference actual test files, actual test coverage data, actual test frameworks in use. The document describes the real testing state — what's tested, what's not, what gaps exist.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-Generate a complete QA document from scratch using the document-level generation template.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Generation
+## Tier Gate
 
-| Domain | Template | Key code-specific context |
-|---|---|---|
-| qa | `templates/generation/document/12-qa.md` | Actual test files, test frameworks, coverage data |
+All domains in tier 6 must reach `Acceptable` before tier 7 starts.
 
-## Within-Tier Ordering
+## Domain-Specific Notes
 
-Single domain — no ordering constraint.
+### qa
 
-## Output
-
-One document, ready for stage 2 (audit).
-
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Tier 6 there has no code — QA describes the planned test strategy. This use case has real code — QA describes the actual testing state and gaps.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing QA docs.
+- Scaffold reads `templates/generation/document/qa.md` + `templates/generation/section/qa/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/qa.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

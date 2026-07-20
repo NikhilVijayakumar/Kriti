@@ -1,27 +1,44 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 7 — Generation (Path A)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 7
-**Domains:** build
+**Use case:** Existing repo, existing docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code and existing non-conforming documentation. Tiers 1–6 have completed. Stage 1 is migration with real code verification.
+- `build`
 
-## Procedure
+## Pipeline per Domain
 
-| Domain | Target template | Code verification |
-|---|---|---|
-| build | `templates/generation/document/14-build.md` | Verify CI/CD claims against actual config files |
+Each domain in this tier follows the Path A pipeline:
 
-## Within-Tier Ordering
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-Single domain — no ordering constraint.
+## Upstream Dependencies
 
-## Output
+- `qa` —informs→ `build` (tier-gating: none)
+- `implementation` —derives→ `build` (tier-gating: strict)
+- `readme` —requires→ `build` (tier-gating: strict)
 
-One document, ready for stage 2 (audit).
+## Tier Gate
 
-## Differs From Other Use Cases
+All domains in tier 7 must reach `Acceptable` before tier 8 starts.
 
-- **vs. `repo_existing/case_1_no_documentation`:** Stage 1 is migration, not generation.
+## Domain-Specific Notes
+
+### build
+
+- Scaffold reads `templates/generation/document/build.md` + `templates/generation/section/build/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/build.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

@@ -1,48 +1,45 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 5 — Generation (Path A)
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 5
-**Domains:** implementation
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-New repo, no documentation, no code. Tiers 1–4 have completed — all upstream documents exist and have cleared their tier gates. Tier 5 generation uses all upstream outputs as context.
+- `implementation`
 
-## Procedure
+## Pipeline per Domain
 
-Generate a complete Implementation document from scratch using the document-level generation template.
+Each domain in this tier follows the Path A pipeline:
 
-### Upstream Context (from completed tiers)
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-- **Vision** — what to build and why
-- **Philosophy** — principles, values, trade-offs
-- **Feature** — feature list, priorities
-- **Architecture** — system design, component boundaries
-- **Design** — user experience, interaction patterns
-- **Engineering** — technical practices
-- **External Context** — market landscape, constraints
-- **Security** — threat model, requirements
-- **Feature Design** — detailed feature specifications
-- **Feature Technical** — technical feature specifications
-- **Prototype** — prototype plan, validation results
+## Upstream Dependencies
 
-### Generation
+- `feature-technical` —derives→ `implementation` (tier-gating: strict)
+- `engineering` —derives→ `implementation` (tier-gating: strict)
+- `prototype` —informs→ `implementation` (tier-gating: none)
+- `qa` —validates→ `implementation` (tier-gating: strict)
 
-| Domain | Template | Key upstream inputs |
-|---|---|---|
-| implementation | `templates/generation/document/13-implementation.md` | Feature Technical, Engineering, Prototype |
+## Tier Gate
 
-Implementation translates Feature Technical specifications into a concrete implementation plan. Since this is a new repo with no code, the plan describes what will be built, not what has been built.
+All domains in tier 5 must reach `Acceptable` before tier 6 starts.
 
-## Within-Tier Ordering
+## Domain-Specific Notes
 
-Single domain — no ordering constraint.
+### implementation
 
-## Output
-
-One document, ready for stage 2 (audit). No scoring at this stage.
-
-## Differs From Other Use Cases
-
-- **vs. `repo_existing/case_1_no_documentation`:** Tier 5 generation there has real code available. Implementation should reflect the actual codebase — what exists, what needs to be added, what needs to change. This use case has no code — implementation describes the planned build from scratch.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing implementation docs.
+- Scaffold reads `templates/generation/document/implementation.md` + `templates/generation/section/implementation/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/implementation.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

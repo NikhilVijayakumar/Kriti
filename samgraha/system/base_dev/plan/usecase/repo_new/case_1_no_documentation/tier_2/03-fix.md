@@ -1,45 +1,34 @@
-﻿# Stage 3 → Fix
+# Tier 2 — Fix Loop
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 2
-**Domains:** security, feature, architecture, design, engineering, external-context
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Max iterations:** 5
+**Threshold:** `Acceptable`
+**Fallback:** human_review
 
-## Input
+## Fix Procedure
 
-Reports from stage 2 (`02-audit.md`): per-domain scores and failure details.
+For each domain in this tier that scores below threshold:
 
-## Procedure
+1. Identify failing sections from audit findings
+2. Re-run content-fill with expanded context (all completed domains)
+3. Re-validate and re-calculate
+4. Repeat until threshold met or max iterations reached
+5. If max iterations exceeded: flag for human review
 
-For each domain, check the final score against the gate threshold. If below threshold, decide fix scope, apply the fix, then re-run stage 2. Loop stages 2→3 until gate clears or fallback triggers.
+## Domains
 
-### Threshold
+- `security`
+- `feature`
+- `architecture`
+- `design`
+- `engineering`
+- `external-context`
 
-- **Score:** the Acceptable band minimum)
-- **Rating:** Acceptable
+## Iteration Tracking
 
-### Fix Scope Decision
+Each iteration is logged to console with:
+- Current score vs threshold
+- Which sections were re-filled
+- Re-scored result after fix
 
-- **Section-level fix** if failures are isolated to ≤2 sections AND no whole-document criterion failed. Apply via `templates/generation/section/{domain}/{section}.md`'s `## Audit Fix` slot.
-- **Whole-document regeneration** otherwise. Apply via `templates/generation/document/{domain}.md`.
-
-### Fix Loop
-
-1. Apply fix (section-level or whole-document).
-2. Re-run stage 2 on the fixed document.
-3. Check score against threshold.
-4. If below threshold and iterations < 5: repeat from step 1.
-5. If iterations = 5: fallback → flag remaining failures for human review.
-
-### Max Iterations
-
-`max_iterations: 5` — per `core/loop.yaml`. After 5 iterations, fallback to `human_review`. Tier gate stays hard.
-
-### Tier Gate
-
-Once every domain in Tier 2 (security, feature, architecture, design, engineering, external-context) has a final score ≥ the Acceptable band minimum, the tier clears and Tier 3 can begin.
-
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_2_has_documentation`:** No difference → same fix procedure.
-- **vs. `repo_existing/case_1_no_documentation`:** No difference → same fix procedure.
-- **vs. `repo_existing/case_2_has_documentation`:** No difference → same fix procedure.
+Score history persisted to `score_history.json` after each successful calculate.

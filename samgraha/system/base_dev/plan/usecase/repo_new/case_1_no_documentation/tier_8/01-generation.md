@@ -1,43 +1,46 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 8 — Generation (Path A)
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 8
-**Domains:** readme, product-guide
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-New repo, no documentation, no code. Tiers 1–7 have completed — all 14 upstream documents exist and have cleared their tier gates. Tier 8 is the final tier: Product Guide cannot be generated accurately until everything upstream, all the way through Build, is real and compliant.
+- `readme`
+- `product-guide`
 
-## Procedure
+## Pipeline per Domain
 
-For each domain in this tier, generate a complete document from scratch using the document-level generation template.
+Each domain in this tier follows the Path A pipeline:
 
-### Upstream Context (from completed tiers)
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-All 14 upstream documents are available as context. This is the most context-rich generation step — every domain's output feeds into README and Product Guide.
+## Tier Gate
 
-- **README** references Vision (for product description) and requires Build (for installation/setup instructions)
-- **Product Guide** needs everything — it's the comprehensive user-facing document that covers the entire product
+All domains in tier 8 must reach `Acceptable` before tier 9 starts.
 
-### Per-Domain Generation
+## Domain-Specific Notes
 
-| Domain | Template | Key upstream inputs |
-|---|---|---|
-| readme | `templates/generation/document/16-readme.md` | Vision, Build |
-| product-guide | `templates/generation/document/17-product-guide.md` | All 14 upstream documents |
+### readme
 
-**Product Guide special case:** Product Guide has zero edges in `core/tiers.yaml`'s relationships — it depends on everything, not nothing. Its generation context is all already-completed domains, not derived from relationship edges. This matches `00-domain-relationships.md`: "needs everything else, including README, to be accurate."
+- Scaffold reads `templates/generation/document/readme.md` + `templates/generation/section/readme/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/readme.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-## Within-Tier Ordering
+### product-guide
 
-No ordering constraint — both domains generate in full parallel. README and Product Guide are independent of each other (README references Vision and Build; Product Guide references everything). Both can generate simultaneously.
-
-## Output
-
-Two documents, one per domain, ready for stage 2 (audit). No scoring at this stage.
-
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_2_has_documentation`:** No difference at Tier 8 — neither case has pre-existing README or Product Guide docs.
-- **vs. `repo_existing/case_1_no_documentation`:** Tier 8 generation there has real code available. README installation instructions and Product Guide examples should reflect actual code structure, actual commands, actual file paths. This use case has no code — README and Product Guide describe the planned product.
-- **vs. `repo_existing/case_2_has_documentation`:** Tier 8 there starts with existing non-conforming README/Product Guide docs and migrates them. This use case generates from scratch.
+- Scaffold reads `templates/generation/document/product-guide.md` + `templates/generation/section/product-guide/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/product-guide.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

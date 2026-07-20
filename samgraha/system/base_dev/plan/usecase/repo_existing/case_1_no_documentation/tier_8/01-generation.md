@@ -1,37 +1,46 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 8 — Generation (Path A)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 8
-**Domains:** readme, product-guide
+**Use case:** Existing repo with code, no docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code but no documentation. Tiers 1–7 have completed — all 14 upstream documents exist and have cleared their tier gates. Tier 8 is the final tier.
+- `readme`
+- `product-guide`
 
-**Key difference from `repo_new`:** Real code exists. README should reference actual file paths, actual commands, actual configuration. Product Guide should reference actual features visible in the codebase. Both documents describe the real product, not a planned one.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-For each domain in this tier, generate a complete document from scratch using the document-level generation template.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Per-Domain Generation
+## Tier Gate
 
-| Domain | Template | Key code-specific context |
-|---|---|---|
-| readme | `templates/generation/document/16-readme.md` | Actual file paths, commands, configuration, entry points |
-| product-guide | `templates/generation/document/17-product-guide.md` | All 14 upstream docs + actual features visible in code |
+All domains in tier 8 must reach `Acceptable` before tier 9 starts.
 
-**Product Guide special case:** Product Guide depends on everything — full-context generation from all already-completed domains.
+## Domain-Specific Notes
 
-## Within-Tier Ordering
+### readme
 
-No ordering constraint — both domains generate in parallel.
+- Scaffold reads `templates/generation/document/readme.md` + `templates/generation/section/readme/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/readme.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-## Output
+### product-guide
 
-Two documents, ready for stage 2 (audit).
-
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Tier 8 there has no code — README and Product Guide describe the planned product. This use case has real code — both documents describe the actual product with real file paths and commands.
-- **vs. `repo_new/case_2_has_documentation` / `repo_existing/case_2_has_documentation`:** No difference — neither has pre-existing README/Product Guide docs.
+- Scaffold reads `templates/generation/document/product-guide.md` + `templates/generation/section/product-guide/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/product-guide.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

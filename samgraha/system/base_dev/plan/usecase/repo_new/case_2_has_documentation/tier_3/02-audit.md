@@ -1,32 +1,55 @@
-﻿# Stage 2 — Audit
+# Tier 3 — Audit (Path B)
 
-**Use case:** `repo_new/case_2_has_documentation`
-**Tier:** 3
-**Domains:** feature-design, feature-technical
+**Use case:** New repo, some pre-existing docs
+**Path:** B (audit existing documentation — docs already present)
 
-## Input
+## Domains
 
-Documents produced by stage 1 (`01-generation.md`).
+- `feature-design`
+- `feature-technical`
 
-## Procedure
+## Pipeline per Domain
 
-0. **Run applicable scripts:** for domains with scripts (Scripts column below), run each per its manifest's `depends_on` order, reusing a cached result where `script/policy.yaml`'s policy allows, else executing fresh. Capture JSON per check-name.
+Each domain in this tier follows the Path B pipeline (no scaffold/content phase):
 
-Run the real audit files unmodified. Produce a report per domain.
+1. **Pre-hook: staleness check** — skip if doc unchanged since last audit
+2. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against existing docs
+3. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+4. **Validate** (`scripts/validate.py`) — run 18 deterministic check scripts
+5. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+6. **Report** (`scripts/report.py`) — render markdown report
+7. **Analyze** (`scripts/analyze.py`) — generate structured fix plan
+8. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+9. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report
+10. **Fix** (semantic, conditional) — only if score < threshold; modify existing sections
 
-### Per-Domain Audit Files
+## Upstream Dependencies
 
-| Domain | Scripts (check-name) | Deterministic doc | Semantic doc |
-|---|---|---|---|
-| feature-design |  | `audit/deterministic/document/09-feature-design.yaml` | `audit/semantic/document/09-feature-design.md` |
-| feature-technical | `integration-points-exist` | `audit/deterministic/document/10-feature-technical.yaml` | `audit/semantic/document/10-feature-technical.md` |
+- `external-context` —informs→ `feature-design` (tier-gating: none)
+- `external-context` —informs→ `feature-technical` (tier-gating: none)
+- `feature` —derives→ `feature-design` (tier-gating: strict)
+- `design` —derives→ `feature-design` (tier-gating: strict)
+- `feature` —derives→ `feature-technical` (tier-gating: strict)
+- `engineering` —derives→ `feature-technical` (tier-gating: strict)
+- `architecture` —derives→ `feature-technical` (tier-gating: strict)
+- `prototype` —validates→ `feature-design` (tier-gating: strict)
+- `prototype` —validates→ `feature-technical` (tier-gating: strict)
 
-Plus section-level audits. Score via `calculation/summary/final_score.yaml` — 4 equal buckets.
+## Tier Gate
 
-## Output
+All domains in tier 3 must reach `Acceptable` before tier 4 starts.
 
-A report per domain. This stage never fixes anything.
+## Domain-Specific Notes
 
-## Differs From Other Use Cases
+### feature-design
 
-No difference — same audit files, same procedure.
+- Existing doc detected at `docs/feature-design.md` or `feature-design.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### feature-technical
+
+- Existing doc detected at `docs/feature-technical.md` or `feature-technical.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)

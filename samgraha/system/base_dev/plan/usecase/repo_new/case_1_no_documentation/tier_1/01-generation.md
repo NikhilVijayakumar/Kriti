@@ -1,41 +1,51 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 1 — Generation (Path A)
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 1
-**Domains:** vision, philosophy
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-New repo, no documentation, no code. The only input is the product idea — a description of what the product is, who it serves, and why it exists. No upstream tier outputs exist (Tier 1 is the root of the derivation chain).
+- `vision`
+- `philosophy`
 
-## Procedure
+## Pipeline per Domain
 
-For each domain in this tier, generate a complete document from scratch using the document-level generation template.
+Each domain in this tier follows the Path A pipeline:
 
-### Vision
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-- **Template:** `templates/generation/document/01-vision.md`
-- **Input context:** the product idea
-- **Upstream context:** none (Vision is Tier 1 — derives from nothing)
-- **Output:** `vision.md` — a complete Vision document with all 10 sections (Purpose, Vision Statement, Problem, Solution, Target Audience, Platform Pillars, Philosophy, Guiding Principles, Success Criteria, Traceability)
+## Upstream Dependencies
 
-### Philosophy
+- `vision` —inspires→ `philosophy` (tier-gating: strict)
+- `readme` —references→ `vision` (tier-gating: none)
 
-- **Template:** `templates/generation/document/02-philosophy.md`
-- **Input context:** the product idea + the generated Vision document from above
-- **Upstream context:** Vision (Tier 1) — Philosophy is in the same tier; Vision generates first, Philosophy uses Vision as input
-- **Output:** `philosophy.md` — a complete Philosophy document with all 4 sections (Purpose, Principles, Values, Trade-offs)
+## Tier Gate
 
-## Within-Tier Ordering
+All domains in tier 1 must reach `Acceptable` before tier 2 starts.
 
-No ordering constraint — both domains generate in parallel. However, Philosophy's template references Vision as upstream, so in practice Philosophy generation should read the generated Vision document as input context. This is a data dependency within the tier, not a gating constraint — Vision doesn't need to clear the audit gate before Philosophy can start generating, it just needs to exist as text.
+## Domain-Specific Notes
 
-## Output
+### vision
 
-Two documents, one per domain, ready for stage 2 (audit). No scoring at this stage — that's stage 2's job.
+- Scaffold reads `templates/generation/document/vision.md` + `templates/generation/section/vision/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/vision.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-## Differs From Other Use Cases
+### philosophy
 
-- **vs. `repo_new/case_2_has_documentation`:** No difference at Tier 1 — neither case has pre-existing docs at this tier.
-- **vs. `repo_existing/case_1_no_documentation`:** No difference at Tier 1 — no code context applies to Vision or Philosophy.
-- **vs. `repo_existing/case_2_has_documentation`:** No difference at Tier 1 — no existing docs to migrate.
+- Scaffold reads `templates/generation/document/philosophy.md` + `templates/generation/section/philosophy/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/philosophy.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

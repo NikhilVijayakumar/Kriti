@@ -1,36 +1,85 @@
-# Stage 2 — Audit
+# Tier 2 — Audit (Path B)
 
-**Use case:** `repo_existing/case_1_no_documentation`
-**Tier:** 2
-**Domains:** security, feature, architecture, design, engineering, external-context
+**Use case:** Existing repo with code, no docs
+**Path:** B (audit existing documentation — docs already present)
 
-## Input
+## Domains
 
-Documents produced by stage 1 (`01-generation.md`): one document per domain.
+- `security`
+- `feature`
+- `architecture`
+- `design`
+- `engineering`
+- `external-context`
 
-## Procedure
+## Pipeline per Domain
 
-0. **Run applicable scripts:** for domains with scripts (Scripts column below), run each per its manifest's `depends_on` order, reusing a cached result where `script/policy.yaml`'s policy allows, else executing fresh. Capture JSON per check-name.
+Each domain in this tier follows the Path B pipeline (no scaffold/content phase):
 
-For each domain, run the real audit files unmodified against the generated document. Produce a report per domain.
+1. **Pre-hook: staleness check** — skip if doc unchanged since last audit
+2. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against existing docs
+3. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+4. **Validate** (`scripts/validate.py`) — run 18 deterministic check scripts
+5. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+6. **Report** (`scripts/report.py`) — render markdown report
+7. **Analyze** (`scripts/analyze.py`) — generate structured fix plan
+8. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+9. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report
+10. **Fix** (semantic, conditional) — only if score < threshold; modify existing sections
 
-### Per-Domain Audit Files
+## Upstream Dependencies
 
-| Domain | Scripts (check-name) | Deterministic doc | Deterministic section | Semantic doc | Semantic section |
-|---|---|---|---|---|---|
-| security | `secret-scan`, `dependency-vuln-scan` | `audit/deterministic/document/03-security.yaml` | `audit/deterministic/section/03-security/*.yaml` | `audit/semantic/document/03-security.md` | `audit/semantic/section/03-security/*.md` |
-| feature |  | `audit/deterministic/document/04-feature.yaml` | `audit/deterministic/section/04-feature/*.yaml` | `audit/semantic/document/04-feature.md` | `audit/semantic/section/04-feature/*.md` |
-| architecture | `module-boundary-diff` | `audit/deterministic/document/05-architecture.yaml` | `audit/deterministic/section/05-architecture/*.yaml` | `audit/semantic/document/05-architecture.md` | `audit/semantic/section/05-architecture/*.md` |
-| design | `design-tokens-in-implementation` | `audit/deterministic/document/06-design.yaml` | `audit/deterministic/section/06-design/*.yaml` | `audit/semantic/document/06-design.md` | `audit/semantic/section/06-design/*.md` |
-| engineering | `lint-standards` | `audit/deterministic/document/07-engineering.yaml` | `audit/deterministic/section/07-engineering/*.yaml` | `audit/semantic/document/07-engineering.md` | `audit/semantic/section/07-engineering/*.md` |
-| external-context | `dependency-reachable` | `audit/deterministic/document/08-external-context.yaml` | `audit/deterministic/section/08-external-context/*.yaml` | `audit/semantic/document/08-external-context.md` | `audit/semantic/section/08-external-context/*.md` |
+- `vision` —derives→ `feature` (tier-gating: strict)
+- `philosophy` —derives→ `feature` (tier-gating: strict)
+- `vision` —derives→ `security` (tier-gating: strict)
+- `philosophy` —derives→ `security` (tier-gating: strict)
+- `philosophy` —guides→ `architecture` (tier-gating: strict)
+- `philosophy` —guides→ `design` (tier-gating: strict)
+- `philosophy` —guides→ `engineering` (tier-gating: strict)
+- `security` —guides→ `architecture` (tier-gating: strict)
+- `security` —guides→ `engineering` (tier-gating: strict)
+- `architecture` —soft_aligns_with→ `engineering` (tier-gating: none)
+- `external-context` —informs→ `engineering` (tier-gating: none)
 
-Score via `calculation/summary/final_score.yaml` — 4 equal buckets (25% each).
+## Tier Gate
 
-## Output
+All domains in tier 2 must reach `Acceptable` before tier 3 starts.
 
-A report per domain. This stage never fixes anything.
+## Domain-Specific Notes
 
-## Differs From Other Use Cases
+### security
 
-No difference — same audit files, same procedure.
+- Existing doc detected at `docs/security.md` or `security.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### feature
+
+- Existing doc detected at `docs/feature.md` or `feature.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### architecture
+
+- Existing doc detected at `docs/architecture.md` or `architecture.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### design
+
+- Existing doc detected at `docs/design.md` or `design.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### engineering
+
+- Existing doc detected at `docs/engineering.md` or `engineering.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)
+
+### external-context
+
+- Existing doc detected at `docs/external-context.md` or `external-context.md`
+- Validate runs same checks as Path A but against existing content
+- Fix phase modifies existing sections in-place (not full re-generation)

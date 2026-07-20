@@ -1,59 +1,96 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 2 — Generation (Path A)
 
-**Use case:** `repo_new/case_1_no_documentation`
-**Tier:** 2
-**Domains:** security, feature, architecture, design, engineering, external-context
+**Use case:** New repo, no code, no docs — only a product idea as input
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-New repo, no documentation, no code. Tier 1 has completed — Vision and Philosophy documents exist and have cleared the tier gate. Tier 2 generation uses Tier 1 outputs as upstream context.
+- `security`
+- `feature`
+- `architecture`
+- `design`
+- `engineering`
+- `external-context`
 
-## Procedure
+## Pipeline per Domain
 
-For each domain in this tier, generate a complete document from scratch using the document-level generation template.
+Each domain in this tier follows the Path A pipeline:
 
-### Upstream Context (from completed tiers)
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-- **Vision** — `vision.md` (Tier 1): product purpose, problem, solution, target audience, pillars, philosophy, guiding principles, success criteria
-- **Philosophy** — `philosophy.md` (Tier 1): principles, values, trade-offs
+## Upstream Dependencies
 
-All Tier 2 domains read both Tier 1 documents as input context. The specific relevance varies by domain:
-- **Security** reads Vision ( threat landscape framing) and Philosophy ( values that constrain security decisions)
-- **Feature** reads Vision ( what to build) and Philosophy ( how to prioritize)
-- **Architecture** reads Philosophy ( principles that constrain architectural choices)
-- **Design** reads Philosophy ( principles that guide design decisions)
-- **Engineering** reads Philosophy ( principles that constrain engineering choices)
-- **External Context** reads Vision ( what the product aspires to be, for market/landscape framing)
-
-### Per-Domain Generation
-
-| Domain | Template | Key upstream inputs |
-|---|---|---|
-| security | `templates/generation/document/06-security.md` | Vision, Philosophy |
-| feature | `templates/generation/document/04-feature.md` | Vision, Philosophy |
-| architecture | `templates/generation/document/05-architecture.md` | Philosophy |
-| design | `templates/generation/document/07-design.md` | Philosophy |
-| engineering | `templates/generation/document/08-engineering.md` | Philosophy |
-| external-context | `templates/generation/document/15-external-context.md` | Vision |
-
-Each domain generates a complete document with all sections defined in its generation template.
+- `vision` —derives→ `feature` (tier-gating: strict)
+- `philosophy` —derives→ `feature` (tier-gating: strict)
+- `vision` —derives→ `security` (tier-gating: strict)
+- `philosophy` —derives→ `security` (tier-gating: strict)
+- `philosophy` —guides→ `architecture` (tier-gating: strict)
+- `philosophy` —guides→ `design` (tier-gating: strict)
+- `philosophy` —guides→ `engineering` (tier-gating: strict)
+- `security` —guides→ `architecture` (tier-gating: strict)
+- `security` —guides→ `engineering` (tier-gating: strict)
+- `architecture` —soft_aligns_with→ `engineering` (tier-gating: none)
+- `external-context` —informs→ `engineering` (tier-gating: none)
 
 ## Within-Tier Ordering
 
-**External Context must complete before Engineering starts.** External Context informs Engineering — Engineering's generation needs External Context as input context (market landscape, competitive analysis, regulatory constraints).
+- `external-context` must complete before `engineering` starts
 
-All other domains in this tier generate in full parallel. Architecture and Engineering have a `soft_aligns_with` relationship (mutual, non-mandatory) — this is non-blocking.
+## Tier Gate
 
-Execution order:
-1. External Context, Security, Feature, Architecture, Design — parallel
-2. Engineering — after External Context completes
+All domains in tier 2 must reach `Acceptable` before tier 3 starts.
 
-## Output
+## Domain-Specific Notes
 
-Six documents, one per domain, ready for stage 2 (audit). No scoring at this stage.
+### security
 
-## Differs From Other Use Cases
+- Scaffold reads `templates/generation/document/security.md` + `templates/generation/section/security/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/security.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-- **vs. `repo_new/case_2_has_documentation`:** No difference at Tier 2 — neither case has pre-existing docs for these domains.
-- **vs. `repo_existing/case_1_no_documentation`:** Tier 2 generation there has real code available as additional context. Architecture, Engineering, and Feature Technical generation should reflect the actual code structure, not invent a design. This use case has no code — generation produces a plausible design from the product idea alone.
-- **vs. `repo_existing/case_2_has_documentation`:** Tier 2 there starts with existing non-conforming docs and migrates them. This use case generates from scratch.
+### feature
+
+- Scaffold reads `templates/generation/document/feature.md` + `templates/generation/section/feature/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/feature.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### architecture
+
+- Scaffold reads `templates/generation/document/architecture.md` + `templates/generation/section/architecture/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/architecture.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### design
+
+- Scaffold reads `templates/generation/document/design.md` + `templates/generation/section/design/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/design.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### engineering
+
+- Scaffold reads `templates/generation/document/engineering.md` + `templates/generation/section/engineering/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/engineering.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
+
+### external-context
+
+- Scaffold reads `templates/generation/document/external-context.md` + `templates/generation/section/external-context/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/external-context.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends

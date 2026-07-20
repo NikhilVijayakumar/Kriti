@@ -1,43 +1,51 @@
-﻿# Stage 1 — Generate or Migrate
+# Tier 1 — Generation (Path A)
 
-**Use case:** `repo_existing/case_2_has_documentation`
-**Tier:** 1
-**Domains:** vision, philosophy
+**Use case:** Existing repo, existing docs
+**Path:** A (generate from scratch — no existing documentation)
 
-## Context Available
+## Domains
 
-Existing repo with real code and existing non-conforming documentation. Tier 1 domains have hand-written docs that don't conform to `documentation-standards/`. Stage 1 is migration — restructure existing prose into the template shape.
+- `vision`
+- `philosophy`
 
-**Key difference from `case_1_no_documentation`:** Every domain starts with existing docs (Path B). No generation from scratch. The existing content is preserved and restructured, not discarded.
+## Pipeline per Domain
 
-## Procedure
+Each domain in this tier follows the Path A pipeline:
 
-For each domain, migrate the existing document into the template shape.
+1. **Scaffold** (`scripts/scaffold.py`) — read template, emit heading skeleton to `{domain}.md`
+2. **Content-fill** (semantic) — LLM writes prose per section, filling TODO placeholders
+3. **Post-hook: compile** — ingest into knowledge.db (when built)
+4. **Evaluate rules** (`scripts/evaluate_rules.py`) — evaluate deterministic rules against document
+5. **Evaluate semantic** (`scripts/evaluate_semantic.py`) — heuristic semantic criteria evaluation
+   - Pre-script: `scripts/gather_semantic_context.py` — gather check metrics as grounding evidence
+6. **Calculate** (`scripts/calculate.py`) — compute 4-bucket score from evaluated results
+7. **Report** (`scripts/report.py`) — render markdown report from templates
+8. **Analyze** (`scripts/analyze.py`) — generate structured fix plan, save to `{domain}-fix-plan.json`
+9. **Visualize** (`scripts/visualize.py`) — generate 8 PNG charts
+10. **Report HTML** (`scripts/report_html.py`) — render self-contained HTML report with embedded charts
+11. **Fix** (semantic, conditional) — only if score < threshold; re-fill content, re-audit
 
-### Per-Domain Migration
+## Upstream Dependencies
 
-| Domain | Existing doc | Target template |
-|---|---|---|
-| vision | Existing Vision doc | `templates/generation/document/01-vision.md` |
-| philosophy | Existing Philosophy doc | `templates/generation/document/02-philosophy.md` |
+- `vision` —inspires→ `philosophy` (tier-gating: strict)
+- `readme` —references→ `vision` (tier-gating: none)
 
-### Migration Process
+## Tier Gate
 
-1. Read the existing document.
-2. Map existing content to the generation template's required sections.
-3. Restructure: correct section order, fill missing sections using template guidance, remove content that belongs in a different domain.
-4. Output: template-shaped document with original content preserved where it fits.
+All domains in tier 1 must reach `Acceptable` before tier 2 starts.
 
-## Within-Tier Ordering
+## Domain-Specific Notes
 
-No ordering constraint — both domains migrate in parallel.
+### vision
 
-## Output
+- Scaffold reads `templates/generation/document/vision.md` + `templates/generation/section/vision/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/vision.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
 
-Two documents, ready for stage 2 (audit).
+### philosophy
 
-## Differs From Other Use Cases
-
-- **vs. `repo_new/case_1_no_documentation`:** Stage 1 is migration, not generation. Every domain has existing docs.
-- **vs. `repo_existing/case_1_no_documentation`:** Stage 1 is migration, not generation. Same code context, but existing docs change the starting point.
-- **vs. `repo_new/case_2_has_documentation`:** Identical at Tier 1 — no code context applies to Vision/Philosophy.
+- Scaffold reads `templates/generation/document/philosophy.md` + `templates/generation/section/philosophy/*.md`
+- Content-fill uses upstream context from completed tiers
+- Validate runs against `audit/deterministic/document/philosophy.yaml` + section rules
+- Score persisted to `score_history.json` for cross-run trends
