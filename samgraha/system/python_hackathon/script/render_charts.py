@@ -42,15 +42,15 @@ DOMAIN_SHORT = [
 ]
 
 COLORS = {
-    "primary": "#2563EB",
-    "secondary": "#7C3AED",
-    "success": "#16A34A",
-    "danger": "#DC2626",
-    "warning": "#F59E0B",
-    "neutral": "#6B7280",
-    "light": "#F3F4F6",
-    "bg": "#FFFFFF",
-    "text": "#111827",
+    "primary": "#0969da",       # accent-fg
+    "secondary": "#8250df",     # accent-emphasis (purple, Primer default)
+    "success": "#1a7f37",       # success-fg
+    "danger": "#cf222e",        # danger-fg
+    "warning": "#9a6700",       # attention-fg
+    "neutral": "#656d76",       # fg-muted
+    "light": "#f6f8fa",         # canvas-subtle
+    "bg": "#ffffff",            # canvas
+    "text": "#1f2328",          # fg-default
 }
 
 SEVERITY_COLORS = {
@@ -257,7 +257,7 @@ def chart_model_spread(model_results, domain_name, output_path, mean_score=0):
     """
     _ensure_dir(output_path)
 
-    if len(model_results) < 2:
+    if len(model_results) < 3:
         return
 
     names = [m["model_name"] for m in model_results]
@@ -394,13 +394,22 @@ def generate_charts(spec, output_dir):
 
     spec keys:
       - domain_charts: {"{participant}_{domain}": {team_score, global_mean, ...}}
+      - rank_charts: {domain_name: {teams_data}} — once per domain
       - team_charts: {team_name: {domain_scores_list}}
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # Domain-specific charts (1-5), keyed by "{participant}_{domain}"
+    # Rank distribution — once per domain (chart 2)
+    for domain_name, data in spec.get("rank_charts", {}).items():
+        if "teams_data" in data:
+            chart_rank_distribution(
+                data["teams_data"],
+                domain_name,
+                os.path.join(output_dir, f"{domain_name}-rank-distribution.png"),
+            )
+
+    # Domain-specific charts (1, 3-5), keyed by "{participant}_{domain}"
     for chart_key, data in spec.get("domain_charts", {}).items():
-        # chart_key is "teamname_infrastructure" format
         parts = chart_key.split("_", 1)
         pname = parts[0] if len(parts) > 1 else "unknown"
         domain_name = parts[1] if len(parts) > 1 else chart_key
@@ -414,14 +423,6 @@ def generate_charts(spec, output_dir):
                 data.get("global_stdev", 0),
                 f"{pname} — {domain_name}",
                 os.path.join(output_dir, f"{safe_key}-field-distribution.png"),
-            )
-
-        # 2. Rank distribution
-        if "teams_data" in data:
-            chart_rank_distribution(
-                data["teams_data"],
-                domain_name,
-                os.path.join(output_dir, f"{safe_key}-rank-distribution.png"),
             )
 
         # 3. Det vs sem contribution

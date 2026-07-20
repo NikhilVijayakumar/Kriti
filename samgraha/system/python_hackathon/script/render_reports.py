@@ -347,7 +347,7 @@ def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
     """
     from db import list_participants, get_domain_scores
 
-    spec = {"domain_charts": {}, "team_charts": {}}
+    spec = {"domain_charts": {}, "team_charts": {}, "rank_charts": {}}
 
     participants = list_participants(conn, "python_hackathon")
 
@@ -378,19 +378,20 @@ def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
         global_mean = ds.get("global_mean", 0)
         global_stdev = ds.get("global_stdev", 0)
 
-        # All teams' scores for rank distribution (shared across participants)
+        # Rank distribution — once per domain (shared across all teams)
         teams_data = []
         for r in results:
             score = r.get("domain_details", {}).get(domain_name, {}).get("adjusted_score", 0)
             teams_data.append({"team": r["team"], "score": score})
+        spec["rank_charts"][domain_name] = {"teams_data": teams_data}
 
+        # Per-participant charts for this domain
         for p in participants:
             pid = p["id"]
             pname = p["participant_name"]
             chart_key = f"{pname}_{domain_name}"
 
             dc = {
-                "teams_data": teams_data,
                 "global_mean": global_mean,
                 "global_stdev": global_stdev,
                 "det_weight": det_w,
