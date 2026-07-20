@@ -3,6 +3,11 @@ import json
 import argparse
 import os
 import glob
+import re
+
+
+SKIP_DIRS = {".git", "__pycache__", "venv", ".venv", "node_modules", ".mypy_cache",
+             ".pytest_cache", ".tox", ".eggs", "*.egg-info", ".eggs"}
 
 
 def _run_tool(cmd, timeout=60):
@@ -14,6 +19,76 @@ def _run_tool(cmd, timeout=60):
         return proc.returncode, proc.stdout, proc.stderr
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return -1, "", "tool not available"
+
+
+def _check_cicd_content(repo_path):
+    """
+    Check for CI/CD files with real pipeline content (on: triggers, jobs: blocks).
+    Returns dict with cicd_real_content (bool), cicd_files_found (list), cicd_stubs (list).
+    """
+    real_files = []
+    stub_files = []
+
+    # GitHub Actions
+    workflows_dir = os.path.join(repo_path, ".github", "workflows")
+    if os.path.isdir(workflows_dir):
+        for f in os.listdir(workflows_dir):
+            if not f.endswith((".yml", ".yaml")):
+                continue
+            path = os.path.join(workflows_dir, f)
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+                    content = fh.read()
+            except OSError:
+                continue
+            has_trigger = bool(re.search(r"^\s*on\s*:", content, re.MULTILINE))
+            has_jobs = bool(re.search(r"^\s*jobs\s*:", content, re.MULTILINE))
+            if has_trigger and has_jobs:
+                real_files.append(os.path.relpath(path, repo_path))
+            else:
+                stub_files.append(os.path.relpath(path, repo_path))
+
+    # GitLab CI
+    gitlab_ci = os.path.join(repo_path, ".gitlab-ci.yml")
+    if os.path.isfile(gitlab_ci):
+        try:
+            with open(gitlab_ci, "r", encoding="utf-8", errors="ignore") as fh:
+                content = fh.read()
+            has_trigger = bool(re.search(r"^\s*(on|rules|only|except)\s*:", content, re.MULTILINE))
+            has_jobs = bool(re.search(r"^\s*jobs\s*:", content, re.MULTILINE)) or bool(
+                re.search(r"^[a-zA-Z_][a-zA-Z0-9_-]*\s*:", content, re.MULTILINE)
+            )
+            if has_trigger or has_jobs:
+                real_files.append(os.path.relpath(gitlab_ci, repo_path))
+            else:
+                stub_files.append(os.path.relpath(gitlab_ci, repo_path))
+        except OSError:
+            pass
+
+    return {
+        "cicd_real_content": len(real_files) > 0,
+        "cicd_files_found": real_files,
+        "cicd_stubs": stub_files,
+    }
+
+
+def _count_top_level_dirs(repo_path):
+    """
+    Count top-level directories (excluding hidden dirs and known non-structure dirs).
+    """
+    count = 0
+    for entry in os.listdir(repo_path):
+        full = os.path.join(repo_path, entry)
+        if not os.path.isdir(full):
+            continue
+        if entry.startswith("."):
+            continue
+        if entry in SKIP_DIRS:
+            continue
+        if entry.endswith(".egg-info"):
+            continue
+        count += 1
+    return count
 
 
 def run_python_audit(repo_path):
@@ -32,6 +107,12 @@ def run_python_audit(repo_path):
         "mypy_executed": False,
         "mypy_error_count": 0,
         "mypy_errors": [],
+        # CI/CD content check
+        "cicd_real_content": False,
+        "cicd_files_found": [],
+        "cicd_stubs": [],
+        # Folder structure
+        "top_level_dir_count": 0,
     }
 
     # 1. Check Configurations
@@ -109,6 +190,15 @@ def run_python_audit(repo_path):
         result["mypy_executed"] = True
         result["mypy_error_count"] = len(errors)
         result["mypy_errors"] = errors[:20]  # cap at 20
+
+    # 4. CI/CD content check
+    cicd = _check_cicd_content(repo_path)
+    result["cicd_real_content"] = cicd["cicd_real_content"]
+    result["cicd_files_found"] = cicd["cicd_files_found"]
+    result["cicd_stubs"] = cicd["cicd_stubs"]
+
+    # 5. Folder structure proxy
+    result["top_level_dir_count"] = _count_top_level_dirs(repo_path)
 
     return result
 

@@ -3,8 +3,8 @@ domain: engineering
 scope: document
 kind: deterministic
 standard_version: "1.0"
-total_rules: 8
-total_weight: 8.0
+total_rules: 9
+total_weight: 9.0
 
 description: "Rules checking code quality configurations, type hinting, and code metrics."
 
@@ -88,12 +88,27 @@ rules:
       op: eq
 
   - id: eng-008
-    description: "CI/CD pipeline configured"
-    condition: "repository contains .github/workflows/*.yml or .gitlab-ci.yml with real pipeline content"
-    message: "No CI/CD pipeline found. Teams should have automated testing or build workflows."
+    description: "CI/CD pipeline with real workflow content"
+    condition: "repository contains .github/workflows/*.yml or .gitlab-ci.yml with on: triggers and jobs: blocks (not empty stubs)"
+    message: "No CI/CD pipeline with real content found. Teams should have automated testing or build workflows."
     severity: warning
     weight: 1.0
     mandatory: false
     evidence:
-      type: file_presence
-      targets: [.github/workflows/*.yml, .gitlab-ci.yml]
+      type: tool_execution
+      target: cicd_real_content
+      threshold: 1
+      op: gte
+
+  - id: eng-009
+    description: "Codebase split across multiple directories"
+    condition: "repository has at least 2 top-level directories (not counting hidden/venv/__pycache__)"
+    message: "Everything appears to be in one directory. A structured codebase separates concerns."
+    severity: warning
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: tool_execution
+      target: top_level_dir_count
+      threshold: 2
+      op: gte
