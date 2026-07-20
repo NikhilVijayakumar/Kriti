@@ -28,13 +28,15 @@ def main():
     parser.add_argument("--standard", default="python_hackathon")
     parser.add_argument("--db", default=None)
     parser.add_argument("--output-dir", default=None, help="Output directory for reports (default: reports/)")
+    parser.add_argument("--mode", choices=["det", "sem", "both"], default="both",
+                        help="det=ignore semantic scores, sem=ignore deterministic, both=default")
     args = parser.parse_args()
 
     conn = get_conn(args.db)
     weights_cfg = _load_weights(WEIGHTS_FILE)
 
     # Load aggregated scores from DB
-    aggregated = get_all_scores_as_dict(conn, args.standard)
+    aggregated = get_all_scores_as_dict(conn, args.standard, mode=args.mode)
     if not aggregated:
         print("No scores found in DB. Run run_hackathon.py first.")
         return

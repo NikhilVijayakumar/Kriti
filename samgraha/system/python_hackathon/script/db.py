@@ -209,14 +209,24 @@ def get_domain_scores(conn, participant_id, domain=None):
     ).fetchall()
 
 
-def get_all_scores_as_dict(conn, standard):
+def get_all_scores_as_dict(conn, standard, mode="both"):
     """
     Returns aggregated_scores dict shaped for statistics.py:
       {team_name: {domain: {"raw_score": float, "deterministic_score": float,
        "semantic_mean": float, "model_breakdown": {model: score}}}}
+
+    Domains with zero audit data for a team get raw_score=0.0 (z-score
+    population includes everyone, per loop.yaml z_score_population_rule).
+
+    mode: "both" (default) | "det" (zero out semantic) | "sem" (zero out deterministic)
     """
     import yaml
     agg_dir = os.path.join(os.path.dirname(__file__), "..", "calculation", "aggregation", "domain")
+    all_domains = [
+        "infrastructure", "engineering", "testing", "documentation",
+        "security", "mlops", "runtime", "team-workflow",
+        "data-quality", "ai-explanations",
+    ]
 
     participants = list_participants(conn, standard)
     result = {}
@@ -234,10 +244,28 @@ def get_all_scores_as_dict(conn, standard):
                 domains[d]["semantic_models"][r["model"]] = r["score"]
 
         team_output = {}
-        for d, data in domains.items():
+        for d in all_domains:
+            if d not in domains:
+                # Zero audit data for this domain — inject 0.0 so
+                # statistics.py includes this team in the z-score population.
+                team_output[d] = {
+                    "raw_score": 0.0,
+                    "deterministic_score": 0.0,
+                    "semantic_mean": 0.0,
+                    "model_breakdown": {},
+                }
+                continue
+
+            data = domains[d]
             det = data["deterministic"] or 0.0
             sem_scores = list(data["semantic_models"].values())
             sem_mean = sum(sem_scores) / len(sem_scores) if sem_scores else 0.0
+
+            # --mode filter: zero out the excluded kind
+            if mode == "det":
+                sem_mean = 0.0
+            elif mode == "sem":
+                det = 0.0
 
             det_w, sem_w = 0.60, 0.40
             import glob as globmod
@@ -246,9 +274,9 @@ def get_all_scores_as_dict(conn, standard):
                 try:
                     with open(matches[0], "r", encoding="utf-8") as f:
                         agg = yaml.safe_load(f)
-                    w = agg.get("weights", {})
-                    det_w = w.get("deterministic", 0.60)
-                    sem_w = w.get("semantic", 0.40)
+                    weights = agg.get("weights", {})
+                    det_w = weights.get("deterministic", 0.60)
+                    sem_w = weights.get("semantic", 0.40)
                 except (yaml.YAMLError, OSError):
                     pass
 

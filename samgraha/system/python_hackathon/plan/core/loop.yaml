@@ -1,44 +1,78 @@
 id: python-hackathon-loop
-version: "1.0"
+version: "2.0"
+
+description: >
+  8-use-case pipeline for python_hackathon. Strict sequential order.
+  2a always before 2b per team. 2b has no "complete" end-state —
+  it accumulates indefinitely. Gate for use-case 3 is "2a passed for
+  team(s), whatever 2b data exists is used as-is."
 
 stages:
-  - repository:
-      description: "Ingest target repository for evaluation"
+  - id: 1
+    name: Init
+    script: run_hackathon.py (startup path)
+    verify: verify_usecase_1_init.py
+    gate: DB exists, schema correct, all teams.json entries registered
 
-  - audit:
-      type: deterministic
-      scope: document
-      parallel: true
+  - id: 2a
+    name: "Audit — Deterministic"
+    script: run_hackathon.py --deterministic-only
+    verify: verify_usecase_2a_audit_deterministic.py
+    gate: "10/10 domains have kind='deterministic' row per team"
+    rule: always runs FIRST per team, before 2b
 
-  - audit:
-      type: semantic
-      scope: document
-      parallel: true
+  - id: 2b
+    name: "Audit — Semantic"
+    script: agent-driven sessions
+    verify: verify_usecase_2b_audit_semantic.py
+    gate_minimum: ">=1 semantic row per domain per team (unblocks 3)"
+    gate_full: "all configured models scored every domain (informational only)"
+    rule: starts after 2a for that team; accumulates indefinitely; no "complete" end-state
 
-  - calculate:
-      type: deterministic
-      scope: document
+  - id: 3
+    name: Calculate
+    script: run_reporting.py (--mode det|sem|both)
+    verify: verify_usecase_3_calculate.py
+    gate: 2a passed for team(s); uses whatever 2b data exists
 
-  - calculate:
-      type: semantic
-      scope: ensemble
+  - id: 4
+    name: Analysis
+    script: agent-driven (writes standard_narratives)
+    verify: verify_usecase_4_analysis.py
+    gate: narrative exists for every team+domain with audit data
 
-  - aggregate:
-      type: domain
+  - id: 5
+    name: "Markdown + Visualization"
+    script: run_reporting.py (render_charts.py + render_reports.py markdown)
+    verify: verify_usecase_5_markdown_charts.py
+    gate: all expected PNG + MD files exist, no leftover {{}} tokens
 
-  - calculate:
-      type: relative
-      scope: competition
+  - id: 6
+    name: "HTML Report"
+    script: run_reporting.py (render_reports.py render_html_all)
+    verify: verify_usecase_6_html_report.py
+    gate: 31 HTML files per team + 1 leaderboard, no empty base64 payloads
 
-  - normalize:
-      type: final
-      cap: 20
+  - id: 7
+    name: "PDF Generation"
+    script: export_team_pdfs.py
+    verify: verify_usecase_7_pdf_generation.py
+    gate: one PDF per team, page count matches expected
 
-  - validate:
-      type: scoring
-      source: calculation/validation/scoring_validation.yaml
-      on_failure: abort
+domains:
+  - infrastructure
+  - engineering
+  - testing
+  - documentation
+  - security
+  - mlops
+  - runtime
+  - team-workflow
+  - data-quality
+  - ai-explanations
 
-  - report:
-      type: generation
-      templates: templates/reports
+z_score_population_rule: >
+  A team with zero audit data for a domain is included in that domain's
+  z-score population with raw_score=0.0 (option A). This means incomplete
+  teams drag the domain mean down and inflate spread mid-competition.
+  Self-corrects once all teams are audited. See proposal §5.
