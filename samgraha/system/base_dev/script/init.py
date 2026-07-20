@@ -21,7 +21,7 @@ from typing import Any
 
 import re
 
-from _common import load_yaml, read_text, write_json, write_text, compute_fingerprint, utc_now_iso, ALL_DOMAINS
+from _common import load_yaml, load_json, read_text, write_json, write_text, compute_fingerprint, utc_now_iso, ALL_DOMAINS
 
 # Import sibling scripts
 sys.path.insert(0, str(Path(__file__).parent))
@@ -31,7 +31,7 @@ from scaffold import (
 )
 from validate import validate
 from calculate import calculate_all
-from report import render_report
+from report import render_report, render_trend_and_narrative
 from evaluate_rules import evaluate_rules
 from evaluate_semantic import evaluate_all_semantic, evaluate_semantic_document
 from gather_semantic_context import build_supporting_evidence
@@ -125,6 +125,7 @@ def append_score_history(
         "final_score": scores.get("final_score", {}).get("score", 0),
         "band": scores.get("score_bands", {}).get("rating", "N/A"),
         "git_revision": git_revision,
+        "model": scores.get("model", "heuristic-v1"),
         "deterministic_whole": scores.get("deterministic_whole", {}).get("score", 0),
         "deterministic_section": scores.get("deterministic_section", {}).get("score", 0),
         "semantic_whole": scores.get("semantic_whole", {}).get("score", 0),
@@ -281,6 +282,8 @@ def phase_report(
     domain: str,
     scores: dict[str, Any],
     out_dir: Path,
+    trend_json: Path | None = None,
+    narrative_json: Path | None = None,
 ) -> Path:
     """Render reports for a domain."""
     reports: list[str] = []
@@ -308,6 +311,20 @@ def phase_report(
     sem_sec_path = out_dir / f"{domain}-sem-sec-report.md"
     write_text(sem_sec_path, sem_sec_report)
     reports.append(str(sem_sec_path))
+
+    # Trend table + narrative (§6.5 + §9)
+    trend = None
+    if trend_json and trend_json.exists():
+        trend = load_json(trend_json)
+    narrative = None
+    if narrative_json and narrative_json.exists():
+        narrative = load_json(narrative_json)
+
+    trend_narrative_md = render_trend_and_narrative(trend, narrative)
+    if trend_narrative_md.strip():
+        tn_path = out_dir / f"{domain}-trend-narrative.md"
+        write_text(tn_path, trend_narrative_md)
+        reports.append(str(tn_path))
 
     return det_doc_path  # Return primary report path
 
@@ -360,17 +377,60 @@ def phase_analyze(
     return result
 
 
+def phase_analyze_trend(
+    system_root: Path,
+    domain: str,
+    out_dir: Path,
+    score_history: list[dict] | None = None,
+) -> dict[str, Any] | None:
+    """Run multi-window trend analysis (§6.5). Produces {domain}-trend.json.
+
+    Reads the existing score_history.json via load_score_history().
+    Returns the trend dict, or None on error.
+    """
+    try:
+        from analyze_trend import analyze_trend, load_history
+    except ImportError:
+        print(f"  Analyze trend: skipped (import error)")
+        return None
+
+    scores_path = out_dir / f"{domain}-scores.json"
+    if not scores_path.exists():
+        print(f"  Analyze trend: skipped (no scores file)")
+        return None
+
+    scores = json.loads(scores_path.read_text(encoding="utf-8"))
+
+    # Use passed history or load from file
+    if score_history is not None:
+        history = [e for e in score_history if e.get("domain") == domain]
+    else:
+        history_path = out_dir.parent / "score_history.json"
+        history = load_history(history_path, domain) if history_path.exists() else []
+
+    result = analyze_trend(scores, history)
+    trend_path = out_dir / f"{domain}-trend.json"
+    write_json(trend_path, result)
+    return result
+
+
 def phase_visualize(
     system_root: Path,
     domain: str,
     out_dir: Path,
+    history_path: Path | None = None,
+    viz_plan: list[str] | None = None,
 ) -> None:
     """Generate visualization charts (§19)."""
     try:
         from visualize import generate_all_charts
         scores_path = out_dir / f"{domain}-scores.json"
         charts_out = out_dir / "charts"
-        generate_all_charts(system_root, out_dir, charts_out, scores_path)
+        generate_all_charts(
+            system_root, out_dir, charts_out, scores_path,
+            viz_plan=viz_plan,
+            history_path=history_path,
+        )
     except ImportError:
         print(f"  Visualize: skipped (matplotlib not available)")
     except Exception as e:
@@ -574,9 +634,24 @@ def execute_tier(
             git_rev = compute_fingerprint(out_dir)
             append_score_history(score_history_path, domain, scores, git_rev)
 
+        # Phase 6.5: Trend analysis (§6.5)
+        trend = None
+        if not dry_run and scores:
+            history = load_score_history(score_history_path)
+            trend = phase_analyze_trend(system_root, domain, domain_out, history)
+            if trend:
+                print(f"  Trend: {trend['vs_last_run']['direction']}, "
+                      f"vs_last_run={trend['vs_last_run']['delta']:+.1f}")
+
         # Phase 7: Report
         if not dry_run and scores:
-            report_path = phase_report(system_root, domain, scores, domain_out)
+            trend_path = domain_out / f"{domain}-trend.json"
+            narrative_path = domain_out / f"{domain}-narrative.json"
+            report_path = phase_report(
+                system_root, domain, scores, domain_out,
+                trend_json=trend_path if trend_path.exists() else None,
+                narrative_json=narrative_path if narrative_path.exists() else None,
+            )
             print(f"  Report: {report_path}")
 
         # Phase 8: Analyze — generate fix plan (§22)
@@ -630,7 +705,7 @@ def execute_tier(
 
         # Phase 10: Visualize (§19)
         if not dry_run:
-            phase_visualize(system_root, domain, domain_out)
+            phase_visualize(system_root, domain, domain_out, history_path=score_history_path)
 
         # Phase 11: HTML Report (§19)
         if not dry_run:

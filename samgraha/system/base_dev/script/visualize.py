@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 
-from _common import load_yaml, read_text, write_text, ALL_DOMAINS, DOMAIN_NUMS
+from _common import load_yaml, read_text, write_text, load_tiers, ALL_DOMAINS, DOMAIN_NUMS
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +49,64 @@ DOMAIN_COLORS = [
     "#8bc34a", "#ff5722", "#607d8b", "#795548", "#cddc39",
     "#ff9800",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Chart catalog — maps viz-plan shorthand names to chart functions
+# ---------------------------------------------------------------------------
+
+# Each entry is a callable: (check_results, det_rules, sem_criteria,
+# scores, all_domain_scores, out_dir, extra) -> Path
+# extra is a dict for optional params (e.g. history_path for trend_history).
+
+def _chart_check_results(check_results, _dr, _sc, _s, _ads, out_dir, _extra):
+    return chart_check_results_by_domain(check_results, out_dir)
+
+def _chart_category(_cr, _dr, _sc, _s, _ads, out_dir, _extra):
+    return chart_category_breakdown(_extra.get("check_results", []), out_dir)
+
+def _chart_rule_weights(_cr, det_rules, _sc, _s, _ads, out_dir, _extra):
+    return chart_rule_weights_heatmap(det_rules, out_dir)
+
+def _chart_radar(_cr, _dr, _sc, scores, _ads, out_dir, _extra):
+    return chart_scoring_radar(scores, out_dir)
+
+def _chart_score_bands(_cr, _dr, _sc, _s, all_domain_scores, out_dir, _extra):
+    return chart_score_bands(all_domain_scores, out_dir)
+
+def _chart_domain_scores(_cr, _dr, _sc, _s, all_domain_scores, out_dir, _extra):
+    return chart_domain_scores_bar(all_domain_scores, out_dir)
+
+def _chart_section_heatmap(check_results, _dr, _sc, _s, _ads, out_dir, _extra):
+    return chart_section_pass_rate_heatmap(check_results, out_dir)
+
+def _chart_trend_history(_cr, _dr, _sc, _s, _ads, out_dir, extra):
+    history_path = extra.get("history_path")
+    domain = extra.get("domain", "unknown")
+    if history_path:
+        return chart_trend_history(history_path, domain, out_dir)
+    return _empty_chart(out_dir, "trend_history", "No history path provided")
+
+def _chart_tier_progression(_cr, _dr, _sc, _s, all_domain_scores, out_dir, _extra):
+    return chart_tier_progression(all_domain_scores, out_dir)
+
+
+CHART_CATALOG: dict[str, callable] = {
+    "check_results":       _chart_check_results,
+    "category_breakdown":  _chart_category,
+    "rule_weights_heatmap": _chart_rule_weights,
+    "scoring_radar":       _chart_radar,
+    "score_bands":         _chart_score_bands,
+    "domain_scores":       _chart_domain_scores,
+    "section_heatmap":     _chart_section_heatmap,
+    "trend_history":       _chart_trend_history,
+    "tier_progression":    _chart_tier_progression,
+}
+
+# Default: all charts except tier_progression (needs cross-domain data)
+# and trend_history (needs 2+ runs in history). Both generated only
+# from the system-scope summary step (§10).
+DEFAULT_CHARTS = [k for k in CHART_CATALOG if k not in ("tier_progression", "trend_history")]
 
 
 # ---------------------------------------------------------------------------
@@ -552,12 +610,71 @@ def chart_tier_progression(
     return out_path
 
 
+def chart_trend_history(
+    history_path: Path,
+    domain: str,
+    out_dir: Path,
+) -> Path:
+    """Line chart: score history over time for a single domain."""
+    if not history_path.exists():
+        return _empty_chart(out_dir, "trend_history", "No history data found")
+
+    try:
+        raw = json.loads(history_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, KeyError):
+        return _empty_chart(out_dir, "trend_history", "Invalid history file")
+
+    entries = [e for e in raw if e.get("domain") == domain and e.get("final_score") is not None]
+    if len(entries) < 2:
+        return _empty_chart(out_dir, "trend_history", f"Need 2+ runs for trend (have {len(entries)})")
+
+    timestamps = [e.get("timestamp", "")[:10] for e in entries]
+    scores_list = [e.get("final_score", 0) for e in entries]
+    x = np.arange(len(entries))
+
+    fig, ax = plt.subplots(figsize=(max(8, len(entries) * 0.8), 5))
+    ax.plot(x, scores_list, "o-", linewidth=2, markersize=6, color="#3498db", label="Final Score")
+
+    # Threshold lines
+    ax.axhline(y=70, color="#e67e22", linestyle="--", alpha=0.5, label="Acceptable (70)")
+    ax.axhline(y=95, color="#27ae60", linestyle="--", alpha=0.5, label="Excellent (95)")
+
+    # Band coloring behind the line
+    for i in range(len(entries) - 1):
+        s = scores_list[i]
+        if s >= 95:
+            c = COLORS["Excellent"]
+        elif s >= 90:
+            c = COLORS["Very Good"]
+        elif s >= 80:
+            c = COLORS["Good"]
+        elif s >= 70:
+            c = COLORS["Acceptable"]
+        else:
+            c = COLORS["Needs Improvement"]
+        ax.axvspan(i, i + 1, alpha=0.08, color=c)
+
+    for i, (ts, sc) in enumerate(zip(timestamps, scores_list)):
+        ax.annotate(f"{sc:.0f}", xy=(i, sc), fontsize=8, ha="center", va="bottom", fontweight="bold")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(timestamps, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("Final Score", fontsize=11)
+    ax.set_title(f"Score History — {domain}", fontsize=13, fontweight="bold")
+    ax.set_ylim(0, 105)
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+
+    out_path = out_dir / "trend_history.png"
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def _load_tiers() -> dict:
-    """Load tiers.yaml from the base_dev system."""
-    tiers_path = Path(__file__).parent.parent / "plan" / "core" / "tiers.yaml"
-    if tiers_path.exists():
-        return load_yaml(tiers_path)
-    return {"tiers": []}
+    """Load tiers.yaml from the base_dev system (delegates to _common.load_tiers)."""
+    return load_tiers()
 
 
 def _empty_chart(out_dir: Path, name: str, message: str) -> Path:
@@ -586,8 +703,15 @@ def generate_all_charts(
     results_dir: Path,
     out_dir: Path,
     scores_json: Path | None = None,
+    viz_plan: dict[str, Any] | None = None,
+    history_path: Path | None = None,
 ) -> list[Path]:
-    """Generate all visualization charts. Returns list of output PNG paths."""
+    """Generate visualization charts. Returns list of output PNG paths.
+
+    When viz_plan is provided (from {domain}-viz-plan.json), only charts
+    listed in plan["charts"] are generated. When absent, DEFAULT_CHARTS
+    is used (all standard charts except tier_progression and trend_history).
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     charts: list[Path] = []
 
@@ -620,31 +744,34 @@ def generate_all_charts(
     print(f"  Domain scores: {len(all_domain_scores)}")
     print()
 
-    # Generate charts
+    # Resolve which charts to generate
+    if viz_plan and "charts" in viz_plan:
+        chart_names = viz_plan["charts"]
+        print(f"Viz-plan: generating {len(chart_names)} chart(s) from plan")
+    else:
+        chart_names = DEFAULT_CHARTS
+        print(f"Generating {len(chart_names)} default charts...")
+
+    # Build extra context for charts that need it
+    extra = {
+        "check_results": check_results,
+        "history_path": history_path,
+        "domain": scores.get("domain", "unknown"),
+    }
+
     print("Generating charts...")
-    charts.append(chart_check_results_by_domain(check_results, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_category_breakdown(check_results, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_rule_weights_heatmap(det_rules, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_scoring_radar(scores, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_score_bands(all_domain_scores, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_domain_scores_bar(all_domain_scores, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_section_pass_rate_heatmap(check_results, out_dir))
-    print(f"  [OK] {charts[-1].name}")
-
-    charts.append(chart_tier_progression(all_domain_scores, out_dir))
-    print(f"  [OK] {charts[-1].name}")
+    for name in chart_names:
+        chart_fn = CHART_CATALOG.get(name)
+        if chart_fn is None:
+            print(f"  [SKIP] {name} — unknown chart name")
+            continue
+        try:
+            chart_path = chart_fn(check_results, det_rules, sem_criteria,
+                                  scores, all_domain_scores, out_dir, extra)
+            charts.append(chart_path)
+            print(f"  [OK] {chart_path.name}")
+        except Exception as e:
+            print(f"  [ERROR] {name} — {e}")
 
     print(f"\n{len(charts)} charts written to {out_dir}")
     return charts
@@ -656,18 +783,27 @@ def main() -> None:
     parser.add_argument("--results-dir", required=True, help="Directory with check result JSONs")
     parser.add_argument("--out-dir", required=True, help="Output directory for PNG charts")
     parser.add_argument("--scores-json", help="Path to scores JSON (optional)")
+    parser.add_argument("--viz-plan", help="Path to {domain}-viz-plan.json (optional, selects charts)")
+    parser.add_argument("--history", help="Path to score_history.json (for trend_history chart)")
     args = parser.parse_args()
 
     system_root = Path(args.system_root)
     results_dir = Path(args.results_dir)
     out_dir = Path(args.out_dir)
     scores_json = Path(args.scores_json) if args.scores_json else None
+    history_path = Path(args.history) if args.history else None
+
+    viz_plan = None
+    if args.viz_plan:
+        viz_plan_path = Path(args.viz_plan)
+        if viz_plan_path.exists():
+            viz_plan = json.loads(viz_plan_path.read_text(encoding="utf-8"))
 
     if not system_root.is_dir():
         print(f"Error: system-root not found: {system_root}", file=sys.stderr)
         sys.exit(1)
 
-    generate_all_charts(system_root, results_dir, out_dir, scores_json)
+    generate_all_charts(system_root, results_dir, out_dir, scores_json, viz_plan, history_path)
 
 
 if __name__ == "__main__":

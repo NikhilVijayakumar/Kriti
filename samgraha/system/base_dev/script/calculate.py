@@ -438,9 +438,19 @@ def calculate_all(system_root: Path, domain: str, out_dir: Path | None = None) -
     # 7. Trend (placeholder — needs previous report)
     trend = trend_comparison(final["score"], None)
 
+    # Read model attribution from semantic eval (§7 flow)
+    model = "heuristic-v1"
+    if out_dir:
+        sem_eval_path = out_dir / f"{domain}-sem-eval.json"
+        if sem_eval_path.exists():
+            from _common import load_json
+            sem_eval = load_json(sem_eval_path)
+            model = sem_eval.get("model", "heuristic-v1")
+
     return {
         "domain": domain,
         "calculated_at": utc_now_iso(),
+        "model": model,
         "deterministic_document": det_doc,
         "deterministic_section": det_sec,
         "semantic_document": sem_doc,

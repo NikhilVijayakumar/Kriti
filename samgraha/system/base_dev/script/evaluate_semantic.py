@@ -381,6 +381,7 @@ def evaluate_all_semantic(
     return {
         "domain": domain,
         "evaluated_at": utc_now_iso(),
+        "model": "heuristic-v1",
         "document": doc_result,
         "sections": sec_results,
     }

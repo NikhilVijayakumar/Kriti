@@ -302,3 +302,22 @@ def find_md_files(root: Path, prefix: str = "") -> list[Path]:
             continue
         results.append(p)
     return sorted(results)
+
+
+# ---------------------------------------------------------------------------
+# Tier loading
+# ---------------------------------------------------------------------------
+
+def load_tiers(system_root: Path | None = None) -> dict[str, Any]:
+    """Load tiers.yaml from the base_dev system.
+
+    If system_root is provided, loads from plan/core/tiers.yaml under it.
+    Otherwise, loads relative to this file's parent (script/ → ../plan/core/).
+    """
+    if system_root:
+        tiers_path = system_root / "plan" / "core" / "tiers.yaml"
+    else:
+        tiers_path = Path(__file__).parent.parent / "plan" / "core" / "tiers.yaml"
+    if tiers_path.exists():
+        return load_yaml(tiers_path)
+    return {"tiers": []}

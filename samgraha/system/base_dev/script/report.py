@@ -197,6 +197,59 @@ def _generate_fallback_report(
 
 
 # ---------------------------------------------------------------------------
+# Trend + narrative block (§8)
+# ---------------------------------------------------------------------------
+
+def render_trend_and_narrative(
+    trend: dict[str, Any] | None,
+    narrative: dict[str, Any] | None,
+) -> str:
+    """Build a markdown block with trend table + narrative sections.
+
+    Returns empty string when neither file exists — callers append
+    unconditionally, this handles the "not yet generated" case.
+    """
+    if not trend and not narrative:
+        return ""
+
+    lines: list[str] = []
+
+    # Trend table
+    if trend:
+        lines.append("## Trend")
+        lines.append("")
+        lines.append("| Window | Delta | Direction |")
+        lines.append("|---|---|---|")
+
+        vs_last = trend.get("vs_last_run", {})
+        d = vs_last.get("delta", 0)
+        lines.append(f"| vs last run | {d:+.1f} | {vs_last.get('direction', 'baseline')} |")
+
+        vs_3 = trend.get("vs_last_3_runs", {})
+        d = vs_3.get("delta", 0)
+        runs = vs_3.get("runs_compared", 0)
+        lines.append(f"| vs last {runs} run(s) | {d:+.1f} | {vs_3.get('direction', 'baseline')} |")
+
+        vs_bl = trend.get("vs_baseline", {})
+        d = vs_bl.get("delta", 0)
+        lines.append(f"| vs baseline | {d:+.1f} | {vs_bl.get('direction', 'baseline')} |")
+        lines.append("")
+
+    # Narrative sections
+    if narrative and narrative.get("sections"):
+        lines.append("## Analysis")
+        lines.append("")
+        for section in narrative["sections"]:
+            heading = section.get("heading", "")
+            text = section.get("text", "")
+            lines.append(f"### {heading}")
+            lines.append(text)
+            lines.append("")
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -212,6 +265,8 @@ def main() -> None:
     parser.add_argument("--scope", default="document",
                         choices=["document", "section"],
                         help="Report scope")
+    parser.add_argument("--trend", help="Path to {domain}-trend.json (optional)")
+    parser.add_argument("--narrative", help="Path to {domain}-narrative.json (optional)")
     args = parser.parse_args()
 
     system_root = Path(args.system_root)
@@ -226,6 +281,23 @@ def main() -> None:
 
     scores = load_json(scores_path)
     report = render_report(system_root, args.domain, scores, args.type, args.scope)
+
+    # Append trend + narrative block (§8)
+    trend = None
+    if args.trend:
+        trend_path = Path(args.trend)
+        if trend_path.exists():
+            trend = load_json(trend_path)
+
+    narrative = None
+    if args.narrative:
+        narrative_path = Path(args.narrative)
+        if narrative_path.exists():
+            narrative = load_json(narrative_path)
+
+    trend_block = render_trend_and_narrative(trend, narrative)
+    if trend_block:
+        report = report.rstrip() + "\n\n" + trend_block
 
     write_text(Path(args.out), report)
     print(f"Report written to {args.out}")
