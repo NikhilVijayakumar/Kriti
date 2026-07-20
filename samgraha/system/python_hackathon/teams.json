@@ -1,0 +1,26 @@
+[
+  {
+    "team_code": "Team B",
+    "team_name": "Goal GPT",
+    "team_leader": "Vishnu R Menon",
+    "members": [
+      {"name": "Vishnu R Menon", "employee_id": "IN0041"},
+      {"name": "Alice Smith", "employee_id": "IN0173"}
+    ],
+    "repo_https": "https://github.com/ckr-11/goalGPT",
+    "repo_ssh": "git@github.com:ckr-11/goalGPT.git",
+    "repo_path": ".hackathon/goal-gpt"
+  },
+  {
+    "team_code": "Team A",
+    "team_name": "Paul Neerali",
+    "team_leader": "Justin Thomas",
+    "members": [
+      {"name": "Justin Thomas", "employee_id": "IN0023"},
+      {"name": "Priya Nair", "employee_id": "IN0149"}
+    ],
+    "repo_https": "https://gitlab.opentrends.net/justinthomask/paul-neerali-engine.git",
+    "repo_ssh": "git@gitlab.opentrends.net:justinthomask/paul-neerali-engine.git",
+    "repo_path": ".hackathon/paul-neerali"
+  }
+]

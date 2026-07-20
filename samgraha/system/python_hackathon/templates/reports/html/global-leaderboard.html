@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hackathon Global Leaderboard</title>
+{{>styles}}
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Global Leaderboard</div>
+    <h1>Hackathon Global Leaderboard</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Date Generated</span>
+        <span class="meta-value mono">{{ report_date }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Total Teams</span>
+        <span class="meta-value mono">{{ total_teams }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header"><h2>Final Competition Results</h2></div>
+    <div class="section-body" style="padding:0;overflow-x:auto;">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th style="text-align:center;">Rank</th>
+            <th>Team / Repo</th>
+            <th style="text-align:right;">Score</th>
+            <th style="text-align:right;">Inf</th>
+            <th style="text-align:right;">Eng</th>
+            <th style="text-align:right;">Tst</th>
+            <th style="text-align:right;">Doc</th>
+            <th style="text-align:right;">Sec</th>
+            <th style="text-align:right;">MLOps</th>
+            <th style="text-align:right;">Run</th>
+            <th style="text-align:right;">T-W</th>
+            <th style="text-align:right;">D-Q</th>
+            <th style="text-align:right;">AI-E</th>
+          </tr>
+        </thead>
+        <tbody>
+{{#teams}}
+          <tr{{#rank}} class="{{#equals_1}}gold{{/equals_1}}{{#equals_2}}silver{{/equals_2}}{{#equals_3}}bronze{{/equals_3}}"{{/rank}}>
+            <td class="rank mono">{{ rank }}</td>
+            <td class="mono">{{ repo_name }}</td>
+            <td class="num"><strong>{{ final_score }}/20</strong></td>
+            <td class="num">{{ scores.infrastructure }}</td>
+            <td class="num">{{ scores.engineering }}</td>
+            <td class="num">{{ scores.testing }}</td>
+            <td class="num">{{ scores.documentation }}</td>
+            <td class="num">{{ scores.security }}</td>
+            <td class="num">{{ scores.mlops }}</td>
+            <td class="num">{{ scores.runtime }}</td>
+            <td class="num">{{ scores.team_workflow }}</td>
+            <td class="num">{{ scores.data_quality }}</td>
+            <td class="num">{{ scores.ai_explanations }}</td>
+          </tr>
+{{/teams}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="section-header"><h2>Competition Overview</h2></div>
+    <div class="section-body">
+{{#narrative_blocks}}
+      <div class="block">
+        <h3>{{ heading }}</h3>
+        <p>{{ text }}</p>
+      </div>
+{{/narrative_blocks}}
+{{^narrative_blocks}}
+      <p style="color:var(--fg-muted);font-size:13px;">No narrative available yet.</p>
+{{/narrative_blocks}}
+    </div>
+  </section>
+
+{{#rank_chart_base64}}
+  <section>
+    <div class="section-header"><h2>Rank Distribution</h2></div>
+    <div class="section-body">
+      <div class="chart-wrap">
+        <img src="{{ rank_chart_base64 }}" alt="Rank Distribution" style="width:100%;border-radius:4px;" />
+      </div>
+    </div>
+  </section>
+{{/rank_chart_base64}}
+
+  <section>
+    <div class="section-header"><h2>Statistical Overview</h2></div>
+    <div class="section-body" style="padding:0;">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Domain Section</th>
+            <td style="text-align:right;font-weight:500;">Global Mean</td>
+            <td style="text-align:right;font-weight:500;">Global Std Dev</td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th>Infrastructure</th><td class="num" style="text-align:right;">{{ global_stats.infrastructure.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.infrastructure.stdev }}</td></tr>
+          <tr><th>Engineering</th><td class="num" style="text-align:right;">{{ global_stats.engineering.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.engineering.stdev }}</td></tr>
+          <tr><th>Testing</th><td class="num" style="text-align:right;">{{ global_stats.testing.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.testing.stdev }}</td></tr>
+          <tr><th>Documentation</th><td class="num" style="text-align:right;">{{ global_stats.documentation.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.documentation.stdev }}</td></tr>
+          <tr><th>Security</th><td class="num" style="text-align:right;">{{ global_stats.security.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.security.stdev }}</td></tr>
+          <tr><th>MLOps</th><td class="num" style="text-align:right;">{{ global_stats.mlops.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.mlops.stdev }}</td></tr>
+          <tr><th>Runtime</th><td class="num" style="text-align:right;">{{ global_stats.runtime.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.runtime.stdev }}</td></tr>
+          <tr><th>Team Workflow</th><td class="num" style="text-align:right;">{{ global_stats.team_workflow.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.team_workflow.stdev }}</td></tr>
+          <tr><th>Data Quality</th><td class="num" style="text-align:right;">{{ global_stats.data_quality.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.data_quality.stdev }}</td></tr>
+          <tr><th>AI Explanations</th><td class="num" style="text-align:right;">{{ global_stats.ai_explanations.mean }}</td><td class="num" style="text-align:right;">{{ global_stats.ai_explanations.stdev }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Hackathon Global Leaderboard · Samgraha Evaluation System</footer>
+
+</div>
+</body>
+</html>

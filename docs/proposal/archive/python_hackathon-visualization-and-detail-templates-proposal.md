@@ -43,7 +43,7 @@ invented for two specific templates and stopped there.
 | **det-vs-sem contribution** (new) | `{domain}-summary` ×10 | `scores.deterministic`, `scores.semantic`, the 0.60/0.40 weights from `calculation/aggregation/domain/{domain}.yaml` | Visually shows *why* the raw merge landed where it did — a team strong on rules but weak on semantic judgment (or vice versa) looks identical as a single raw-merge number; this chart makes the split visible. Simple split/stacked bar, two segments sized by weighted contribution. |
 | **rule-pass-rate breakdown** (new) | `{domain}-deterministic` ×10 | `deterministic_rules[]` **plus a new `severity` field** (see below — not currently in the data) | Not every failing rule costs the same — grouping passed/failed shows at a glance whether failures are cosmetic or structural. A flat table buries this; base_dev's `rule_weights_heatmap` is the direct precedent. **Grouping, corrected**: `severity` (error/warning/info) already exists in every rule's YAML source but is dropped by `evaluate_rules.py`'s extraction — proposing a one-line addition (`"severity": rule.get("severity", "warning")`) to `evaluate_domain()`'s `rule_results.append(...)` rather than falling back to a degraded `mandatory × pass/fail` (4-bucket) grouping that ignores real, already-authored data. Once added, group by `severity × passed` (up to 6 buckets). |
 | **model-score spread** (new) | `{domain}-semantic` ×10 | `model_results[]` (already fetched — one row per model) | A dot-plot or small bar-per-model chart of the N semantic scores for *this* domain/team, with the `mean_score` and `agreement_level` band overlaid — makes "3 models mostly agreed, 1 was an outlier" visible instead of requiring the reader to eyeball a 2-4 row table. **Minimum-data guard**: skip the chart (show only the existing `model_results[]` table) when fewer than 3 models have run for this (participant, domain) — a dot-plot of 1-2 points is noise, not signal, and this matches §5's "accumulates over multiple agent sessions" reality where partial ensembles are the normal early state, not an edge case. |
-| **team domain-profile radar** (new) | `team-final-summary` ×1/team | All 10 domains' `final_domain_score` for one team — **as a list, not 10 scalars** (see below) | Base_dev precedent: `chart_scoring_radar`. A 10-spoke radar shows a team's shape — "strong on runtime/testing, weak on documentation/data-quality" — legible in one glance, where the existing flat 10-row score table requires reading every row to form the same impression. **Data-shape note**: `render_reports.py`'s `fetch_team_summary_data()` currently builds `scores` as a dict of 10 named scalar fields (`scores.infrastructure`, `scores.engineering`, ...) for the flat table — the radar chart partial needs an iterable `[{domain, score}, ...]` list to loop over. Small additive change: emit both shapes from the same fetch function, not a breaking change to the existing flat fields. |
+| **team domain-profile radar** (new) | `team-final-summary` ×1/team | All 10 domains' `final_domain_score` for one team — **as a list, not 10 scalars** (see below) | Base_dev precedent: `chart_scoring_radar`. A 10-spoke radar shows a team's shape — "strong on runtime/testing, weak on documentation/data-quality" — legible in one glance, where the existing flat 10-row score table requires reading every row to form the same impression. **Data-shape note**: `render_reports.py`'s `fetch_team_summary_data()` currently builds `scores` as a dict of 10 named scalar fields (`scores.infrastructure`, `scores.engineering`, ...) for the flat table — the radar chart *function* (matplotlib, `render_charts.py` — not a template partial) needs an iterable `[{domain, score}, ...]` list to loop over. Small additive change: emit both shapes from the same fetch function, not a breaking change to the existing flat fields. |
 | **domain-weight breakdown** (new) | `global-leaderboard` — **placement reconsidered, see note** | `weights.yaml`'s 10 domain weights | Shows *why* the leaderboard is shaped the way it is — runtime (weight 15) moving a team's rank matters more than documentation (weight 5) doing the same. **Placement note**: `weights.yaml` is static config — identical for every team, every run, not per-run competition data. Two real options, not obviously resolved either way: (a) `global-leaderboard` — the *one* shared page, so a static chart appears exactly once total, cheapest; (b) `team-final-summary` — gives each team direct context for their own rank, but duplicates the identical static chart once per team's PDF (N copies of the same data). Leaning (a) for the duplication-cost reason, clearly labeled as "scoring methodology" rather than "this run's results" so it doesn't read as competition data — flagged as an open question (§4) rather than decided unilaterally, since "avoid duplicating static data N times" and "give each team direct context" are both real, competing considerations. |
 
 7 chart types total (2 existing + 5 new), not 2. Each maps to exactly
@@ -128,8 +128,11 @@ leaving the hedge in place:
   (`{domain}-summary`, `team-final-summary`, `global-leaderboard`)
   are unaffected by this proposal, only by §1's new charts.
 - Proposal 2's chart scope (2 types) — extends to 7 (§1). Its already-
-  written §10 sections for the 2 existing charts don't need rework,
-  just the addition of 5 more chart-partial rows to its template table.
+  written §10 sections for the 2 existing charts don't need conceptual
+  rework, just the addition of 5 more chart rows to its table — and,
+  per the pipeline-verification proposal's later §6 resolution, all 7
+  (not just the 5 new ones) are matplotlib-generated PNG files, not
+  HTML/Mustache partials as an earlier draft of both documents assumed.
 
 ## 4. Open questions for confirmation
 
@@ -140,11 +143,14 @@ leaving the hedge in place:
 
 ## 5. Verification checklist
 
-- [ ] §1 — all 7 chart types have a named chart-partial file planned
-      (2 existing + 5 new: `_chart-det-sem-contribution.html`,
-      `_chart-rule-pass-rate.html`, `_chart-model-spread.html`,
-      `_chart-team-radar.html`, `_chart-domain-weights.html`), each
-      mapped to exactly one template kind, each with its edge-case
+- [ ] §1 — all 7 chart types have a named function in `render_charts.py`
+      planned (2 existing + 5 new: `chart_det_sem_contribution`,
+      `chart_rule_pass_rate`, `chart_model_spread`, `chart_team_radar`,
+      `chart_domain_weights`), each producing a PNG file (matplotlib,
+      per the pipeline-verification proposal's §6 resolution — **not**
+      an HTML template/partial, corrected here from an earlier draft
+      of this checklist that still named `.html` chart-partial files),
+      each mapped to exactly one template kind, each with its edge-case
       behavior specified (model-spread's <3-model skip; empty-data /
       single-team cases don't crash the renderer, they degrade to
       "not enough data" same as §7 of the report-analysis proposal's
@@ -165,9 +171,17 @@ leaving the hedge in place:
 - [ ] §3 — proposal 2 (`python_hackathon-report-analysis-proposal.md`)
       §9/§10's template tables are updated to reference this
       proposal's 7-chart catalog, not the original 2.
-- [ ] Mechanism check — `chevron`'s Mustache-partials support
-      (`{{> chart_name}}`) is confirmed working before any of the 7
-      chart partials are built against it (proposal 2 §10 flagged this
-      as unverified; still unverified as of this proposal).
-- [ ] File count after this proposal: 32 markdown templates (unchanged)
-      + 7 chart partials (new) = 39 template files total, not 32.
+- [ ] Mechanism check — **corrected, this item is now moot.** An
+      earlier draft of this checklist asked whether `chevron`'s
+      Mustache-partials support (`{{> chart_name}}`) was confirmed
+      working, on the assumption charts would be Mustache partials.
+      That assumption was dropped once matplotlib/PNG was decided
+      (report-analysis-proposal.md §10, pipeline-verification-proposal.md
+      §6) — charts are generated files, not template markup, so there's
+      no partials mechanism to verify. `chevron` only still matters for
+      `{{> design_tokens}}` (colors/type/spacing), which is unaffected.
+- [ ] File count after this proposal: 32 markdown templates (unchanged,
+      **never gain charts** — markdown stays text-only, per the
+      confirmed pipeline design) + `render_charts.py`'s 7 chart
+      functions (new, produce PNG files, not template files) — not
+      "39 template files," that count no longer applies.

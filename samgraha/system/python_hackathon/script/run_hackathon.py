@@ -16,6 +16,9 @@ import os
 import subprocess
 import sys
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add script dir to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
@@ -46,6 +49,45 @@ DOMAIN_AUDIT_MODULES = {
 
 # Domains with no audit script (§0 bug #3) — deterministic pass is skipped
 DOMAINS_NO_AUDIT_SCRIPT = set()
+
+
+def _load_teams():
+    """Load teams from TEAMS_JSON env path. Returns list of team dicts or empty list."""
+    teams_path = os.environ.get("PYTHON_HACKATHON_TEAMS_JSON", "")
+    if not teams_path or not os.path.isfile(teams_path):
+        return []
+    with open(teams_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _sync_teams(conn, standard):
+    """Register any teams from teams.json not already in DB. Returns count of new."""
+    teams = _load_teams()
+    if not teams:
+        return 0
+    count = 0
+    for t in teams:
+        team_name = t.get("team_name")
+        if not team_name:
+            continue
+        existing = conn.execute(
+            "SELECT id FROM standard_participants WHERE standard=? AND team_name=?",
+            (standard, team_name),
+        ).fetchone()
+        if existing:
+            continue
+        register_participant(
+            conn, standard, team_name,
+            repo_path=t.get("repo_path", ""),
+            team_leader=t.get("team_leader"),
+            members=t.get("members"),
+            repo_https=t.get("repo_https"),
+            repo_ssh=t.get("repo_ssh"),
+            team_code=t.get("team_code"),
+        )
+        count += 1
+        print(f"  Registered from teams.json: {team_name}")
+    return count
 
 
 def _load_weights():
@@ -105,8 +147,8 @@ def _get_domain_agg_weights(domain_dirname):
     return 0.60, 0.40
 
 
-def process_deterministic(conn, participant_id, participant_name, repo_path, domain, weights_cfg):
-    """Run deterministic audit for one participant + domain. Stores score in DB."""
+def process_deterministic(conn, participant_id, team_name, repo_path, domain, weights_cfg):
+    """Run deterministic audit for one team + domain. Stores score in DB."""
     audit_module_name = DOMAIN_AUDIT_MODULES.get(domain)
 
     if domain in DOMAINS_NO_AUDIT_SCRIPT:
@@ -154,20 +196,20 @@ def process_deterministic(conn, participant_id, participant_name, repo_path, dom
 
 
 def process_participant(conn, participant, weights_cfg, deterministic_only=False):
-    """Process one participant's full cycle."""
-    pname = participant["participant_name"]
+    """Process one team's full cycle."""
+    tname = participant["team_name"]
     repo_path = participant["repo_path"]
     participant_id = participant["id"]
 
     print(f"\n{'='*60}")
-    print(f"Processing: {pname} ({repo_path})")
+    print(f"Processing: {tname} ({repo_path})")
     print(f"{'='*60}")
 
     domains = list(weights_cfg["domains"].keys())
 
     for domain in domains:
         # Deterministic pass
-        process_deterministic(conn, participant_id, pname, repo_path, domain, weights_cfg)
+        process_deterministic(conn, participant_id, tname, repo_path, domain, weights_cfg)
 
         if not deterministic_only:
             # Semantic pass is agent-driven — nothing to run here.
@@ -201,20 +243,25 @@ def main():
     )
     parser.add_argument("--standard", default="python_hackathon", help="Standard name")
     parser.add_argument("--db", default=None, help="Path to SQLite DB")
-    parser.add_argument("--participant", default=None, help="Process only this participant")
+    parser.add_argument("--team", default=None, help="Process only this team")
     parser.add_argument("--deterministic-only", action="store_true",
                         help="Only run deterministic audits (skip semantic tracking)")
-    parser.add_argument("--register", nargs=3, metavar=("NAME", "REPO_PATH", "METADATA_JSON"),
-                        help="Register a participant: NAME REPO_PATH METADATA_JSON")
+    parser.add_argument("--register", nargs=3, metavar=("TEAM_NAME", "REPO_PATH", "METADATA_JSON"),
+                        help="Register a team: TEAM_NAME REPO_PATH METADATA_JSON")
     args = parser.parse_args()
 
     conn = get_conn(args.db)
+
+    # Auto-register teams from teams.json if present
+    new_count = _sync_teams(conn, args.standard)
+    if new_count:
+        print(f"Auto-registered {new_count} team(s) from teams.json")
 
     # Register mode
     if args.register:
         name, repo_path, metadata_json = args.register
         metadata = json.loads(metadata_json) if metadata_json else None
-        pid = register_participant(conn, args.standard, name, repo_path, metadata)
+        pid = register_participant(conn, args.standard, name, repo_path, metadata=metadata)
         print(f"Registered '{name}' (id={pid})")
         return
 
@@ -223,17 +270,17 @@ def main():
     # List participants
     participants = list_participants(conn, args.standard)
     if not participants:
-        print("No participants registered. Use --register NAME REPO_PATH METADATA_JSON")
+        print("No teams registered. Use --register NAME REPO_PATH METADATA_JSON")
         return
 
-    # Filter to single participant if specified
-    if args.participant:
-        participants = [p for p in participants if p["participant_name"] == args.participant]
+    # Filter to single team if specified
+    if args.team:
+        participants = [p for p in participants if p["team_name"] == args.team]
         if not participants:
-            print(f"Participant '{args.participant}' not found")
+            print(f"Team '{args.team}' not found")
             return
 
-    print(f"Processing {len(participants)} participant(s) for {args.standard}")
+    print(f"Processing {len(participants)} team(s) for {args.standard}")
 
     for p in participants:
         process_participant(conn, p, weights_cfg, args.deterministic_only)

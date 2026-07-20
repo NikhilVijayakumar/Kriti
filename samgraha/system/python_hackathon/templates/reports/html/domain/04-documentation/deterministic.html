@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Documentation — Deterministic Audit</title>
+{{>styles}}
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Deterministic Audit · Documentation</div>
+    <h1>Documentation — Deterministic Audit</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Repository</span>
+        <span class="meta-value mono">{{ repo_name }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Evaluation Date</span>
+        <span class="meta-value mono">{{ evaluation_date }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header"><h2>Rule Executions</h2></div>
+    <div class="section-body" style="padding:0;overflow-x:auto;">
+      <table class="rule-table">
+        <thead>
+          <tr>
+            <th>Rule ID</th>
+            <th>Description</th>
+            <th style="text-align:center;">Passed</th>
+            <th style="text-align:right;">Weight</th>
+            <th style="text-align:center;">Mandatory</th>
+          </tr>
+        </thead>
+        <tbody>
+{{#deterministic_rules}}
+          <tr>
+            <td class="mono">{{ id }}</td>
+            <td>{{ description }}</td>
+            <td style="text-align:center;">{{#passed}}<span class="badge success">Pass</span>{{/passed}}{{^passed}}<span class="badge danger">Fail</span>{{/passed}}</td>
+            <td class="num" style="text-align:right;">{{ weight }}</td>
+            <td style="text-align:center;">{{#mandatory}}<span class="badge attention">Yes</span>{{/mandatory}}{{^mandatory}}No{{/mandatory}}</td>
+          </tr>
+{{/deterministic_rules}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+{{#chart_base64}}
+  <section>
+    <div class="section-header"><h2>Rule Pass Rate</h2></div>
+    <div class="section-body">
+      <div class="chart-wrap">
+        <img src="{{ chart_base64 }}" alt="Rule Pass Rate" style="width:100%;border-radius:4px;" />
+      </div>
+    </div>
+  </section>
+{{/chart_base64}}
+
+  <section>
+    <div class="section-header"><h2>Rule Detail</h2></div>
+    <div class="section-body">
+{{#deterministic_rules}}
+      <div class="rule-detail">
+        <h4>{{ id }} — {{ description }}</h4>
+        <div class="meta">
+          {{#passed}}<span class="badge success">Pass</span>{{/passed}}{{^passed}}<span class="badge danger">Fail</span>{{/passed}}
+          · Weight: {{ weight }} · Mandatory: {{#mandatory}}Yes{{/mandatory}}{{^mandatory}}No{{/mandatory}} · Severity: {{ severity }}
+        </div>
+        <p>{{ detail }}</p>
+      </div>
+{{/deterministic_rules}}
+    </div>
+  </section>
+
+  <footer>Documentation deterministic audit · Samgraha Evaluation System</footer>
+
+</div>
+</body>
+</html>

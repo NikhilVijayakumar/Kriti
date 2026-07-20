@@ -31,6 +31,13 @@ rewrite what already works.
 
 ## 0. Current state — grounded in what's actually on disk
 
+**Implementation status note**: Items marked **Built** or **Fixed**
+in the table below and in bugs #1–#5 have been verified implemented
+in code and confirmed working. Items marked **Missing** or **Designed
+(not built)** exist only in this proposal — they need implementation.
+The same confident phrasing ("Fixed in §6") applies to both states;
+look for the explicit "(implemented, verified)" tag to distinguish.
+
 | Piece | State | Evidence |
 |---|---|---|
 | Deterministic rules (10 domains) | **Built** | `audit/deterministic/document/*.yaml` — weight/mandatory/condition per rule, same shape as base_dev's rules |
@@ -52,49 +59,21 @@ assumed** — reclassified from an earlier "flag, don't fix" pass after
 review pushback: these block §4/§6 outright, not cosmetic:
 
 1. **`leaderboard.py`'s `DOMAIN_KEY_MAP` silently zeroes 3 domains'
-   weights (CRITICAL).** It maps to `team_workflow`, `data_quality`,
-   `ai_explanations` (underscores); `weights.yaml`'s actual keys are
-   `team-workflow`, `data-quality`, `ai-explanations` (hyphens).
-   `domain_weights.get("team_workflow", {}).get("weight", 0)` finds
-   nothing, returns `0` — 28 of 100 base-score points (8+10+10)
-   silently vanish for every team, every run. **Fix direction revised
-   after finding the markdown templates (§9)**: `global-leaderboard.md`
-   and `team-final-summary.md` already use `team_workflow`/
-   `data_quality`/`ai_explanations` (underscores) as Mustache variable
-   paths across 3 files — and Mustache paths can't contain hyphens as
-   bare identifiers anyway. So underscore is the convention everything
-   downstream already committed to; `weights.yaml`'s hyphens are the
-   outlier. Fix: normalize `weights.yaml`'s domain keys to underscores
-   once, at load time, not `DOMAIN_KEY_MAP`. Fixed in §6.
+   weights (CRITICAL).** *(implemented, verified)* — `leaderboard.py`'s
+   `_load_weights()` normalizes keys to underscores at load time.
 2. **Stdout contamination in 2 of 7 audit scripts (HIGH).**
-   `audit_testing.py` (lines 155–160) and `audit_model_artifact.py`
-   (lines 256–261) `print()` `[audit_testing]`/`[audit_model_artifact]`
-   info lines *before* their final `print(json.dumps(...))` — anything
-   capturing stdout as JSON (§4's orchestrator) gets non-JSON lines
-   first and fails to parse. Fixed in §4.
+   *(implemented, verified)* — `audit_testing.py` and
+   `audit_model_artifact.py` info prints go to stderr.
 3. **3 of 10 domains have no deterministic audit script at all
-   (HIGH).** `documentation`, `data-quality`, `ai-explanations` have
-   rules in `audit/deterministic/document/*.yaml` and a formula in
-   `calculation/`, but no `audit_*.py` runner produces the raw facts
-   those rules check. Resolved in §4 — reuses §7's missing-domain
-   mechanism rather than inventing a new one.
-4. **The 60/40 det/sem split is duplicated, not undocumented** —
-   correcting an earlier review's framing: `calculation/aggregation/domain/*.yaml`
-   (all 10, checked) already declares `weights: {deterministic: 0.60,
-   semantic: 0.40}` — `score_aggregator.py`'s `DET_WEIGHT`/`SEM_WEIGHT`
-   constants match it exactly today, but hardcode instead of reading
-   it, so a future edit to the yaml would silently stop matching the
-   code. Fixed in §4/§6 — read the yaml, don't hardcode the constant.
+   (HIGH).** *(implemented, verified)* — `audit_documentation.py`,
+   `audit_data_quality.py`, `audit_ai_explanations.py` exist; orchestrator
+   checks for script existence before attempting deterministic pass.
+4. **The 60/40 det/sem split is duplicated, not undocumented**
+   *(implemented, verified)* — reads from
+   `calculation/aggregation/domain/{domain}.yaml` at runtime.
 5. **`{domain}-semantic.md`'s "Median Score" label doesn't match what
-   gets computed (MEDIUM).** `templates/reports/domain/01-infrastructure-semantic.md`
-   line 16 labels a field "Median Score," but every actual formula
-   that produces this number uses the mean — `calculation/semantic/ensemble/*.yaml`
-   (`mean_score = mean(scores)`) and `score_aggregator.py`
-   (`statistics.mean(sem_scores)`) agree with each other and with §5's
-   design; only the template's label disagrees. Fixed in §9 — the
-   renderer feeds this field `{{ mean_score }}` and the template gets
-   its label corrected to "Mean Score," not the other way around
-   (nothing anywhere actually computes a median for this).
+   gets computed (MEDIUM).** *(implemented, verified)* — label reads
+   "Mean Score," templates use `{{ mean_score }}`.
 
 **Three more pre-existing inconsistencies — no longer deferred, each
 gets a resolution below** (an earlier draft of this proposal called
@@ -150,16 +129,37 @@ Applied below, not restated as abstract advice:
 
 ```sql
 CREATE TABLE standard_participants (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    standard        TEXT    NOT NULL,   -- e.g. "python_hackathon" — data, not a table name
-    participant_name TEXT   NOT NULL,   -- team name
-    repo_path       TEXT    NOT NULL,   -- local path or clone URL
-    metadata_json   TEXT,               -- nullable: member names, contact, etc. — JSON so
-                                         -- schema doesn't grow every time a new field is wanted
-    registered_at   TEXT    NOT NULL,
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    standard            TEXT    NOT NULL,   -- e.g. "python_hackathon" — data, not a table name
+    participant_name    TEXT    NOT NULL,   -- slug identifier (e.g. "goal-gpt")
+    repo_path           TEXT    NOT NULL,   -- local clone path
+    team_name           TEXT,               -- display name (e.g. "Goal GPT")
+    team_leader         TEXT,               -- team lead name
+    members_json        TEXT,               -- JSON: [{"name":"...", "role":"lead|member"}]
+    repo_https          TEXT,               -- HTTPS clone URL
+    repo_ssh            TEXT,               -- SSH clone URL
+    presentation_order  INTEGER,            -- display order in reports
+    time_slot           TEXT,               -- presentation slot (e.g. "11:00 - 11:30 am")
+    metadata_json       TEXT,               -- nullable: extensibility catch-all
+    registered_at       TEXT    NOT NULL,
     UNIQUE(standard, participant_name)
 );
 ```
+
+**Why explicit columns instead of just `metadata_json`** — the HTML
+report templates (§10) need to render team leader, members, and repo
+URLs directly in Mustache templates. Mustache can't do
+`{{ metadata_json.team_leader }}` (it's a flat string, not a nested
+object). Extracting these into real columns means `chevron.render()`
+gets `{"team_leader": "Vishnu R Menon"}` as a top-level field, not a
+JSON blob that needs a second parse step. Core team identity fields
+(team name, leader, members, repo URLs, presentation slot) get
+columns; everything else stays in `metadata_json` for extensibility.
+
+**Why not a separate `standard_teams` table** — team and participant
+are the same entity here (one repo submission per team). A separate
+table would require a JOIN for every report query with no normalization
+benefit — there's no "one team, many participants" relationship.
 
 **Why not `register_repository`** (samgraha's existing MCP tool) —
 checked `crates/registry/src/migration.rs`'s `REG_V1` comment: that
@@ -402,6 +402,65 @@ type, and `calculation/deterministic/document.yaml`'s
 `weighted_pass_rate` formula needs those richer evidence values to
 still resolve to a clean pass/fail per rule.
 
+### 4b. Team registration — `teams.json` config file
+
+Heimdall-style team configuration at `python_hackathon/teams.json`:
+
+```json
+[
+  {
+    "team_name": "Goal GPT",
+    "participant_name": "goal-gpt",
+    "team_leader": "Vishnu R Menon",
+    "members": [
+      {"name": "Vishnu R Menon", "role": "lead"},
+      {"name": "Alice Smith", "role": "member"}
+    ],
+    "repo_https": "https://github.com/ckr-11/goalGPT",
+    "repo_ssh": "git@github.com:ckr-11/goalGPT.git",
+    "repo_path": ".hackathon/goal-gpt",
+    "presentation_order": 1,
+    "time_slot": "11:00 - 11:30 am"
+  }
+]
+```
+
+`run_hackathon.py` auto-loads `teams.json` if present — no CLI change
+needed. Each entry maps directly to §2's `standard_participants`
+columns: `team_name` → `team_name`, `team_leader` → `team_leader`,
+`members` → `members_json` (JSON-serialized), `repo_https` →
+`repo_https`, `repo_ssh` → `repo_ssh`, `presentation_order` →
+`presentation_order`, `time_slot` → `time_slot`. The existing
+`--register` CLI flag still works for one-off registrations without a
+config file.
+
+**`register_participant()` signature change** — the current function
+only accepts `(conn, standard, name, repo_path, metadata=None)`,
+which means calling it as-is leaves all 7 new columns NULL and dumps
+everything into `metadata_json` — directly contradicting §2's reason
+for adding the columns. Updated signature:
+
+```python
+def register_participant(conn, standard, name, repo_path,
+                         team_name=None, team_leader=None, members=None,
+                         repo_https=None, repo_ssh=None,
+                         presentation_order=None, time_slot=None,
+                         metadata=None):
+```
+
+`members` (a list of dicts) gets JSON-serialized to `members_json`.
+All new fields are nullable — a participant registered via the old
+`--register` CLI (which only passes name + repo_path + metadata_json)
+still works, those columns just stay NULL. `teams.json` entries
+provide the full set.
+
+**Why a file and not CLI args** — 5-10 teams with 3-4 members each
+is too much data for `--register NAME REPO_PATH METADATA_JSON` on one
+command line. The JSON file is the authoritative source of who's
+competing; the DB is the runtime copy. Backward compatible: if
+`teams.json` doesn't exist, `run_hackathon.py` falls back to reading
+participants from DB only (current behavior).
+
 ## 5. Semantic audit — agent-driven via MCP, multiple agent sessions, no API (resolved)
 
 **Decided, not a decision point anymore** — corrects the previous
@@ -629,6 +688,54 @@ Two levels, same as base_dev's per-domain + final-summary split:
   failure mode this run." Always generated once the leaderboard exists,
   same "always present" rule as base_dev's Final Summary.
 
+### Dual narrative sources — agent-written + rule-based, both shown if present
+
+Every domain page has **two independent narrative sources**, both
+rendered if they exist, either skipped if absent:
+
+1. **Agent-written narrative** — from `standard_narratives` (§3's table,
+   `participant_id` + `domain` → `sections_json`). Written by whichever
+   agent runs the `analysis/{domain}.md` rubric via MCP. Rich analysis:
+   strengths, weaknesses, recommendations, context-aware.
+
+2. **Rule-based narrative** — built at render time from deterministic
+   rule results in `standard_domain_scores.raw_evidence_json`. Not
+   agent-written, not stored in `standard_narratives`. Covers: pass
+   rate (X/Y rules, Z%), list of failed rules with descriptions, subset
+   of mandatory failures. Always available after deterministic scoring
+   runs — no agent call needed.
+
+Both are `{"heading": "...", "text": "..."}` section lists, same shape
+as `standard_narratives.sections_json`. The renderer passes both to
+chevron as `agent_narrative` and `rule_narrative` — if either is
+`None`/empty, its `{{#...}}` block simply doesn't render. No empty
+sections, no fallback logic, no conditional in the template beyond
+chevron's built-in falsy-section behavior.
+
+**Why both exist**: the rule-based narrative is always available
+immediately after deterministic scoring (no agent dependency), while
+the agent-written narrative arrives later (after semantic scoring +
+analysis pass). During partial evaluation, the rule-based narrative
+fills the page. After full evaluation, both appear — the rule-based
+summary gives a quick pass/fail overview, the agent narrative gives
+the deeper analysis. No competition between them, complementary.
+
+**`_build_rule_narrative(det_data)`** — new helper in `render_reports.py`:
+```python
+def _build_rule_narrative(det_data):
+    """Build narrative blocks from deterministic rule results."""
+    rules = det_data.get("deterministic_rules", [])
+    passed = [r for r in rules if r["passed"]]
+    failed = [r for r in rules if not r["passed"]]
+    mandatory_failed = [r for r in failed if r.get("mandatory")]
+
+    blocks = []
+    # "Pass Rate" — X/Y rules passed (Z%)
+    # "Failed Rules" — each: id, description, detail
+    # "Mandatory Failures" — subset where mandatory=True (if any)
+    return blocks
+```
+
 ## 9. Markdown report templates — script + template, not agent-driven
 
 **Scope correction from your last message**: only the semantic *audit*
@@ -676,11 +783,31 @@ template's variable paths (post-§6-fix, underscored domain keys
 throughout) — `chevron.render(template_str, data_dict)`, no templating
 logic beyond that in the renderer itself.
 
+### HTML data-fetch extensions (§10's three additional functions)
+
+The HTML renderer calls the *same* five data-fetch functions above for
+the markdown layer, then extends each result with additional fields
+§10's HTML templates need. These are separate `fetch_*_html_data()`
+functions, not replacements — markdown rendering is unchanged.
+
+| HTML Fetch | Extends | Additional fields |
+|---|---|---|
+| `fetch_summary_html_data()` | `fetch_summary_data()` | `agent_narrative` (from `standard_narratives`), `rule_narrative` (built from `raw_evidence_json`), `chart_base64`, `domain_badge` (`_score_badge()`) |
+| `fetch_team_summary_html_data()` | `fetch_team_summary_data()` | `team_profile` (from `get_team_profile()`: team_name, leader, members, repo URLs, time_slot), `narrative_blocks` (competition-wide from `standard_narratives`), `radar_chart_base64` |
+| `fetch_leaderboard_html_data()` | `fetch_leaderboard_data()` | `narrative_blocks` (competition-wide from `standard_narratives`), `rank_chart_base64` |
+
+Domain deterministic and semantic HTML pages don't need separate
+`fetch_*_html_data()` — they use the same data as their markdown
+versions (rule results, model scores) plus `chart_base64` and
+`domain_badge` injected by `render_html_all()`.
+
 ## 10. HTML report templates — design system locked, full template set
 
 Same data as §9, richer presentation — not a redesign of what §9
-renders, a second rendering of the same fetched data plus charts and
-the full narrative already sitting in `standard_narratives`.
+renders, a second rendering of the same fetched data plus charts,
+team profiles, and the full narrative already sitting in
+`standard_narratives` (both agent-written and rule-based, per §8's
+dual-source design).
 
 **Design system session complete** (superseding the "invoke
 `huashu-design` first" instruction this section used to carry — that
@@ -746,12 +873,12 @@ equally ready to lock:**
 **Mechanism — how "not inline" actually gets enforced**: one shared
 partial, e.g. `_design-tokens.html` (a `<style>` block containing only
 `:root{...}` custom properties + the type/spacing scale once
-formalized), included via the same Mustache partial mechanism as the
-chart partials (§10's "Detail visualization" above):
-`{{> design_tokens}}`, referenced once by every one of the 32 page
-templates. Change a color or a spacing value in one file, every page
-picks it up — the actual technical meaning of "avoid inline theme,"
-not just a style preference.
+formalized), included via Mustache's partial mechanism — this is the
+*only* thing in this proposal still using Mustache partials, since
+charts are PNG files, not partials (below): `{{> design_tokens}}`,
+referenced once by every one of the 32 page templates. Change a color
+or a spacing value in one file, every page picks it up — the actual
+technical meaning of "avoid inline theme," not just a style preference.
 
 **Charts are a different case, revised** — the pipeline-verification
 proposal resolved chart output as matplotlib-generated PNG files, not
@@ -836,11 +963,12 @@ markdown stays the plain-text/diffable artifact it always was.
 
 Why this separation matters beyond "your ask": §6's data-fetch
 functions already compute the raw numbers these charts need
-(`global_stats.mean/stdev`, `team_stats.z_score`); the chart partial
-receives that same dict and only owns the *rendering* of it as SVG.
-If the visualization approach changes later — the proposal's earlier
-note that matplotlib PNGs might eventually replace inline SVG — only
-the two chart partials change, not all 12 pages that embed them.
+(`global_stats.mean/stdev`, `team_stats.z_score`); `render_charts.py`'s
+7 functions receive that same data and only own the *rendering* of it
+as a PNG. If the visualization mechanism changes again later, only
+those 7 functions change — not the 32 page templates that embed their
+output, since a page template only ever sees "here's a base64 image
+string," never how it was produced.
 
 ### PDF assembly per team
 
@@ -861,12 +989,154 @@ Primer's locked color meaning (score-band status) rather than a free
 palette choice — the two aren't in tension: `dataviz` governs mark
 specs/legibility, Primer governs what the colors *mean*.
 
-**Data-fetch reuse, unchanged from the earlier draft of this
-section**: the HTML renderer calls the *same* five data-fetch
-functions §9 defines for the markdown renderer — one data layer, two
-presentations (markdown + HTML), now three consumers of that layer
-counting the chart partials. No separate "HTML data fetcher" or
-"chart data fetcher" gets written.
+**Data-fetch reuse, revised from the earlier draft of this section**:
+the HTML renderer extends §9's *same* five data-fetch functions with
+three additional `fetch_*_html_data()` wrappers (§9's "HTML data-fetch
+extensions" table) — one data layer, feeding four consumers: the
+markdown renderer (§9), the HTML renderer (this section),
+`render_charts.py`'s 7 chart functions, and `_build_rule_narrative()`
+(§8's rule-based narrative builder). No separate "HTML data fetcher"
+or "chart data fetcher" gets written; markdown itself only ever
+consumes text/table fields from that data, never a chart.
+
+### `render_html_all()` — the HTML rendering pipeline
+
+New function in `render_reports.py`, called after chart generation in
+`run_reporting.py`:
+
+```python
+def render_html_all(conn, standard, output_dir, results, domain_stats,
+                    adjusted_scores, weights_cfg, charts_dir):
+```
+
+Steps:
+1. Create `html/` subdirectory inside `output_dir`.
+2. Load shared `_styles.html` partial (inlined in every page, not a
+   `<link>` — each file must be standalone for PDF merge).
+3. **Global leaderboard** (once): `fetch_leaderboard_html_data()` →
+   chevron render → write `html/global-leaderboard.html`.
+4. **Per-participant loop**: for each participant, for each domain:
+   - Deterministic: same data as markdown, add `chart_base64` +
+     `domain_badge` → write `html/domain/{name}/deterministic.html`.
+   - Semantic: same data as markdown → write `html/domain/{name}/semantic.html`.
+   - Summary: `fetch_summary_html_data()` (extends summary data with
+     `agent_narrative`, `rule_narrative`, `chart_base64`, `domain_badge`)
+     → write `html/domain/{name}/summary.html`.
+5. **Team final summary**: `fetch_team_summary_html_data()` (extends
+   team summary data with `team_profile`, `narrative_blocks`,
+   `radar_chart_base64`) → write `html/{participant}-summary.html`.
+
+### Team profile in `team-final-summary.html`
+
+The team-final-summary page shows team identity, not just scores.
+Data from §2's extended `standard_participants` via
+`get_team_profile(conn, participant_id)`:
+
+```
+Header:
+  eyebrow: "Team Final Report"
+  h1: team_profile.team_name (or participant_name if team_name is null)
+  meta-row:
+    - Team Leader: team_profile.team_leader
+    - Members: team_profile.members (formatted list)
+    - Repository: team_profile.repo_https (linked)
+    - Time Slot: team_profile.time_slot
+
+Scorecards:
+  - Final Score: final_score / 20 (with badge)
+  - Rank: team_rank of total_teams
+
+Radar chart:
+  <img src="data:image/png;base64,{radar_chart_base64}">
+
+Domain table:
+  10 rows: domain | score | badge (success/attention/danger)
+
+Model aggregate:
+  {{#model_aggregate_scores}} model | mean {{/...}}
+
+Narrative:
+  {{#narrative_blocks}} (competition-wide, from standard_narratives NULL/NULL)
+  heading + text rendered as <h3> + <p>
+```
+
+### Dual narrative rendering in domain summary pages
+
+`{domain}-summary.html` renders both narrative sources independently:
+
+```mustache
+{{#agent_narrative}}
+<section class="narrative">
+  <div class="section-header"><h2>Agent Analysis</h2></div>
+  <div class="section-body">
+    {{#sections}}
+    <div class="block">
+      <h3>{{ heading }}</h3>
+      <p>{{ text }}</p>
+    </div>
+    {{/sections}}
+  </div>
+</section>
+{{/agent_narrative}}
+
+{{#rule_narrative}}
+<section class="narrative rule-based">
+  <div class="section-header"><h2>Rule Execution Summary</h2></div>
+  <div class="section-body">
+    {{#sections}}
+    <div class="block">
+      <h3>{{ heading }}</h3>
+      <p>{{ text }}</p>
+    </div>
+    {{/sections}}
+  </div>
+</section>
+{{/rule_narrative}}
+```
+
+If `agent_narrative` is `None` (no agent has written this domain's
+narrative yet), its `{{#agent_narrative}}` block is skipped entirely.
+Same for `rule_narrative` (should never be empty after deterministic
+scoring, but guarded regardless). No empty sections render.
+
+### Chart base64 embedding
+
+`render_charts.py` generates PNGs to `charts_dir/`. A new helper:
+
+```python
+def chart_to_base64(chart_path):
+    """Read a PNG file and return its base64-encoded string."""
+    import base64
+    with open(chart_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("ascii")
+```
+
+HTML templates embed charts as self-contained data URIs:
+
+```html
+<img src="data:image/png;base64,{{ chart_base64 }}" alt="Chart">
+```
+
+No external file references — each HTML file is standalone, works
+when opened directly, works when merged into PDF. Chart file paths
+are never exposed in the rendered output.
+
+### `_score_badge()` helper
+
+```python
+def _score_badge(score):
+    """Map a 0-100 score to a Primer status badge."""
+    if score >= 75:
+        return {"label": "Strong", "css_class": "success"}
+    if score >= 50:
+        return {"label": "Attention", "css_class": "attention"}
+    return {"label": "Needs Work", "css_class": "danger"}
+```
+
+Used by `fetch_summary_html_data()` (per-domain badge) and
+`fetch_team_summary_html_data()` (final-score badge). The badge
+appears in scorecard sections and domain tables — same status-color
+language across every page, per §10's locked Primer rules.
 
 ## 11. Out of scope
 
@@ -886,24 +1156,18 @@ counting the chart partials. No separate "HTML data fetcher" or
 
 ## 12. Open questions for confirmation
 
-1. §10's page-vs-section granularity call (standalone HTML page per
-   audit-kind, or assembled sections within 2 navigable pages) —
-   flagged above, recommend sections/2-pages, your call to override
-   before the `huashu-design` session starts (cheaper to redirect now
-   than after 3 directions are drafted).
+1. ~~§10's page-vs-section granularity call~~ — **resolved**: 1:1
+   standalone pages per template, matching §9's markdown set.
 2. `analysis/00-leaderboard.md`'s narrative — heuristic or agent
    judgment? Given it's comparing N teams' actual results, recommend
    agent-driven (matches §8's other rubric, and there's real
    comparative judgment to make, not just arithmetic) — flagging since
    base_dev's equivalent question defaulted to heuristic-first, and
    this one has a real argument for the opposite default.
-3. Should `run_hackathon.py`'s deterministic pass (§4, defined as
-   "run once per participant") support being explicitly re-run for one
-   participant (e.g. resubmission), or is a full re-run of all
-   participants the only supported path? §3's `UNIQUE` constraint
-   makes a targeted re-run an upsert either way — this is about
-   whether `run_hackathon.py`'s CLI exposes a `--participant` filter,
-   not a schema question anymore.
+3. ~~Should `run_hackathon.py` support targeted re-run~~ — **resolved**:
+   `--participant` filter exists (line 204 of `run_hackathon.py`);
+   `UNIQUE` constraint makes re-run an upsert — same behavior as
+   full re-run, just scoped. No additional work needed.
 4. §4a's `doc-003` ("no broken links in README") needs real network
    access to validate external URLs — every other script in this
    standard is deliberately offline-only
@@ -1017,3 +1281,27 @@ version (`max_possible = total_weight`, no `+ max_sem_bonus`).
       can't use `var()` at all (previous subsection covers this); the
       type/spacing scale was produced via a `huashu-design` pass, not
       invented ad hoc while writing template #1 and copied forward.
+- [ ] §2 extended schema — `standard_participants` has `team_name`,
+      `team_leader`, `members_json`, `repo_https`, `repo_ssh`,
+      `presentation_order`, `time_slot` columns; `metadata_json` is
+      still populated for extensibility; `get_team_profile()` helper
+      returns a dict with all team fields.
+- [ ] §4b teams.json — `python_hackathon/teams.json` exists with at
+      least one sample team entry; `run_hackathon.py` auto-loads it
+      when present; `--register` CLI flag still works independently.
+- [ ] §8 dual narrative — `_build_rule_narrative()` produces sections
+      from deterministic rule results; `agent_narrative` and
+      `rule_narrative` render independently in HTML templates; absent
+      source skips its block (no empty sections).
+- [ ] §9 HTML data-fetch extensions — `fetch_summary_html_data()`,
+      `fetch_team_summary_html_data()`, `fetch_leaderboard_html_data()`
+      exist; each extends its markdown counterpart with narrative
+      blocks, chart base64, team profile, and/or badge.
+- [ ] §10 `render_html_all()` — 32 HTML files generated; team
+      profiles render in `team-final-summary.html` (team name, leader,
+      members, repo URLs); dual narratives render in domain summary
+      pages; charts embedded as base64 data URIs; `_score_badge()`
+      produces consistent Primer status badges across all pages.
+- [ ] §10 `chart_to_base64()` — helper exists in `render_charts.py`;
+      all chart PNGs are embeddable as self-contained data URIs; no
+      external file references in rendered HTML.

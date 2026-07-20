@@ -84,8 +84,14 @@ separate HTML data fetcher" instruction), but rendering against 32 new
 `.html.mustache`-style templates (or `.html` files with embedded
 Mustache tags, matching the existing `.md` templates' convention)
 instead of the 32 `.md` files, using `chevron.render()` the same way,
-plus `{{> design_tokens}}` and the relevant `{{> chart_*}}` partials
-per proposal 2/1. The two approved demo pages become the reference
+plus `{{> design_tokens}}` (still a real Mustache partial — colors/
+type/spacing scale, §6). **Charts are not a Mustache partial** —
+corrected here, this line previously said `{{> chart_*}}` before the
+matplotlib/PNG decision (§6) landed; the renderer instead calls
+`render_charts.py` (§1) to get each chart's PNG bytes and inlines them
+as `<img src="data:image/png;base64,...">` in the fetch-function output
+dict, same as any other template field, no partial-include mechanism
+involved. The two approved demo pages become the reference
 implementation to extract these 32 templates from — not a fresh
 design pass, the visual language is already locked.
 

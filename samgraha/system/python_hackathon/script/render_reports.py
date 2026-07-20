@@ -1,13 +1,15 @@
 """
-render_reports.py — Render all 32 markdown templates using chevron.
+render_reports.py — Render all 32 markdown + 32 HTML templates using chevron.
 
-Five data-fetch functions, one per template kind, feeding chevron.render().
+Five markdown data-fetch functions, three HTML data-fetch extensions,
+one rule-narrative builder, one HTML rendering pipeline.
 """
 import chevron
 import json
 import os
 import yaml
 from datetime import datetime, timezone
+from render_charts import chart_to_base64
 
 SYSTEM_DIR = os.path.join(os.path.dirname(__file__), "..")
 TEMPLATES_DIR = os.path.join(SYSTEM_DIR, "templates", "reports")
@@ -30,8 +32,8 @@ def _now():
 
 
 def _load_template(relative_path):
-    """Load a template file and return its content string."""
-    path = os.path.join(TEMPLATES_DIR, relative_path)
+    """Load a markdown template file and return its content string."""
+    path = os.path.join(TEMPLATES_DIR, "markdown", relative_path)
     with open(path, "r", encoding="utf-8-sig") as f:
         return f.read()
 
@@ -116,7 +118,7 @@ def fetch_semantic_data(conn, participant_id, domain_name, repo_name=""):
 
 
 def fetch_summary_data(conn, participant_id, domain_name, domain_stats, adjusted_scores,
-                        repo_name="", participant_name=""):
+                        repo_name="", team_name=""):
     """
     Data for {domain}-summary.md templates.
     Combines det/sem scores with z-score stats.
@@ -153,7 +155,7 @@ def fetch_summary_data(conn, participant_id, domain_name, domain_stats, adjusted
 
     # Get z-score stats
     ds = domain_stats.get(domain_name, {})
-    team_adj = adjusted_scores.get(participant_name, {}).get(domain_name, {})
+    team_adj = adjusted_scores.get(team_name, {}).get(domain_name, {})
 
     final_domain_score = team_adj.get("adjusted_score", raw_merge)
 
@@ -210,7 +212,7 @@ def fetch_leaderboard_data(conn, results, domain_stats, weights_cfg):
     }
 
 
-def fetch_team_summary_data(conn, participant_id, participant_name, results,
+def fetch_team_summary_data(conn, participant_id, team_name, results,
                               domain_stats, adjusted_scores, repo_name=""):
     """
     Data for team-final-summary.md template.
@@ -219,7 +221,7 @@ def fetch_team_summary_data(conn, participant_id, participant_name, results,
     team_rank = 0
     final_score = 0
     for r in results:
-        if r["team"] == participant_name:
+        if r["team"] == team_name:
             team_rank = r["rank"]
             final_score = r["final_score"]
             break
@@ -228,7 +230,7 @@ def fetch_team_summary_data(conn, participant_id, participant_name, results,
     scores = {}
     domain_scores_list = []
     for d in DOMAIN_NAMES:
-        team_adj = adjusted_scores.get(participant_name, {}).get(d, {})
+        team_adj = adjusted_scores.get(team_name, {}).get(d, {})
         score_val = team_adj.get("adjusted_score", 0)
         scores[d] = score_val
         domain_scores_list.append({"domain": d, "score": score_val})
@@ -280,21 +282,21 @@ def render_all(conn, standard, output_dir, results, domain_stats, adjusted_score
         f.write(lb_md)
     print(f"  global-leaderboard.md")
 
-    # 2. Per-participant reports
+    # 2. Per-team reports
     for p in participants:
         pid = p["id"]
-        pname = p["participant_name"]
+        tname = p["team_name"]
         repo_path = p["repo_path"]
 
         # Team final summary
         ts_data = fetch_team_summary_data(
-            conn, pid, pname, results, domain_stats, adjusted_scores, pname,
+            conn, pid, tname, results, domain_stats, adjusted_scores, tname,
         )
         ts_template = _load_template("team-final-summary.md")
         ts_md = chevron.render(ts_template, ts_data)
-        with open(os.path.join(output_dir, f"{pname}-summary.md"), "w", encoding="utf-8") as f:
+        with open(os.path.join(output_dir, f"{tname}-summary.md"), "w", encoding="utf-8") as f:
             f.write(ts_md)
-        print(f"  {pname}-summary.md")
+        print(f"  {tname}-summary.md")
 
         # Per-domain reports
         rows = get_domain_scores(conn, pid)
@@ -306,32 +308,32 @@ def render_all(conn, standard, output_dir, results, domain_stats, adjusted_score
             template_prefix = dir_name.split("-", 1)[1]  # e.g., "infrastructure"
 
             # Deterministic template
-            det_data = fetch_deterministic_data(conn, pid, domain_name, pname)
+            det_data = fetch_deterministic_data(conn, pid, domain_name, tname)
             det_template = _load_template(f"domain/{dir_name}/deterministic.md")
             det_md = chevron.render(det_template, det_data)
-            det_path = os.path.join(output_dir, f"{pname}-{template_prefix}-deterministic.md")
+            det_path = os.path.join(output_dir, f"{tname}-{template_prefix}-deterministic.md")
             with open(det_path, "w", encoding="utf-8") as f:
                 f.write(det_md)
 
             # Semantic template
-            sem_data = fetch_semantic_data(conn, pid, domain_name, pname)
+            sem_data = fetch_semantic_data(conn, pid, domain_name, tname)
             sem_template = _load_template(f"domain/{dir_name}/semantic.md")
             sem_md = chevron.render(sem_template, sem_data)
-            sem_path = os.path.join(output_dir, f"{pname}-{template_prefix}-semantic.md")
+            sem_path = os.path.join(output_dir, f"{tname}-{template_prefix}-semantic.md")
             with open(sem_path, "w", encoding="utf-8") as f:
                 f.write(sem_md)
 
             # Summary template
             sum_data = fetch_summary_data(
-                conn, pid, domain_name, domain_stats, adjusted_scores, pname, pname,
+                conn, pid, domain_name, domain_stats, adjusted_scores, tname, tname,
             )
             sum_template = _load_template(f"domain/{dir_name}/summary.md")
             sum_md = chevron.render(sum_template, sum_data)
-            sum_path = os.path.join(output_dir, f"{pname}-{template_prefix}-summary.md")
+            sum_path = os.path.join(output_dir, f"{tname}-{template_prefix}-summary.md")
             with open(sum_path, "w", encoding="utf-8") as f:
                 f.write(sum_md)
 
-        print(f"  {pname}: 30 domain templates rendered")
+        print(f"  {tname}: 30 domain templates rendered")
 
     print(f"\nTotal: {1 + len(participants) * 31} markdown files written to {output_dir}")
 
@@ -388,8 +390,8 @@ def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
         # Per-participant charts for this domain
         for p in participants:
             pid = p["id"]
-            pname = p["participant_name"]
-            chart_key = f"{pname}_{domain_name}"
+            tname = p["team_name"]
+            chart_key = f"{tname}_{domain_name}"
 
             dc = {
                 "global_mean": global_mean,
@@ -399,17 +401,17 @@ def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
             }
 
             # Deterministic rules
-            det_data = fetch_deterministic_data(conn, pid, domain_name, pname)
+            det_data = fetch_deterministic_data(conn, pid, domain_name, tname)
             dc["rules"] = det_data.get("deterministic_rules", [])
 
             # Semantic model results
-            sem_data = fetch_semantic_data(conn, pid, domain_name, pname)
+            sem_data = fetch_semantic_data(conn, pid, domain_name, tname)
             dc["model_results"] = sem_data.get("model_results", [])
             dc["mean_score"] = sem_data.get("mean_score", 0)
 
             # Summary scores
             sum_data = fetch_summary_data(
-                conn, pid, domain_name, domain_stats, adjusted_scores, pname, pname,
+                conn, pid, domain_name, domain_stats, adjusted_scores, tname, tname,
             )
             dc["team_score"] = sum_data["scores"].get("final_domain_score",
                                 sum_data["scores"].get("raw_merge", 0))
@@ -420,12 +422,263 @@ def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
 
     # Team radar charts
     for p in participants:
-        pname = p["participant_name"]
+        tname = p["team_name"]
         ts_data = fetch_team_summary_data(
-            conn, p["id"], pname, results, domain_stats, adjusted_scores, pname,
+            conn, p["id"], tname, results, domain_stats, adjusted_scores, tname,
         )
-        spec["team_charts"][pname] = {
+        spec["team_charts"][tname] = {
             "domain_scores_list": ts_data.get("domain_scores_list", []),
         }
 
     return spec
+
+
+# ---------------------------------------------------------------------------
+# Rule-based narrative builder
+# ---------------------------------------------------------------------------
+
+def _build_rule_narrative(det_data):
+    """Build narrative blocks from deterministic rule results.
+
+    Returns list of {"heading": str, "text": str} for chevron rendering.
+    Always available after deterministic scoring — no agent dependency.
+    """
+    rules = det_data.get("deterministic_rules", [])
+    if not rules:
+        return None
+
+    passed = [r for r in rules if r.get("passed")]
+    failed = [r for r in rules if not r.get("passed")]
+    mandatory_failed = [r for r in failed if r.get("mandatory")]
+
+    blocks = []
+
+    # Pass rate
+    total = len(rules)
+    pass_count = len(passed)
+    pass_pct = round(pass_count / total * 100) if total else 0
+    blocks.append({
+        "heading": "Pass Rate",
+        "text": f"{pass_count}/{total} rules passed ({pass_pct}%).",
+    })
+
+    # Failed rules
+    if failed:
+        fail_lines = []
+        for r in failed:
+            status = "MANDATORY" if r.get("mandatory") else "optional"
+            fail_lines.append(
+                f"- **{r.get('id', '?')}** ({status}): {r.get('detail', r.get('description', ''))}"
+            )
+        blocks.append({
+            "heading": "Failed Rules",
+            "text": "\n".join(fail_lines),
+        })
+
+    # Mandatory failures (subset, only if any)
+    if mandatory_failed:
+        mand_lines = [f"- **{r.get('id', '?')}**: {r.get('detail', '')}" for r in mandatory_failed]
+        blocks.append({
+            "heading": "Mandatory Failures",
+            "text": "\n".join(mand_lines),
+        })
+
+    return blocks if blocks else None
+
+
+# ---------------------------------------------------------------------------
+# Score badge helper
+# ---------------------------------------------------------------------------
+
+def _score_badge(score):
+    """Map a 0-100 score to a Primer status badge dict."""
+    if score >= 75:
+        return {"label": "Strong", "css_class": "success"}
+    if score >= 50:
+        return {"label": "Attention", "css_class": "attention"}
+    return {"label": "Needs Work", "css_class": "danger"}
+
+
+# ---------------------------------------------------------------------------
+# HTML data-fetch extensions
+# ---------------------------------------------------------------------------
+
+def _load_html_template(relative_path):
+    """Load an HTML template file (same utf-8-sig handling as markdown)."""
+    path = os.path.join(TEMPLATES_DIR, "html", relative_path)
+    with open(path, "r", encoding="utf-8-sig") as f:
+        return f.read()
+
+
+def fetch_summary_html_data(conn, participant_id, domain_name, domain_stats,
+                            adjusted_scores, repo_name, team_name,
+                            chart_b64=None):
+    """Extend fetch_summary_data() with agent narrative, rule narrative, chart, badge."""
+    from db import get_narrative
+
+    base = fetch_summary_data(conn, participant_id, domain_name,
+                              domain_stats, adjusted_scores, repo_name, team_name)
+
+    # Agent-written narrative
+    agent_sections = get_narrative(conn, participant_id, domain_name)
+    base["agent_narrative"] = {"sections": agent_sections} if agent_sections else None
+
+    # Rule-based narrative
+    det_data = fetch_deterministic_data(conn, participant_id, domain_name, repo_name)
+    rule_sections = _build_rule_narrative(det_data)
+    base["rule_narrative"] = {"sections": rule_sections} if rule_sections else None
+
+    # Chart
+    base["chart_base64"] = chart_b64 or ""
+
+    # Badge
+    base["domain_badge"] = _score_badge(base["scores"]["final_domain_score"])
+
+    return base
+
+
+def fetch_team_summary_html_data(conn, participant_id, team_name, results,
+                                 domain_stats, adjusted_scores, repo_name,
+                                 radar_b64=None):
+    """Extend fetch_team_summary_data() with team profile, narrative, radar chart."""
+    from db import get_narrative, get_team_profile
+
+    base = fetch_team_summary_data(conn, participant_id, team_name,
+                                   results, domain_stats, adjusted_scores, repo_name)
+
+    # Team profile from DB
+    base["team_profile"] = get_team_profile(conn, participant_id) or {}
+
+    # Competition-wide narrative (NULL, NULL)
+    sections = get_narrative(conn, None, None)
+    base["narrative_blocks"] = sections or []
+
+    # Radar chart
+    base["radar_chart_base64"] = radar_b64 or ""
+
+    # Final score badge
+    base["final_badge"] = _score_badge(base["final_score"])
+
+    # Domain badges
+    base["domain_badges"] = {}
+    for d, score in base.get("scores", {}).items():
+        base["domain_badges"][d] = _score_badge(score)
+
+    return base
+
+
+def fetch_leaderboard_html_data(conn, results, domain_stats, weights_cfg,
+                                rank_chart_b64=None):
+    """Extend fetch_leaderboard_data() with competition-wide narrative, rank chart."""
+    from db import get_narrative
+
+    base = fetch_leaderboard_data(conn, results, domain_stats, weights_cfg)
+
+    # Competition-wide narrative (NULL, NULL)
+    sections = get_narrative(conn, None, None)
+    base["narrative_blocks"] = sections or []
+
+    # Rank chart
+    base["rank_chart_base64"] = rank_chart_b64 or ""
+
+    return base
+
+
+# ---------------------------------------------------------------------------
+# HTML rendering pipeline
+# ---------------------------------------------------------------------------
+
+def render_html_all(conn, standard, output_dir, results, domain_stats,
+                    adjusted_scores, weights_cfg, charts_dir):
+    """Render all 32 HTML templates with embedded charts + narratives."""
+    from db import list_participants, get_domain_scores
+
+    html_out = os.path.join(output_dir, "html")
+    os.makedirs(html_out, exist_ok=True)
+
+    # Load shared CSS partial
+    styles_html = _load_html_template("_styles.html")
+    partials = {"styles": styles_html}
+
+    # Build chart base64 lookup from charts_dir
+    # render_charts.py uses safe_key = "{pname}-{domain}" (dashes, not underscores)
+    chart_b64_cache = {}
+
+    def _get_chart_b64(filename_stem):
+        """Get data-URI base64 for a chart by its filename stem (without .png)."""
+        if filename_stem in chart_b64_cache:
+            return chart_b64_cache[filename_stem]
+        path = os.path.join(charts_dir, f"{filename_stem}.png")
+        if os.path.isfile(path):
+            b64 = chart_to_base64(path)
+            chart_b64_cache[filename_stem] = b64
+            return b64
+        chart_b64_cache[filename_stem] = ""
+        return ""
+
+    participants = list_participants(conn, standard)
+
+    # 1. Global leaderboard
+    lb_data = fetch_leaderboard_html_data(
+        conn, results, domain_stats, weights_cfg,
+        rank_chart_b64=_get_chart_b64("rank-distribution"),
+    )
+    lb_template = _load_html_template("global-leaderboard.html")
+    lb_html = chevron.render(lb_template, lb_data, partials_dict=partials)
+    with open(os.path.join(html_out, "global-leaderboard.html"), "w", encoding="utf-8") as f:
+        f.write(lb_html)
+    print("  html/global-leaderboard.html")
+
+    # 2. Per-team reports
+    for p in participants:
+        pid = p["id"]
+        tname = p["team_name"]
+
+        # Team final summary
+        ts_data = fetch_team_summary_html_data(
+            conn, pid, tname, results, domain_stats, adjusted_scores, tname,
+            radar_b64=_get_chart_b64(f"{tname}-radar"),
+        )
+        ts_template = _load_html_template("team-final-summary.html")
+        ts_html = chevron.render(ts_template, ts_data, partials_dict=partials)
+        with open(os.path.join(html_out, f"{tname}-summary.html"), "w", encoding="utf-8") as f:
+            f.write(ts_html)
+        print(f"  html/{tname}-summary.html")
+
+        # Per-domain reports
+        for dir_name, domain_name in zip(DOMAINS, DOMAIN_NAMES):
+            template_prefix = dir_name.split("-", 1)[1]
+            safe_key = f"{tname}-{domain_name}"
+
+            # Deterministic
+            det_data = fetch_deterministic_data(conn, pid, domain_name, tname)
+            det_data["chart_base64"] = _get_chart_b64(f"{safe_key}-rule-pass-rate")
+            det_template = _load_html_template(f"domain/{dir_name}/deterministic.html")
+            det_html = chevron.render(det_template, det_data, partials_dict=partials)
+            det_path = os.path.join(html_out, f"{tname}-{template_prefix}-deterministic.html")
+            with open(det_path, "w", encoding="utf-8") as f:
+                f.write(det_html)
+
+            # Semantic
+            sem_data = fetch_semantic_data(conn, pid, domain_name, tname)
+            sem_template = _load_html_template(f"domain/{dir_name}/semantic.html")
+            sem_html = chevron.render(sem_template, sem_data, partials_dict=partials)
+            sem_path = os.path.join(html_out, f"{tname}-{template_prefix}-semantic.html")
+            with open(sem_path, "w", encoding="utf-8") as f:
+                f.write(sem_html)
+
+            # Summary
+            sum_data = fetch_summary_html_data(
+                conn, pid, domain_name, domain_stats, adjusted_scores, tname, tname,
+                chart_b64=_get_chart_b64(f"{safe_key}-field-distribution"),
+            )
+            sum_template = _load_html_template(f"domain/{dir_name}/summary.html")
+            sum_html = chevron.render(sum_template, sum_data, partials_dict=partials)
+            sum_path = os.path.join(html_out, f"{tname}-{template_prefix}-summary.html")
+            with open(sum_path, "w", encoding="utf-8") as f:
+                f.write(sum_html)
+
+        print(f"  html/{tname}: 30 domain templates + summary rendered")
+
+    total = 1 + len(participants) * 31
+    print(f"\nTotal: {total} HTML files written to {html_out}")

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Team Final Summary — {{ repo_name }}</title>
+{{>styles}}
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Team Final Aggregate</div>
+    <h1>{{ repo_name }} — Final Summary</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Evaluation Date</span>
+        <span class="meta-value mono">{{ evaluation_date }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Rank</span>
+        <span class="meta-value mono">{{ team_rank }} / {{ total_teams }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Final Score</span>
+        <span class="meta-value mono"><strong>{{ final_score }} / 20</strong>
+          {{#final_badge}} <span class="badge {{ css_class }}">{{ label }}</span>{{/final_badge}}
+        </span>
+      </div>
+    </div>
+  </header>
+
+{{#team_profile}}
+{{#team_name}}
+  <section>
+    <div class="section-header"><h2>Team Profile</h2></div>
+    <div class="section-body">
+      <dl class="team-profile">
+        <dt>Team Name</dt>
+        <dd class="mono">{{ team_name }}</dd>
+        <dt>Team Leader</dt>
+        <dd>{{ team_leader }}</dd>
+{{#members}}
+        <dt>Members</dt>
+        <dd>{{ . }}</dd>
+{{/members}}
+{{#repo_https}}
+        <dt>Repository (HTTPS)</dt>
+        <dd class="mono"><a href="{{ repo_https }}" style="color:var(--accent-fg);">{{ repo_https }}</a></dd>
+{{/repo_https}}
+{{#repo_ssh}}
+        <dt>Repository (SSH)</dt>
+        <dd class="mono">{{ repo_ssh }}</dd>
+{{/repo_ssh}}
+{{#team_code}}
+        <dt>Team Code</dt>
+        <dd>{{ team_code }}</dd>
+{{/team_code}}
+      </dl>
+    </div>
+  </section>
+{{/team_name}}
+{{/team_profile}}
+
+{{#radar_chart_base64}}
+  <section>
+    <div class="section-header"><h2>Domain Profile</h2></div>
+    <div class="section-body">
+      <div class="chart-wrap" style="text-align:center;">
+        <img src="{{ radar_chart_base64 }}" alt="Radar Chart" style="max-width:480px;width:100%;border-radius:4px;" />
+      </div>
+    </div>
+  </section>
+{{/radar_chart_base64}}
+
+  <section>
+    <div class="section-header"><h2>Domain Scores</h2></div>
+    <div class="section-body">
+      <div class="domain-grid">
+        <div class="domain-cell">
+          <div class="name">Infrastructure</div>
+          <div class="score">{{ scores.infrastructure }}{{#domain_badges.infrastructure}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.infrastructure}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Engineering</div>
+          <div class="score">{{ scores.engineering }}{{#domain_badges.engineering}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.engineering}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Testing</div>
+          <div class="score">{{ scores.testing }}{{#domain_badges.testing}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.testing}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Documentation</div>
+          <div class="score">{{ scores.documentation }}{{#domain_badges.documentation}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.documentation}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Security</div>
+          <div class="score">{{ scores.security }}{{#domain_badges.security}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.security}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">MLOps</div>
+          <div class="score">{{ scores.mlops }}{{#domain_badges.mlops}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.mlops}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Runtime</div>
+          <div class="score">{{ scores.runtime }}{{#domain_badges.runtime}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.runtime}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Team Workflow</div>
+          <div class="score">{{ scores.team_workflow }}{{#domain_badges.team_workflow}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.team_workflow}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">Data Quality</div>
+          <div class="score">{{ scores.data_quality }}{{#domain_badges.data_quality}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.data_quality}}</div>
+        </div>
+        <div class="domain-cell">
+          <div class="name">AI Explanations</div>
+          <div class="score">{{ scores.ai_explanations }}{{#domain_badges.ai_explanations}} <span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badges.ai_explanations}}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header"><h2>LLM Model Breakdown</h2></div>
+    <div class="section-body" style="padding:0;">
+      <table class="stats-table">
+        <thead>
+          <tr><th>Model Evaluator</th><td style="text-align:right;font-weight:500;">Aggregate Mean</td></tr>
+        </thead>
+        <tbody>
+{{#model_aggregate_scores}}
+          <tr><th class="mono">{{ model_name }}</th><td class="num" style="text-align:right;">{{ mean_score }}</td></tr>
+{{/model_aggregate_scores}}
+{{^model_aggregate_scores}}
+          <tr><th colspan="2" style="color:var(--fg-muted);font-weight:400;">No model data available.</th></tr>
+{{/model_aggregate_scores}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="narrative">
+    <div class="section-header"><h2>Competition Overview</h2></div>
+    <div class="section-body">
+{{#narrative_blocks}}
+      <div class="block">
+        <h3>{{ heading }}</h3>
+        <p>{{ text }}</p>
+      </div>
+{{/narrative_blocks}}
+{{^narrative_blocks}}
+      <p style="color:var(--fg-muted);font-size:13px;">No narrative available yet.</p>
+{{/narrative_blocks}}
+    </div>
+  </section>
+
+  <footer>Team Final Summary · Samgraha Evaluation System</footer>
+
+</div>
+</body>
+</html>

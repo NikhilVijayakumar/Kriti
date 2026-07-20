@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Documentation — Semantic Audit</title>
+{{>styles}}
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Semantic Audit · Documentation</div>
+    <h1>Documentation — Semantic Audit</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Repository</span>
+        <span class="meta-value mono">{{ repo_name }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Evaluation Date</span>
+        <span class="meta-value mono">{{ evaluation_date }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header"><h2>LLM Ensemble Breakdown</h2></div>
+    <div class="section-body" style="padding:0;overflow-x:auto;">
+      <table class="stats-table">
+        <thead>
+          <tr><th>Model Evaluator</th><td style="text-align:right;font-weight:500;">Score</td></tr>
+        </thead>
+        <tbody>
+{{#model_results}}
+          <tr><th class="mono">{{ model_name }}</th><td class="num" style="text-align:right;">{{ score }}</td></tr>
+{{/model_results}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header"><h2>Final Semantic Metrics</h2></div>
+    <div class="scorecards">
+      <div class="scorecard">
+        <div class="label">Mean Score</div>
+        <div class="value num">{{ mean_score }}</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Model Agreement</div>
+        <div class="value" style="font-size:18px;">{{ agreement_level }}</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Std Deviation</div>
+        <div class="value num">{{ stdev_score }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-header"><h2>Model Reasoning</h2></div>
+    <div class="section-body">
+{{#model_results}}
+      <div class="model-card">
+        <h4>{{ model_name }} — <span class="num">{{ score }}</span>/100</h4>
+        <p>{{ reasoning }}</p>
+      </div>
+{{/model_results}}
+{{^model_results}}
+      <p style="color:var(--fg-muted);font-size:13px;">No model data available.</p>
+{{/model_results}}
+    </div>
+  </section>
+
+  <footer>Documentation semantic audit · Samgraha Evaluation System</footer>
+
+</div>
+</body>
+</html>

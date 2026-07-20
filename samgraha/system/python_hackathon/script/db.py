@@ -2,8 +2,8 @@
 db.py — SQLite schema and helpers for python_hackathon scoring.
 
 Tables:
-  standard_participants  — who's competing
-  standard_domain_scores — per (participant, domain, kind, model) scores
+  standard_participants  — who's competing (keyed by team_name)
+  standard_domain_scores — per (team, domain, kind, model) scores
   standard_narratives    — agent-written narrative sections
 """
 import sqlite3
@@ -17,13 +17,18 @@ DEFAULT_DB = os.path.join(
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS standard_participants (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    standard        TEXT    NOT NULL,
-    participant_name TEXT   NOT NULL,
-    repo_path       TEXT    NOT NULL,
-    metadata_json   TEXT,
-    registered_at   TEXT    NOT NULL,
-    UNIQUE(standard, participant_name)
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    standard            TEXT    NOT NULL,
+    team_name           TEXT    NOT NULL,
+    repo_path           TEXT    NOT NULL,
+    team_leader         TEXT,
+    members_json        TEXT,
+    repo_https          TEXT,
+    repo_ssh            TEXT,
+    team_code           TEXT,
+    metadata_json       TEXT,
+    registered_at       TEXT    NOT NULL,
+    UNIQUE(standard, team_name)
 );
 
 CREATE TABLE IF NOT EXISTS standard_domain_scores (
@@ -58,7 +63,49 @@ def get_conn(db_path=None):
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.executescript(SCHEMA_SQL)
+    # Migrate old schemas: participant_name -> team_name
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn):
+    """Handle schema evolution for existing databases."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(standard_participants)")}
+
+    # Old schema had participant_name — migrate to team_name
+    if "participant_name" in cols and "team_name" not in cols:
+        try:
+            conn.execute("ALTER TABLE standard_participants ADD COLUMN team_name TEXT")
+        except sqlite3.OperationalError:
+            pass
+        conn.execute(
+            "UPDATE standard_participants SET team_name=participant_name WHERE team_name IS NULL"
+        )
+        conn.commit()
+    elif "participant_name" in cols and "team_name" in cols:
+        # Both exist — fill any NULL team_names from participant_name
+        conn.execute(
+            "UPDATE standard_participants SET team_name=participant_name WHERE team_name IS NULL"
+        )
+        conn.commit()
+
+    # Drop redundant columns if they exist (SQLite doesn't support DROP COLUMN
+    # before 3.35.0, so we silently ignore).
+    for col in ("presentation_order", "time_slot"):
+        if col in cols:
+            try:
+                conn.execute(f"ALTER TABLE standard_participants DROP COLUMN {col}")
+            except (sqlite3.OperationalError, AttributeError):
+                pass
+
+    # Ensure team_code column exists
+    if "team_code" not in cols:
+        try:
+            conn.execute("ALTER TABLE standard_participants ADD COLUMN team_code TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+    conn.commit()
 
 
 def now_iso():
@@ -69,30 +116,62 @@ def now_iso():
 # Participant helpers
 # ---------------------------------------------------------------------------
 
-def register_participant(conn, standard, name, repo_path, metadata=None):
-    """Insert or ignore a participant. Returns participant id."""
+def register_participant(conn, standard, team_name, repo_path,
+                         team_leader=None, members=None,
+                         repo_https=None, repo_ssh=None, team_code=None,
+                         metadata=None):
+    """Insert or ignore a team. Returns participant id."""
     cur = conn.execute(
-        "SELECT id FROM standard_participants WHERE standard=? AND participant_name=?",
-        (standard, name),
+        "SELECT id FROM standard_participants WHERE standard=? AND team_name=?",
+        (standard, team_name),
     )
     row = cur.fetchone()
     if row:
         return row["id"]
     cur = conn.execute(
-        "INSERT INTO standard_participants (standard, participant_name, repo_path, metadata_json, registered_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (standard, name, repo_path, json.dumps(metadata) if metadata else None, now_iso()),
+        "INSERT INTO standard_participants "
+        "(standard, team_name, repo_path, team_leader, "
+        " members_json, repo_https, repo_ssh, team_code, "
+        " metadata_json, registered_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            standard, team_name, repo_path,
+            team_leader,
+            json.dumps(members) if members else None,
+            repo_https, repo_ssh, team_code,
+            json.dumps(metadata) if metadata else None,
+            now_iso(),
+        ),
     )
     conn.commit()
     return cur.lastrowid
 
 
 def list_participants(conn, standard):
-    """Return all participants for a standard."""
+    """Return all teams for a standard."""
     return conn.execute(
-        "SELECT id, participant_name, repo_path FROM standard_participants WHERE standard=?",
+        "SELECT id, team_name, repo_path FROM standard_participants WHERE standard=?",
         (standard,),
     ).fetchall()
+
+
+def get_team_profile(conn, participant_id):
+    """Return team metadata dict for reports. All fields nullable except id."""
+    row = conn.execute(
+        "SELECT * FROM standard_participants WHERE id=?", (participant_id,)
+    ).fetchone()
+    if not row:
+        return None
+    members = json.loads(row["members_json"]) if row["members_json"] else []
+    return {
+        "team_name": row["team_name"],
+        "team_leader": row["team_leader"] or "",
+        "team_code": row["team_code"] or "",
+        "members": members,
+        "repo_https": row["repo_https"] or "",
+        "repo_ssh": row["repo_ssh"] or "",
+        "repo_path": row["repo_path"],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +182,6 @@ def upsert_domain_score(conn, participant_id, domain, kind, model, score, eviden
     """Insert or update a domain score row (UNIQUE on participant+domain+kind+model)."""
     evidence_json = json.dumps(evidence) if evidence is not None else None
     ts = now_iso()
-    # Try update first
     cur = conn.execute(
         "UPDATE standard_domain_scores SET score=?, raw_evidence_json=?, created_at=? "
         "WHERE participant_id=? AND domain=? AND kind=? AND model=?",
@@ -134,12 +212,8 @@ def get_domain_scores(conn, participant_id, domain=None):
 def get_all_scores_as_dict(conn, standard):
     """
     Returns aggregated_scores dict shaped for statistics.py:
-      {participant_name: {domain: {"raw_score": float, "deterministic_score": float,
+      {team_name: {domain: {"raw_score": float, "deterministic_score": float,
        "semantic_mean": float, "model_breakdown": {model: score}}}}
-
-    Semantic score per domain = mean of all model rows for that (participant, domain).
-    Deterministic score = the single row's score.
-    raw_score = weighted merge from aggregation YAML.
     """
     import yaml
     agg_dir = os.path.join(os.path.dirname(__file__), "..", "calculation", "aggregation", "domain")
@@ -147,7 +221,7 @@ def get_all_scores_as_dict(conn, standard):
     participants = list_participants(conn, standard)
     result = {}
     for p in participants:
-        pname = p["participant_name"]
+        tname = p["team_name"]
         rows = get_domain_scores(conn, p["id"])
         domains = {}
         for r in rows:
@@ -159,16 +233,13 @@ def get_all_scores_as_dict(conn, standard):
             elif r["kind"] == "semantic":
                 domains[d]["semantic_models"][r["model"]] = r["score"]
 
-        # Build output with raw_score per domain
         team_output = {}
         for d, data in domains.items():
             det = data["deterministic"] or 0.0
             sem_scores = list(data["semantic_models"].values())
             sem_mean = sum(sem_scores) / len(sem_scores) if sem_scores else 0.0
 
-            # Read aggregation weights
             det_w, sem_w = 0.60, 0.40
-            # Find the directory name for this domain
             import glob as globmod
             matches = globmod.glob(os.path.join(agg_dir, f"*-{d.replace('_', '-')}.yaml"))
             if matches:
@@ -189,12 +260,12 @@ def get_all_scores_as_dict(conn, standard):
                 "semantic_mean": round(sem_mean, 2),
                 "model_breakdown": data["semantic_models"],
             }
-        result[pname] = team_output
+        result[tname] = team_output
     return result
 
 
 def missing_semantic_combos(conn, standard, target_models):
-    """Return list of (participant_name, domain, model) that have no semantic row yet."""
+    """Return list of (team_name, domain, model) that have no semantic row yet."""
     participants = list_participants(conn, standard)
     domains = set()
     for p in participants:
@@ -210,7 +281,7 @@ def missing_semantic_combos(conn, standard, target_models):
                     (p["id"], d, m),
                 ).fetchone()
                 if not row:
-                    missing.append((p["participant_name"], d, m))
+                    missing.append((p["team_name"], d, m))
     return missing
 
 
@@ -225,7 +296,6 @@ def upsert_narrative(conn, participant_id, domain, sections):
     """
     sections_json = json.dumps(sections)
     ts = now_iso()
-    # Find existing
     if participant_id is None and domain is None:
         existing = conn.execute(
             "SELECT id FROM standard_narratives WHERE participant_id IS NULL AND domain IS NULL"

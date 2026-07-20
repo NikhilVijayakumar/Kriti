@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Engineering — Domain Summary</title>
+{{>styles}}
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <div class="eyebrow">Domain Summary · Engineering</div>
+    <h1>Engineering — Domain Summary</h1>
+    <div class="meta-row">
+      <div class="meta-item">
+        <span class="meta-label">Repository</span>
+        <span class="meta-value mono">{{ repo_name }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Evaluation Date</span>
+        <span class="meta-value mono">{{ evaluation_date }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Domain Status</span>
+        {{#domain_badge}}<span class="badge {{ css_class }}">{{ label }}</span>{{/domain_badge}}
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-header"><h2>Aggregation</h2></div>
+    <div class="scorecards">
+      <div class="scorecard">
+        <div class="label">Deterministic</div>
+        <div class="value num">{{ scores.deterministic }}</div>
+        <div class="sub">rule-checker · weight 0.60</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Semantic</div>
+        <div class="value num">{{ scores.semantic }}</div>
+        <div class="sub">LLM panel avg · weight 0.40</div>
+      </div>
+      <div class="scorecard">
+        <div class="label">Raw Merged Score</div>
+        <div class="value num">{{ scores.raw_merge }}</div>
+        <div class="sub">0.60 × det + 0.40 × sem</div>
+      </div>
+      <div class="scorecard final">
+        <div class="label">Final Domain Score</div>
+        <div class="value num">{{ scores.final_domain_score }}</div>
+        <div class="sub">raw merge + relative bonus</div>
+      </div>
+    </div>
+  </section>
+
+{{#chart_base64}}
+  <section>
+    <div class="section-header"><h2>Score vs. Field Distribution</h2></div>
+    <div class="section-body">
+      <div class="chart-wrap">
+        <img src="{{ chart_base64 }}" alt="Score Distribution" style="width:100%;border-radius:4px;" />
+      </div>
+    </div>
+  </section>
+{{/chart_base64}}
+
+  <section>
+    <div class="section-header"><h2>Hackathon Competition Stats</h2></div>
+    <div class="section-body" style="padding:0;">
+      <table class="stats-table">
+        <tbody>
+          <tr><th>Global Domain Mean</th><td class="num">{{ global_stats.mean }}</td></tr>
+          <tr><th>Global Domain Std Dev</th><td class="num">{{ global_stats.stdev }}</td></tr>
+          <tr><th>Team Z-Score</th><td class="num">{{#team_stats.z_score}}<span class="delta-pos">{{ . }}</span>{{/team_stats.z_score}}</td></tr>
+          <tr><th>Relative Bonus Applied</th><td class="num">{{#team_stats.relative_bonus}}<span class="delta-pos">{{ . }}</span>{{/team_stats.relative_bonus}}</td></tr>
+          <tr><th>Final Domain Score</th><td class="num" style="font-size:16px;">{{ scores.final_domain_score }} {{#domain_badge}}<span class="badge {{ css_class }}" style="margin-left:6px;">{{ label }}</span>{{/domain_badge}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {{#agent_narrative}}
+  <section class="narrative">
+    <div class="section-header"><h2>Agent Narrative</h2></div>
+    <div class="section-body">
+  {{#sections}}
+      <div class="block">
+        <h3>{{ heading }}</h3>
+        <p>{{ text }}</p>
+      </div>
+  {{/sections}}
+  {{^sections}}
+      <p style="color:var(--fg-muted);font-size:13px;">No agent narrative available.</p>
+  {{/sections}}
+    </div>
+  </section>
+  {{/agent_narrative}}
+
+  {{#rule_narrative}}
+  <section class="narrative">
+    <div class="section-header"><h2>Rule-Based Analysis</h2></div>
+    <div class="section-body">
+  {{#sections}}
+      <div class="block">
+        <h3>{{ heading }}</h3>
+        <p>{{ text }}</p>
+      </div>
+  {{/sections}}
+  {{^sections}}
+      <p style="color:var(--fg-muted);font-size:13px;">No rule-based analysis available.</p>
+  {{/sections}}
+    </div>
+  </section>
+  {{/rule_narrative}}
+
+  <footer>Engineering domain summary · Samgraha Evaluation System</footer>
+
+</div>
+</body>
+</html>

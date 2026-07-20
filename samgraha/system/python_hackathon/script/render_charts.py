@@ -1,5 +1,6 @@
 """
 render_charts.py — 7 chart functions producing PNG files via matplotlib.
+Plus chart_to_base64() for embedding PNGs into HTML reports.
 
 Each function takes data + output path, produces one chart.
 Called by run_reporting.py after markdown template rendering.
@@ -466,6 +467,18 @@ def generate_charts(spec, output_dir):
     chart_domain_weights(os.path.join(output_dir, "domain-weights.png"))
 
     print(f"Charts written to {output_dir}")
+
+
+# ---------------------------------------------------------------------------
+# Base64 helper for HTML report embedding
+# ---------------------------------------------------------------------------
+
+def chart_to_base64(chart_path):
+    """Read a PNG file and return its base64-encoded data URI string."""
+    import base64
+    with open(chart_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("ascii")
+    return f"data:image/png;base64,{data}"
 
 
 if __name__ == "__main__":
