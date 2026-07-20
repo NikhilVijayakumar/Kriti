@@ -35,16 +35,16 @@ rules:
 
   - id: dq-003
     description: "Train/test split or cross-validation evidenced in code"
-    condition: "codebase contains train_test_split, cross-validation, or k-fold references"
-    message: "No evidence of data splitting methodology found in code."
+    condition: "Python source files contain train_test_split, cross-validation, or k-fold references"
+    message: "No evidence of data splitting methodology found in codebase."
     severity: warning
     weight: 1.0
     mandatory: false
     evidence:
-      type: regex_match
-      target: README.md
-      patterns: ["train_test_split", "cross.validation", "k.fold", "validation set",
-                 "train.test.split", "model_selection", "StratifiedKFold", "TimeSeriesSplit"]
+      type: tool_execution
+      target: codebase_split_pattern_count
+      threshold: 1
+      op: gte
 
   - id: dq-004
     description: "Feature engineering or validation methodology documented in README"

@@ -15,6 +15,19 @@ DATAHUB_URL_PATTERNS = [
     re.compile(r"(?i)archive\.org"),
 ]
 
+SPLIT_PATTERNS = [
+    re.compile(r"train_test_split"),
+    re.compile(r"cross.validation"),
+    re.compile(r"k.fold"),
+    re.compile(r"StratifiedKFold"),
+    re.compile(r"TimeSeriesSplit"),
+    re.compile(r"validation.set"),
+    re.compile(r"train\.test\.split"),
+    re.compile(r"model_selection"),
+    re.compile(r"kfold"),
+    re.compile(r"repeated_stratified"),
+]
+
 DATA_FILE_EXTENSIONS = (".csv", ".parquet", ".jsonl", ".json", ".tsv", ".h5", ".hdf5", ".npy", ".npz")
 
 
@@ -30,6 +43,8 @@ def run_data_quality_audit(repo_path):
         "data_directory_names": [],
         "datahub_urls_in_readme": [],
         "datahub_url_count": 0,
+        "codebase_split_patterns_found": [],
+        "codebase_split_pattern_count": 0,
     }
 
     # Check for data directories
@@ -55,6 +70,24 @@ def run_data_quality_audit(repo_path):
         result["data_files_found"] = True
         result["data_file_count"] = len(data_files)
         result["data_file_extensions"] = extensions
+
+    # Grep Python source files for train/test split / cross-validation patterns
+    split_matches = set()
+    for root, dirs, files in os.walk(repo_path):
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in ("venv", ".venv", "__pycache__", "node_modules", ".git")]
+        for fname in files:
+            if not fname.endswith(".py"):
+                continue
+            try:
+                with open(os.path.join(root, fname), "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+            except OSError:
+                continue
+            for pat in SPLIT_PATTERNS:
+                if pat.search(content):
+                    split_matches.add(pat.pattern)
+    result["codebase_split_patterns_found"] = sorted(split_matches)
+    result["codebase_split_pattern_count"] = len(split_matches)
 
     # Scan README for data-hub URLs
     for readme_name in ("README.md", "README.rst", "README.txt", "README"):

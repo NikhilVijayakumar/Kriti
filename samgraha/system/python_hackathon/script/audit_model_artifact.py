@@ -205,7 +205,7 @@ mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 if not hasattr(mod, 'predict'):
-    print(json.dumps({{"valid": false, "message": "No predict() function found"}}))
+    print(json.dumps({{"valid": False, "message": "No predict() function found"}}))
 else:
     sig = inspect.signature(mod.predict)
     params = [name for name, p in sig.parameters.items() if p.default is inspect.Parameter.empty]
