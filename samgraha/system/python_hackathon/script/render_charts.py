@@ -253,7 +253,7 @@ def chart_model_spread(model_results, domain_name, output_path, mean_score=0):
     """
     Dot-plot of semantic model scores for one domain.
     model_results: list of {"model_name": str, "score": float}
-    Skip if < 2 models (not enough for meaningful spread).
+    Skip if < 3 models (not enough for meaningful spread).
     """
     _ensure_dir(output_path)
 
