@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from db import get_conn, get_all_scores_as_dict, list_participants, get_domain_scores
 from statistics import run_z_adjustment
 from leaderboard import _load_weights, build_leaderboard, render_leaderboard_md
-from render_reports import render_all
+from render_reports import render_all, build_chart_spec
 
 SYSTEM_DIR = os.path.join(os.path.dirname(__file__), "..")
 WEIGHTS_FILE = os.path.join(SYSTEM_DIR, "calculation", "weights.yaml")
@@ -75,6 +75,13 @@ def main():
     # Render all markdown reports
     print("\nRendering markdown reports...")
     render_all(conn, args.standard, out_dir, results, domain_stats, adjusted_scores, weights_cfg)
+
+    # Generate charts
+    print("\nGenerating charts...")
+    chart_spec = build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg)
+    from render_charts import generate_charts
+    charts_dir = os.path.join(out_dir, "charts")
+    generate_charts(chart_spec, charts_dir)
 
     # Print summary
     print(f"\n{'='*50}")

@@ -334,3 +334,97 @@ def render_all(conn, standard, output_dir, results, domain_stats, adjusted_score
         print(f"  {pname}: 30 domain templates rendered")
 
     print(f"\nTotal: {1 + len(participants) * 31} markdown files written to {output_dir}")
+
+
+# ---------------------------------------------------------------------------
+# Chart spec builder + generation
+# ---------------------------------------------------------------------------
+
+def build_chart_spec(conn, results, domain_stats, adjusted_scores, weights_cfg):
+    """
+    Build the JSON spec dict that render_charts.generate_charts() consumes.
+    Keys domain_charts by "{participant}_{domain}" so each team gets separate charts.
+    """
+    from db import list_participants, get_domain_scores
+
+    spec = {"domain_charts": {}, "team_charts": {}}
+
+    participants = list_participants(conn, "python_hackathon")
+
+    # Aggregation weights (shared across all participants)
+    import glob as globmod
+    agg_dir = os.path.join(SYSTEM_DIR, "calculation", "aggregation", "domain")
+    domain_weights = {}
+    for domain_name in DOMAIN_NAMES:
+        det_w, sem_w = 0.60, 0.40
+        matches = globmod.glob(os.path.join(agg_dir, f"*-{domain_name.replace('_', '-')}.yaml"))
+        if matches:
+            try:
+                with open(matches[0], "r", encoding="utf-8") as f:
+                    agg = yaml.safe_load(f)
+                w = agg.get("weights", {})
+                det_w = w.get("deterministic", 0.60)
+                sem_w = w.get("semantic", 0.40)
+            except (yaml.YAMLError, OSError):
+                pass
+        domain_weights[domain_name] = (det_w, sem_w)
+
+    # Per-domain, per-participant charts
+    for dir_name, domain_name in zip(DOMAINS, DOMAIN_NAMES):
+        det_w, sem_w = domain_weights[domain_name]
+
+        # Global stats for this domain
+        ds = domain_stats.get(domain_name, {})
+        global_mean = ds.get("global_mean", 0)
+        global_stdev = ds.get("global_stdev", 0)
+
+        # All teams' scores for rank distribution (shared across participants)
+        teams_data = []
+        for r in results:
+            score = r.get("domain_details", {}).get(domain_name, {}).get("adjusted_score", 0)
+            teams_data.append({"team": r["team"], "score": score})
+
+        for p in participants:
+            pid = p["id"]
+            pname = p["participant_name"]
+            chart_key = f"{pname}_{domain_name}"
+
+            dc = {
+                "teams_data": teams_data,
+                "global_mean": global_mean,
+                "global_stdev": global_stdev,
+                "det_weight": det_w,
+                "sem_weight": sem_w,
+            }
+
+            # Deterministic rules
+            det_data = fetch_deterministic_data(conn, pid, domain_name, pname)
+            dc["rules"] = det_data.get("deterministic_rules", [])
+
+            # Semantic model results
+            sem_data = fetch_semantic_data(conn, pid, domain_name, pname)
+            dc["model_results"] = sem_data.get("model_results", [])
+            dc["mean_score"] = sem_data.get("mean_score", 0)
+
+            # Summary scores
+            sum_data = fetch_summary_data(
+                conn, pid, domain_name, domain_stats, adjusted_scores, pname, pname,
+            )
+            dc["team_score"] = sum_data["scores"].get("final_domain_score",
+                                sum_data["scores"].get("raw_merge", 0))
+            dc["det_score"] = sum_data["scores"].get("deterministic", 0)
+            dc["sem_score"] = sum_data["scores"].get("semantic", 0)
+
+            spec["domain_charts"][chart_key] = dc
+
+    # Team radar charts
+    for p in participants:
+        pname = p["participant_name"]
+        ts_data = fetch_team_summary_data(
+            conn, p["id"], pname, results, domain_stats, adjusted_scores, pname,
+        )
+        spec["team_charts"][pname] = {
+            "domain_scores_list": ts_data.get("domain_scores_list", []),
+        }
+
+    return spec
