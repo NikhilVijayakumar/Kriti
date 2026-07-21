@@ -11,6 +11,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "common"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "usecase-3-calculate"))
 
 from db import get_conn, get_all_scores_as_dict, list_participants, get_domain_scores
 from statistics import run_z_adjustment
