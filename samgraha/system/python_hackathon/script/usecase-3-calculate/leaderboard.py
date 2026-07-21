@@ -75,15 +75,15 @@ def build_leaderboard(adjusted_scores, weights_cfg):
         domain_details = {}
         for domain, weight_key in DOMAIN_KEY_MAP.items():
             weight = domain_weights.get(weight_key, {}).get("weight", 0)
-            adj_score = team_adj.get(domain, {}).get("adjusted_score", 0.0)
+            adj_score = team_adj.get(weight_key, {}).get("adjusted_score", 0.0)
             contribution = round((adj_score / 100.0) * weight, 3)
             weighted_total += contribution
             domain_details[domain] = {
                 "adjusted_score": adj_score,
                 "weight": weight,
                 "weighted_contribution": contribution,
-                "z_score": team_adj.get(domain, {}).get("z_score", 0.0),
-                "bonus_applied": team_adj.get(domain, {}).get("bonus_applied", 0.0),
+                "z_score": team_adj.get(weight_key, {}).get("z_score", 0.0),
+                "bonus_applied": team_adj.get(weight_key, {}).get("bonus_applied", 0.0),
             }
 
         # Final score: scaled weighted sum, no second bonus stage

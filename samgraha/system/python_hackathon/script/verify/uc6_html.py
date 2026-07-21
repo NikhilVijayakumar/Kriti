@@ -12,6 +12,17 @@ from db import get_conn, list_participants, get_domain_scores, get_canonical_dom
 
 ALL_DOMAINS = get_canonical_domains()
 
+_DIR_NAMES = [
+    "01-infrastructure", "02-engineering", "03-testing",
+    "04-documentation", "05-security", "06-mlops",
+    "07-runtime", "08-team-workflow", "09-data-quality",
+    "10-ai-explanations",
+]
+DOMAIN_TO_PREFIX = {
+    dn.split("-", 1)[1].replace("-", "_"): dn.split("-", 1)[1]
+    for dn in _DIR_NAMES
+}
+
 EMPTY_B64_RE = re.compile(r'base64,"')
 
 
@@ -30,7 +41,7 @@ def main():
 
     conn = get_conn(args.db)
     reports_dir = args.reports_dir or os.path.join(
-        os.path.dirname(__file__), "..", "..", "reports"
+        os.path.dirname(__file__), "..", "..", "reports", "html"
     )
 
     participants = list_participants(conn, args.standard)
@@ -54,8 +65,9 @@ def main():
         for d in ALL_DOMAINS:
             if d not in data_domains:
                 continue
+            prefix = DOMAIN_TO_PREFIX[d]
             for kind in ("deterministic", "semantic", "summary"):
-                fname = f"{tname.replace(' ', '_')}-{d}-{kind}.html"
+                fname = f"{tname}-{prefix}-{kind}.html"
                 fpath = os.path.join(reports_dir, fname)
                 if not os.path.isfile(fpath):
                     errors.append(f"{tname}/{d}/{kind}: HTML missing")
@@ -71,10 +83,9 @@ def main():
                     if empty_hits:
                         errors.append(f"{tname}/{d}/{kind}: {len(empty_hits)} empty base64 payloads")
 
-        summary_fname = f"{tname.replace(' ', '_')}-team-final-summary.html"
-        summary_path = os.path.join(reports_dir, summary_fname)
+        summary_path = os.path.join(reports_dir, f"{tname}-summary.html")
         if not os.path.isfile(summary_path):
-            errors.append(f"{tname}: team-final-summary.html missing")
+            errors.append(f"{tname}: team-summary.html missing")
 
     if errors:
         print(f"FAIL: {len(errors)} issue(s)")

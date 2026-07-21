@@ -40,7 +40,7 @@ def main():
     parser.add_argument("--db", default=None)
     parser.add_argument("--team", default=None, help="Process only this team")
     parser.add_argument("--html-dir", default=None,
-                        help="HTML reports directory (default: reports/)")
+                        help="HTML reports directory (default: reports/html/)")
     parser.add_argument("--output-dir", default=None,
                         help="PDF output directory (default: reports/pdfs/)")
     args = parser.parse_args()
@@ -58,8 +58,9 @@ def main():
             print(f"Team '{args.team}' not found")
             sys.exit(1)
 
-    html_dir = args.html_dir or os.path.join(SYSTEM_DIR, "reports")
-    out_dir = args.output_dir or os.path.join(html_dir, "pdfs")
+    reports_dir = os.path.join(SYSTEM_DIR, "reports")
+    html_dir = args.html_dir or os.path.join(reports_dir, "html")
+    out_dir = args.output_dir or os.path.join(reports_dir, "pdfs")
     os.makedirs(out_dir, exist_ok=True)
 
     # Import PDF generation from usecase-7-pdf

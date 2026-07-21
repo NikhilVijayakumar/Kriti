@@ -51,7 +51,12 @@ def main():
 
         rows = get_domain_scores(conn, p["id"])
         data_domains = {r["domain"] for r in rows}
-        expected_pages = 1 + 3 * len(data_domains)
+        # Minimum, not exact: each source HTML page contributes >=1
+        # physical PDF page, but dense content can overflow onto more
+        # than one page (print pagination is content-dependent, not
+        # fixed per file). Anything below the minimum is a real defect
+        # (missing pages); anything above just reflects real content.
+        min_pages = 1 + 3 * len(data_domains)
 
         try:
             actual = count_pdf_pages(pdf_path)
@@ -59,8 +64,8 @@ def main():
             errors.append(f"{tname}: PDF unreadable ({e})")
             continue
 
-        if actual != expected_pages:
-            errors.append(f"{tname}: expected {expected_pages} pages, got {actual}")
+        if actual < min_pages:
+            errors.append(f"{tname}: expected >= {min_pages} pages, got {actual}")
 
     if errors:
         print(f"FAIL: {len(errors)} issue(s)")
