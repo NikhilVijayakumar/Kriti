@@ -10,49 +10,23 @@ Usage:
   python run_hackathon.py --standard python_hackathon --deterministic-only
 """
 import argparse
-import importlib
 import json
 import os
-import subprocess
 import sys
 import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Add script dir to path for imports
 _script_dir = os.path.join(os.path.dirname(__file__), "..")
-sys.path.insert(0, _script_dir)
 sys.path.insert(0, os.path.join(_script_dir, "common"))
-sys.path.insert(0, os.path.join(_script_dir, "usecase-2a-det-audit"))
+sys.path.insert(0, os.path.join(_script_dir, "usecase-1-init"))
 
-from db import (
-    get_conn, list_participants, register_participant,
-    upsert_domain_score, now_iso,
-)
-from evaluate_rules import evaluate_domain, load_rules
+from db import get_conn, list_participants, register_participant, get_domain_scores
+from det_audit import run_domain_audit, DOMAIN_AUDIT_MODULES
 
 SYSTEM_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
 WEIGHTS_FILE = os.path.join(SYSTEM_DIR, "calculation", "weights.yaml")
-AGG_DIR = os.path.join(SYSTEM_DIR, "calculation", "aggregation", "domain")
-AUDIT_DIR = os.path.join(_script_dir, "usecase-2a-det-audit")
-
-# Map domain names to their audit script module names
-DOMAIN_AUDIT_MODULES = {
-    "infrastructure": "audit_infrastructure",
-    "engineering": "audit_python",
-    "testing": "audit_testing",
-    "documentation": "audit_documentation",
-    "security": "audit_security",
-    "mlops": "audit_mlops",
-    "runtime": "audit_model_artifact",
-    "team_workflow": "audit_git",
-    "data_quality": "audit_data_quality",
-    "ai_explanations": "audit_ai_explanations",
-}
-
-# Domains with no audit script (§0 bug #3) — deterministic pass is skipped
-DOMAINS_NO_AUDIT_SCRIPT = set()
 
 
 def _load_teams():
@@ -101,102 +75,17 @@ def _load_weights():
     return cfg
 
 
-def _discover_entrypoint(repo_path):
-    """Discover main.py/app.py/run.py in the repo root for audit_model_artifact.py."""
-    for name in ("main.py", "app.py", "run.py"):
-        if os.path.isfile(os.path.join(repo_path, name)):
-            return name
-    return None
-
-
-def _run_audit_script(script_name, repo_path, entrypoint=None):
-    """
-    Run an audit_*.py script and return its JSON output.
-    Returns (raw_evidence_dict, error_string_or_None).
-    """
-    script_path = os.path.join(AUDIT_DIR, f"{script_name}.py")
-    if not os.path.isfile(script_path):
-        return None, f"Script not found: {script_path}"
-
-    cmd = [sys.executable, script_path, "--repo", repo_path]
-    if entrypoint and script_name == "audit_model_artifact":
-        cmd.extend(["--entrypoint", entrypoint])
-
-    try:
-        proc = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
-        )
-    except subprocess.TimeoutExpired:
-        return None, f"{script_name} timed out after 120s"
-
-    if proc.returncode != 0 and not proc.stdout.strip():
-        return None, f"{script_name} failed (rc={proc.returncode}): {proc.stderr[:500]}"
-
-    try:
-        evidence = json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        return None, f"{script_name} output not JSON: {proc.stdout[:200]}"
-
-    return evidence, None
-
-
-def _get_domain_agg_weights(domain_dirname):
-    """Read det/sem weights from calculation/aggregation/domain/{domain_dirname}.yaml."""
-    agg_file = os.path.join(AGG_DIR, f"{domain_dirname}.yaml")
-    if os.path.isfile(agg_file):
-        with open(agg_file, "r", encoding="utf-8") as f:
-            agg = yaml.safe_load(f)
-        w = agg.get("weights", {})
-        return w.get("deterministic", 0.60), w.get("semantic", 0.40)
-    return 0.60, 0.40
-
-
-def process_deterministic(conn, participant_id, team_name, repo_path, domain, weights_cfg):
-    """Run deterministic audit for one team + domain. Stores score in DB."""
-    audit_module_name = DOMAIN_AUDIT_MODULES.get(domain)
-
-    if domain in DOMAINS_NO_AUDIT_SCRIPT:
-        print(f"  [{domain}] No audit script — skipping deterministic (missing-domain handling)")
-        return None
-
-    if not audit_module_name:
-        print(f"  [{domain}] Unknown audit module — skipping")
-        return None
-
-    # Discover entrypoint for runtime domain
-    entrypoint = None
-    if domain == "runtime":
-        entrypoint = _discover_entrypoint(repo_path)
-        if not entrypoint:
-            print(f"  [{domain}] No entrypoint found (main.py/app.py/run.py) — run-001 will fail")
-
-    # Run the audit script
-    print(f"  [{domain}] Running {audit_module_name}...", end=" ")
-    evidence, err = _run_audit_script(audit_module_name, repo_path, entrypoint)
-    if err:
-        print(f"ERROR: {err}")
-        return None
-    print("OK")
-
-    # Inject entrypoint presence for runtime domain (run-001)
-    if domain == "runtime":
-        for name in ("main.py", "app.py", "run.py"):
-            evidence[name] = os.path.isfile(os.path.join(repo_path, name))
-
-    # Evaluate rules against raw evidence
-    result = evaluate_domain(domain, evidence)
-    score = result["score"]
-
-    # Store in DB
-    upsert_domain_score(
-        conn, participant_id, domain, "deterministic", "",
-        score, evidence=evidence,
-    )
-
-    passed = sum(1 for r in result["rules"] if r["passed"])
-    total = len(result["rules"])
-    print(f"  [{domain}] Score: {score}/100 ({passed}/{total} rules passed)")
-    return score
+def process_deterministic(conn, participant_id, repo_path, domains):
+    """Run deterministic audit for all domains for one team."""
+    for domain in domains:
+        if domain not in DOMAIN_AUDIT_MODULES:
+            continue
+        print(f"  [{domain}] Running...", end=" ")
+        score = run_domain_audit(conn, participant_id, domain, repo_path)
+        if score is None:
+            print("FAILED")
+        else:
+            print("OK")
 
 
 def process_participant(conn, participant, weights_cfg, deterministic_only=False):
@@ -211,17 +100,8 @@ def process_participant(conn, participant, weights_cfg, deterministic_only=False
 
     domains = list(weights_cfg["domains"].keys())
 
-    for domain in domains:
-        # Deterministic pass
-        process_deterministic(conn, participant_id, tname, repo_path, domain, weights_cfg)
+    process_deterministic(conn, participant_id, repo_path, domains)
 
-        if not deterministic_only:
-            # Semantic pass is agent-driven — nothing to run here.
-            # The semantic scores accumulate as agent sessions write to DB.
-            # Print coverage info.
-            pass
-
-    # Print semantic coverage summary
     if not deterministic_only:
         from db import get_domain_scores
         rows = get_domain_scores(conn, participant_id)
@@ -232,12 +112,7 @@ def process_participant(conn, participant, weights_cfg, deterministic_only=False
         print(f"\n  Semantic coverage:")
         for d in domains:
             models = sem_by_domain.get(d, [])
-            if d in DOMAINS_NO_AUDIT_SCRIPT:
-                status = "no audit script"
-            elif models:
-                status = f"{len(models)} model(s): {', '.join(models)}"
-            else:
-                status = "not started"
+            status = f"{len(models)} model(s): {', '.join(models)}" if models else "not started"
             print(f"    {d}: {status}")
 
 
@@ -256,12 +131,10 @@ def main():
 
     conn = get_conn(args.db)
 
-    # Auto-register teams from teams.json if present
     new_count = _sync_teams(conn, args.standard)
     if new_count:
         print(f"Auto-registered {new_count} team(s) from teams.json")
 
-    # Register mode
     if args.register:
         name, repo_path, metadata_json = args.register
         metadata = json.loads(metadata_json) if metadata_json else None
@@ -271,13 +144,11 @@ def main():
 
     weights_cfg = _load_weights()
 
-    # List participants
     participants = list_participants(conn, args.standard)
     if not participants:
         print("No teams registered. Use --register NAME REPO_PATH METADATA_JSON")
         return
 
-    # Filter to single team if specified
     if args.team:
         participants = [p for p in participants if p["team_name"] == args.team]
         if not participants:
