@@ -9,7 +9,7 @@ Single source of truth for:
 
 Used by: run_hackathon.py, run_det_audit.py, run_pipeline.py
 """
-import importlib
+import importlib.util
 import json
 import os
 import subprocess
@@ -78,7 +78,14 @@ def run_domain_audit(conn, participant_id, domain, repo_path):
     Returns score (0-100) or None on failure.
     """
     from db import upsert_domain_score
-    from evaluate_rules import evaluate_domain
+
+    # evaluate_rules lives in usecase-2a-det-audit/, load dynamically
+    _spec = importlib.util.spec_from_file_location(
+        "evaluate_rules", os.path.join(AUDIT_DIR, "evaluate_rules.py")
+    )
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    evaluate_domain = _mod.evaluate_domain
 
     module_name = DOMAIN_AUDIT_MODULES.get(domain)
     if not module_name:
