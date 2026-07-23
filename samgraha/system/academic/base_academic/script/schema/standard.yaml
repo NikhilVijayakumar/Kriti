@@ -1,0 +1,223 @@
+# base_academic — samgraha standard manifest.
+#
+# Academic-paper class: generates paper sections from project evidence,
+# audits against rubrics, fixes failures, deepens with literature/math/figures,
+# checks for AI fingerprints, and humanizes flagged sections.
+#
+# No deterministic layer, no section-scoped audits, semantic_document bucket
+# only, document-level-only fix loop.
+#
+# Concrete systems (pcems_2026, eswa_journal) override domain lists,
+# rubric content, and generation templates.
+
+name: base_academic
+
+scripts:
+  - name: init-schema
+    location: init_schema.py
+    purpose: "create base_academic's own tables (14 academic_* tables) if missing, seed domains and templates"
+  - name: classify-repo
+    location: classify_repo.py
+    purpose: "entry router — inspect target repo, classify into NO_DOCS_NO_IMPL / DOCS_ONLY / IMPL_NO_ANALYSIS / IMPL_WITH_ANALYSIS"
+  - name: discover-modules
+    location: discover_modules.py
+    purpose: "discover module boundaries (top-level packages) in the target repo; persist to academic_modules"
+  - name: gather-domain-evidence
+    location: gather_domain_evidence.py
+    purpose: "gather evidence for a domain — pulls analysis docs, implementation numbers, or draft text depending on context (input: {paper_id, domain, mode: draft|generate|audit})"
+  - name: gather-module-evidence
+    location: gather_module_evidence.py
+    purpose: "gather one module's source files, imports, docstrings, signatures (input: {paper_id, module_name})"
+  - name: gather-cross-module-evidence
+    location: gather_cross_module_evidence.py
+    purpose: "aggregate every module's evidence + repo-wide import graph (input: {paper_id})"
+  - name: gather-enrichment-context
+    location: gather_enrichment_context.py
+    purpose: "gather current draft text + analysis docs + citation notes for enrichment (input: {paper_id, domain, enrichment_kind})"
+  - name: gather-plagiarism-context
+    location: gather_plagiarism_context.py
+    purpose: "gather current draft text for plagiarism/fingerprint check (input: {paper_id, domain})"
+  - name: gather-humanize-context
+    location: gather_humanize_context.py
+    purpose: "gather draft + flagged spans for humanize rewrite (input: {paper_id, domain})"
+  - name: persist-section-draft
+    location: persist_section_draft.py
+    purpose: "persist generated/deepened/humanized section draft (input: {paper_id, domain, stage, iteration, sections, model})"
+  - name: persist-module-analysis
+    location: persist_module_analysis.py
+    purpose: "persist one module's analysis section + write to docs/paper/{system}/modules/ (input: {paper_id, module_name, analysis_kind, content, model})"
+  - name: persist-cross-module-analysis
+    location: persist_cross_module_analysis.py
+    purpose: "persist cross-module analysis + write to docs/paper/{system}/cross_module/ (input: {paper_id, analysis_kind, content, model})"
+  - name: persist-domain-semantic-score
+    location: persist_domain_semantic_score.py
+    purpose: "persist agent's per-domain semantic score (input: {paper_id, domain, model, result})"
+  - name: persist-plagiarism-findings
+    location: persist_plagiarism_findings.py
+    purpose: "persist plagiarism/fingerprint PASS/FAIL + flagged spans (input: {paper_id, domain, verdict, flagged_spans, model})"
+  - name: persist-humanize-pass
+    location: persist_humanize_pass.py
+    purpose: "persist humanize rewrite result + change summary + risk flags (input: {paper_id, domain, iteration, change_summary, risk_flags, model})"
+
+prompts:
+  # --- Analysis prompts (module-level) ---
+  - name: module-analysis-summary
+    location: ../../templates/generation/analysis/module/summary.md
+  - name: module-analysis-architecture
+    location: ../../templates/generation/analysis/module/architecture.md
+  - name: module-analysis-mathematics
+    location: ../../templates/generation/analysis/module/mathematics.md
+  - name: module-analysis-novelty
+    location: ../../templates/generation/analysis/module/novelty.md
+  - name: module-analysis-gaps
+    location: ../../templates/generation/analysis/module/gaps.md
+  # --- Analysis prompts (cross-module) ---
+  - name: cross-module-analysis-architecture
+    location: ../../templates/generation/analysis/cross_module/architecture.md
+  - name: cross-module-analysis-dependencies
+    location: ../../templates/generation/analysis/cross_module/dependencies.md
+  - name: cross-module-analysis-interactions
+    location: ../../templates/generation/analysis/cross_module/interactions.md
+  - name: cross-module-analysis-patterns
+    location: ../../templates/generation/analysis/cross_module/patterns.md
+  - name: cross-module-analysis-gaps
+    location: ../../templates/generation/analysis/cross_module/gaps.md
+  - name: cross-module-analysis-mathematics
+    location: ../../templates/generation/analysis/cross_module/mathematics.md
+  - name: cross-module-analysis-novelty
+    location: ../../templates/generation/analysis/cross_module/novelty.md
+  # --- Generation prompts ---
+  - name: generate-section
+    location: ../../templates/generation/document/generate-section.md
+  - name: generate-section-docs-only
+    location: ../../templates/generation/document/generate-section-docs-only.md
+  # --- Enrichment prompts ---
+  - name: literature-review-pass
+    location: ../../templates/generation/enrichment/literature-review.md
+  - name: mathematics-pass
+    location: ../../templates/generation/enrichment/mathematics.md
+  - name: figures-pass
+    location: ../../templates/generation/enrichment/figures.md
+  # --- Audit prompts ---
+  - name: plagiarism-fingerprint-audit
+    location: ../../templates/audit/plagiarism-fingerprint.md
+  - name: targeted-rewrite
+    location: ../../templates/generation/document/targeted-rewrite.md
+  - name: semantic-audit
+    location: ../../templates/audit/semantic-audit.md
+  # --- Humanize prompt ---
+  - name: humanize-section
+    location: ../../templates/generation/humanifier.md
+
+custom_tables:
+  - table_name: academic_papers
+    purpose: "one row per registered paper (repo + system)"
+    owner_script: init-schema
+  - table_name: academic_repos
+    purpose: "one row per (repo_root, system) classification result"
+    owner_script: classify-repo
+  - table_name: academic_domains
+    purpose: "lookup: scoring domains for the concrete system"
+    owner_script: init-schema
+  - table_name: academic_modules
+    purpose: "one row per detected module in a repo"
+    owner_script: discover-modules
+  - table_name: academic_module_analysis
+    purpose: "per (module, analysis_kind) section content"
+    owner_script: persist-module-analysis
+  - table_name: academic_cross_module_analysis
+    purpose: "per (repo, analysis_kind) section content"
+    owner_script: persist-cross-module-analysis
+  - table_name: academic_narratives
+    purpose: "one row per (paper, domain) — stores section drafts with stage (generate/deepen/humanize) and iteration"
+    owner_script: persist-section-draft
+  - table_name: academic_narrative_sections
+    purpose: "per-narrative heading+text sections"
+    owner_script: persist-section-draft
+  - table_name: academic_semantic_runs
+    purpose: "one row per (paper, domain, model) semantic evaluation"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_semantic_dimension_scores
+    purpose: "per-dimension score+evidence for a semantic run"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_semantic_findings
+    purpose: "per-run strengths/weaknesses/recommendations"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_plagiarism_findings
+    purpose: "per (paper, domain, run): PASS/FAIL + flagged spans"
+    owner_script: persist-plagiarism-findings
+  - table_name: academic_humanize_passes
+    purpose: "per (paper, domain, iteration): change summary + risk flags"
+    owner_script: persist-humanize-pass
+  - table_name: academic_templates
+    purpose: "catalog of report/generation templates on disk"
+    owner_script: init-schema
+  - table_name: academic_score_history
+    purpose: "one row per calculate.py run (trend tracking)"
+    owner_script: calculate
+  - table_name: academic_visualization_types
+    purpose: "chart type catalog"
+    owner_script: init-schema
+  - table_name: academic_visualizations
+    purpose: "one row per rendered chart image"
+    owner_script: render-charts
+  - table_name: academic_report_history
+    purpose: "one row per assemble-final-document run"
+    owner_script: render
+
+usecases:
+  - name: schema-init
+    description: "create base_academic's own tables before anything else writes to them"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Create 14 academic_* tables, seed domains and templates"
+        script: init-schema
+
+  - name: classify-repo
+    description: "entry router — inspect target repo, classify state, persist to academic_repos"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Scan repo for implementation evidence and analysis docs; persist classification"
+        script: classify-repo
+
+  - name: generate-analysis-docs
+    description: "generate paper-support analysis docs from an existing implementation, module-by-module then cross-module"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Discover module boundaries (top-level packages) in the target repo"
+        script: discover-modules
+      # Per-module analysis steps are expanded at runtime by the orchestrator
+      # based on the number of modules detected. Template shape:
+      #   order N+1: gather-module-evidence (pre)
+      #   order N+2: module-analysis-{kind} (semantic)
+      #   order N+3: persist-module-analysis (post)
+      # Cross-module steps follow after all module steps complete.
+
+  - name: draft-from-docs-only
+    description: "draft paper/journal domains from documentation alone, no implementation to validate against"
+    steps: []
+    # Per-domain triads expanded at runtime by run_full_workflow.py's
+    # expand_triads() — inserts steps into knowledge.db after registration.
+
+  - name: generate-paper-draft
+    description: "generate paper/journal domain drafts from analysis docs + implementation evidence"
+    steps: []
+
+  - name: deepen-sections
+    description: "enrich an existing draft with literature review, mathematical formalization, and figures/diagrams"
+    steps: []
+
+  - name: semantic-audit
+    description: "score a domain draft against the concrete system's rubric"
+    steps: []
+
+  - name: plagiarism-forensic-audit
+    description: "Pass 1+2: forensic audit flagging spans, then targeted in-place rewrite to eliminate fingerprints"
+    steps: []
+
+  - name: humanize
+    description: "Pass 3: full 3-layer humanize rewrite — triggered only for domains still above risk threshold after targeted rewrite"
+    steps: []
