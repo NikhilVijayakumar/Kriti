@@ -1,0 +1,19 @@
+id: semantic_document_v1
+calculation: sum_capped_at_100
+scope: document
+inputs:
+  from: audit/semantic/document/{domain}.md
+  fields: [criterion_id, points, mandatory, passed]
+formula: |
+  score = min(100, sum(points) where passed=true)
+rollup: null   # document scope — one score, no rollup needed
+note: >
+  Academic-class systems have no deterministic layer and no section-scoped
+  audits — one rubric file per paper domain, same shape as
+  base_dev's audit/semantic/document/{domain}.md. Each domain's criteria
+  are derived from the standard's cross-cutting quality checks,
+  redistributed to whichever section each check actually applies to.
+  Mandatory criterion failure forfeits that criterion's points entirely,
+  no partial credit.
+  Structurally identical across pcems_2026 and eswa_journal (only the
+  domain list in the note field differs).

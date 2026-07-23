@@ -1,0 +1,25 @@
+id: scoring_validation
+description: "Validates scoring pipeline integrity for academic-class standards"
+version: "1.0"
+
+checks:
+  - id: val-001
+    name: semantic_score_bounds
+    description: "semantic_document score must be in [0, 100]"
+    rule: "0 <= semantic_document_score <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-002
+    name: final_score_bounds
+    description: "Final score must be in [0, 100]"
+    rule: "0 <= final_score <= 100"
+    severity: critical
+    invalidate_audit: true
+
+  - id: val-003
+    name: mandatory_criteria_present
+    description: "Every scoring criterion in each semantic/document check must report a passed value"
+    rule: "for_each criterion: criterion.passed is not null"
+    severity: critical
+    invalidate_audit: true

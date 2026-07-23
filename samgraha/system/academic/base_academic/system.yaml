@@ -1,0 +1,31 @@
+# System class definition for base_academic
+# This is the abstract base for all academic-paper-class systems.
+# Concrete systems (pcems_2026, eswa_journal) inherit from this and
+# provide their own domain lists, documentation-standards, audit rubrics,
+# and generation templates.
+name: base_academic
+abstract: true
+description: >
+  Base academic-paper system. Provides shared calculation infrastructure
+  (final_score, score_bands, trend, validation), a parameterized fix-loop
+  template, and the relationship-type vocabulary for all academic-paper
+  standards. Not registered directly — use a concrete system
+  (pcems_2026, eswa_journal, etc.).
+#
+# Academic-class systems share:
+#   - Single calculation bucket: semantic_document (no deterministic layer)
+#   - Document-level-only scoring (no section-scoped audits)
+#   - Fix-loop: tier-gated generate → audit → fix pipeline
+#   - Relationship vocabulary: guides, requires, validates, informs
+#
+# Academic-class systems DO NOT share:
+#   - Domain lists (pcems_2026: 6 domains, eswa_journal: 11 domains)
+#   - Documentation-standards content (system-specific depth/rigor)
+#   - Audit rubric content (system-specific criteria)
+#   - Generation templates (system-specific, not yet authored)
+#   - Conclusion rules (contradictory between systems)
+#
+# Override mechanism: concrete systems provide their own files at the
+# same relative path. samgraha resolves by checking the concrete
+# system's directory first, then falling back to base_academic.
+domains: []  # abstract — concrete systems define their own domain lists

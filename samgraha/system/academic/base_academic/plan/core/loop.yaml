@@ -1,0 +1,94 @@
+id: plan_loop_v1
+source: SYSTEM.md
+note: >
+  Academic-paper class — generates a paper's domains from existing project
+  documentation/evidence, audits for compliance, fixes what fails. Distinct
+  from the dev class (base_dev/*_dev: generates full project docs and drives
+  implementation/build) and the hackathon class (python_hackathon: audit-only,
+  multi-repo, competitive leaderboard — no generation at all). Academic-class
+  systems have no deterministic layer and no section-scoped audits, so this
+  loop only ever touches the semantic_document bucket.
+  This is a parameterized template — concrete systems override
+  within_tier_ordering, evidence.applies_to_domains, and cross-reference
+  paths with their own domain-specific values.
+
+threshold:
+  score: acceptable_minimum  # resolved at runtime from score_bands
+  rating: Acceptable
+
+max_iterations: 5
+fallback: human_review
+
+within_tier_ordering: []  # OVERRIDE: system-specific tier ordering edges
+  # Example (pcems_2026):
+  #   - tier: 1
+  #     from: introduction
+  #     to: methodology
+  #     rule: introduction (the stated gap) must complete before methodology is generated/audited
+  # Example (eswa_journal):
+  #   - tier: 1
+  #     from: related-work
+  #     to: problem-definition
+  #     rule: related-work's gap-closing bridge must complete before problem-definition is generated/audited
+  #   - tier: 3
+  #     from: experimental-setup
+  #     to: results
+  #     rule: experimental-setup (baselines, reproducibility) must complete before results is generated/audited
+  # All other domains within a tier: full parallel.
+  # from/to are the machine-readable domain keys (see 00-domain-relationships.md).
+
+path_selection:
+  # Evidence step — academic-class specific, optional. "Find evidence in
+  # implementation" from the proposal: if the target repo has an actual
+  # implementation/experiment-results artifact, pull concrete numbers from
+  # it before generating domains that make quantitative claims. Degrades
+  # gracefully — if no implementation is available, generation proceeds from
+  # author-supplied notes, and the semantic audit's evidence-grounded
+  # criteria will flag any unverifiable claim.
+  evidence:
+    applies_to_domains: []  # OVERRIDE: system-specific domain list
+    # pcems_2026: [findings]
+    # eswa_journal: [abstract, experimental-setup, results]
+    source: implementation (optional, repo-dependent)
+    fallback: author-supplied figures, flagged by audit if unverifiable
+
+  # Path A: no existing draft for this domain → generate from scratch
+  generate:
+    template: templates/generation/document/{domain}.md
+    context: all already-completed upstream domains (from tiers.yaml relationships) + evidence step output when available
+    note: >
+      A domain's generation call includes its upstream tiers' completed
+      output as input context, not just its own template — same as the dev
+      class. templates/generation/document/{domain}.md is not yet authored
+      for any academic system; this loop describes the target shape.
+
+  # Path B: draft exists but doesn't conform → audit → fix
+  audit:
+    semantic_document: audit/semantic/document/{domain}.md
+    report_templates:
+      - templates/audit/summary/{domain}-report.md
+    note: >
+      No deterministic_document/section or semantic_section keys — academic
+      systems don't define those layers.
+
+scoring:
+  final_score: calculation/summary/final_score.yaml
+  score_bands: calculation/summary/score_bands.yaml
+
+validate:
+  source: calculation/validation/scoring_validation.yaml
+  on_failure: abort
+
+fix_loop:
+  trigger: Path B AND final_score < threshold.score
+  mechanism: >
+    Feed the finding into the domain's own generation template's
+    ## Audit Fix slot and regenerate the whole domain document, then
+    re-audit. Document-level only — academic systems have no section-scoped
+    generation templates to target a narrower regenerate at.
+  max_iterations: 5
+  fallback: human_review
+
+tier_gate:
+  rule: every domain in the tier must reach threshold before the next tier starts
+  threshold: acceptable_minimum
