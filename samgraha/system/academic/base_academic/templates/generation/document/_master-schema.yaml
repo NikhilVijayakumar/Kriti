@@ -1,0 +1,38 @@
+# Master schema — section order for document assembly.
+#
+# Read by assemble-final-document.py (scaffolding is the script's job;
+# this file only defines structure, per the explicit split established
+# for base_academic). persist-section-draft's post-script also reads this
+# to know which file to write a generated domain into.
+#
+# Single generic list, not a paper:/journal: split — see
+# docs/proposal/base_academic-data-pipeline-proposal.md §6.2. No concrete
+# system needs a different section order between its paper and journal
+# outputs today; a system that does can override this whole file.
+#
+# 12 structural domains (map 1:1 to an actual section, in document order)
+# + 3 cross-cutting domains (novelty, gaps, mathematics — audited across
+# the whole document, not confined to one section; woven into whichever
+# structural sections they're relevant to rather than rendered as their
+# own headings). cross_cutting entries are NOT in `sections:` — they are
+# audit-only domains, listed separately so assemble-final-document.py
+# knows not to look for a standalone draft file to concatenate for them.
+
+sections:
+  - title-and-metadata
+  - abstract
+  - introduction
+  - related-work
+  - problem-definition
+  - methodology
+  - experimental-setup
+  - results
+  - discussion
+  - limitations
+  - conclusion
+  - references
+
+cross_cutting:
+  - novelty
+  - gaps
+  - mathematics
