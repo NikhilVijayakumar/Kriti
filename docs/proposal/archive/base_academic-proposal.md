@@ -133,11 +133,12 @@ documentation-standards content. Proposed contents:
 
 ```
 academic/base_academic/
-├── system.yaml                          # abstract: true
+├── system.yaml                          # abstract: true, domains: []
 ├── calculation/
 │   ├── summary/{final_score,score_bands,trend}.yaml    # shared, near/fully identical
-│   └── validation/scoring_validation.yaml.template      # shared shape, system name parameterized
-├── plan/core/loop.yaml.template          # shared shape, domain-specific values parameterized
+│   ├── validation/scoring_validation.yaml               # shared shape, system name in description field
+│   └── semantic/document.yaml                           # shared shape, domain list/notes differ
+├── plan/core/loop.yaml                  # shared shape, domain-specific values differ
 └── docs/
     └── relationship-types.md              # shared vocabulary reference (guides/requires/validates/informs)
 ```

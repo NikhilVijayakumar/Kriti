@@ -1,348 +1,174 @@
-# Rust Dev Standard Issues — Proposal
+# rust_dev — System Proposal
 
-Issues found in `E:\Python\Pitha\docs\limitation\samgraha\standard-issues\README.md`.
-Analyzed against `E:\Python\Kriti\samgraha\system\rust_dev\`.
+## 1. Class / Position in Taxonomy
 
----
+Class `dev`, subclass `build` (only member), `extends: base_dev`,
+`drops: [06-design, 09-feature-design, 11-prototype]` — the largest drop
+of any dev-class system. Proposed path `dev/build/rust_dev/` (currently
+flat at `samgraha/system/rust_dev/`). `SYSTEM.md`'s TOML manifest
+confirms: `base = "base_dev"`, `domains = 13`, `technology = "Rust /
+Cargo"`, `methodology = "Systems Engineering"`. `CHANGELOG.md` shows the
+same recent rework date as `fastapi_dev`'s (`[1.0.0] - 2026-07-15`):
+Rust-specific templates for architecture/engineering/feature-technical,
+new semantic audit rules (ownership, async, unsafe), a Cargo audit
+check, and explicitly: *"Dropped `11-prototype` domain (systems require
+full implementation from start)"* — a real methodological reason for
+the third drop, not an incidental one.
 
-## Analysis Summary
+## 2. What It Has
 
-| ID | Verdict | Severity | Status | Root Cause |
-|----|---------|----------|--------|------------|
-| STD-001 | **Acknowledged** | Medium | **Engine feature request** | YAML scope field lacks collection-level semantics |
-| STD-002 | **Acknowledged** | Medium | **Fixed** | Optional section checks fire unconditionally |
-| STD-003 | **Acknowledged — reclassified** | **High** | **Fixed** | rust_dev YAML references dropped domains (prototype) |
-| STD-004 | **Acknowledged** | Low | **Engine feature request** | `keyword_absence` uses substring matching without word boundaries |
-| STD-005 | **Found during analysis** | High | **Fixed** | Additional prototype references in feature-technical and generation_plan |
+13 domains (16 minus `06-design`, `09-feature-design`, `11-prototype`):
+vision, philosophy, security, feature, architecture, engineering,
+external-context, feature-technical, implementation, qa, build, readme,
+product-guide.
 
----
+**Tier structure, read directly from `plan/core/tiers.yaml`:**
 
-## STD-001: Architecture Standard Has Collection-Level Checks
+| Tier | Domains |
+|---|---|
+| 1 | vision, philosophy |
+| 2 | security, feature, architecture, engineering, external-context |
+| 3 | feature-technical |
+| *(4 — absent)* | *prototype removed entirely, not renumbered — see §10* |
+| 5 | implementation |
+| 6 | qa |
+| 7 | build |
+| 8 | readme, product-guide |
 
-**Status:** Acknowledged
-**Severity:** Medium → **keeps Medium**
-**Domain:** Architecture
+**Notable: tier 4 is skipped, not renumbered.** `tiers.yaml` goes
+`1, 2, 3, 5, 6, 7, 8` — confirmed by reading the file directly, not a
+transcription error on my part. `SYSTEM.md`'s `[domain_tiers]` table
+matches this same gap. This appears intentional (tier numbers track
+`base_dev`'s original derivation semantics — tier 4 *is* "Validation
+via Prototype" — rather than being a sequential index), but see §10 for
+why this matters for `init.py`.
 
-### What the Issue Claims
+## 3. What It Inherits vs Overrides vs Adds
 
-`arch-doc-rust-001` verifies `crate_architecture` section exists but fires on every architecture document. If there are 9 architecture docs, 8 produce false positives.
+`rust_dev` has the most extensive customization of any dev-class system
+examined so far — real overrides even in domains it *keeps* (not just
+net-new sections), on top of the 3 drops:
 
-### Verification
+| Area | Result |
+|---|---|
+| `calculation/**` | Identical to `base_dev`, 0 diff |
+| `documentation-standards/*.md` | 13 files present |
+| `plan/core/tiers.yaml` | Regenerated for the 13-domain graph, tier 4 gap intentional (§2, §10) |
+| `templates/generation/section/**` | **9 net-new files** (`05-architecture/{12-crate_architecture,13-trait_design}.md`, `07-engineering/{09-ownership_patterns,10-async_patterns,11-unsafe_guidelines}.md`, `10-feature-technical/{18-crate_implementation,19-error_implementation}.md`, `12-qa/{10-property_testing,11-benchmark_testing}.md`, `13-implementation/08-crate_folder_structure.md`, `14-build/10-crate_publishing.md`, `16-product-guide/07-development_workflow.md`) **plus 11 existing files genuinely rewritten in place**, not just additions: `04-feature/{02-functional_requirements,06-outputs}.md`, `05-architecture/02-system_overview.md`, `07-engineering/{01-guiding_principles,02-rationale,06-code_standards}.md`, `08-external-context/{01-purpose,03-constraints}.md`, `12-qa/{01-purpose,05-e2e-testing}.md`, `13-implementation/{03-generation_plan,05-change_request_plan}.md`, `15-readme/{08-installation,09-build,13-development}.md` |
+| `script/mapping.yaml`, `policy.yaml` | Overridden — 4 new checks added with their own caching strategy (`cargo-audit`: ttl/86400s, `lint-standards`: always_rerun override, `crate-dependency-graph`: fingerprint, `unsafe-code-scan`: always_rerun) |
+| `script/{windows,ubuntu}/` | **4 new checks, fully implemented as `.ps1`+`.sh` pairs** (not schema-only like `fastapi_dev`'s gaps): `cargo-audit`, `crate-dependency-graph`, `cargo-fmt`, `unsafe-code-scan` — confirmed present in both platform directories |
+| `script/schema/03-security/external-ref-isolation.*` | Present, but **no executable script** — same gap as `fastapi_dev`'s (§10), likely a shared, still-unimplemented draft check that propagated into both systems rather than a `rust_dev`-specific miss |
 
-Checked `system/rust_dev/audit/deterministic/document/05-architecture.yaml:99-109`:
+The 11 in-place rewrites (vs. purely additive changes) are the clearest
+signal this system diverges more from `base_dev` in its *shared*
+domains than any other dev-class system reviewed — Rust's ownership
+model and systems-engineering framing evidently required rewording even
+generic sections like `07-engineering/01-guiding_principles.md`, not
+just adding Rust-specific new ones.
 
-```yaml
-- id: arch-doc-rust-001
-  description: "Crate Architecture required"
-  condition: "document contains the crate_architecture section"
-  evidence:
-    type: section_presence
-    required_semantic_types:
-      - crate_architecture
+## 4. Use Cases
+
+Same 4 use case *names* as `base_dev`, tier content reduced per §2 (no
+tier-4/prototype stage exists in this system's use cases at all).
+
+## 5. Workflow per Use Case (target `init.py` phase plan)
+
+`rust_dev` needs its own `init.py`. Partial phase table for
+`repo_new/case_1_no_documentation`, showing the delta:
+
+```
+tier3-feature-technical-scaffold/content/validate/calculate/report/fix
+  depends_on: [tier2-fix]
+
+# NO tier4-* phases at all — prototype domain doesn't exist in this system
+
+tier5-implementation-scaffold
+  depends_on: [tier3-fix]   # skips straight from tier3's fix to tier5's generate
+  # base_dev's tier5-implementation would depend_on [tier4-fix]; here it's [tier3-fix]
 ```
 
-The file-level `scope: document` (line 4) means this check runs per-document. The `crate_architecture` semantic type is defined in `documentation-standards/05-architecture-standards.md` as a required section — but required at collection level (at least one architecture doc must have it), not per-document.
-
-**Confirmed.** The check definition lacks a mechanism to distinguish "must exist in at least one document" from "must exist in every document."
-
-### Root Cause
-
-The YAML schema has no `scope: collection` concept. The `scope` field at file level (`document` vs `section`) controls evaluation granularity, but there is no per-check scope override for collection-level requirements.
-
-### Fix Required
-
-Two options:
-
-**Option A — Add `scope` field to individual checks (recommended):**
-
-```yaml
-checks:
-  - id: arch-doc-rust-001
-    scope: collection  # Fires once across all docs in domain
-    semantic_type: crate_architecture
-```
-
-This requires MCP engine support for `scope: collection` on individual checks.
-
-**Option B — Restructure into a separate collection-level YAML file:**
-
-Move collection-level checks to `audit/deterministic/collection/05-architecture.yaml` with `scope: collection` at file level. Document-level checks stay in `document/05-architecture.yaml`.
-
-### Implementation Status
-
-**Not fixed — requires MCP engine change.** Filed as engine feature request. The YAML schema needs a `scope` field on individual checks to support collection-level evaluation.
-
----
-
-## STD-002: Implementation Standard Requires Optional Sections That Create False Positives
-
-**Status:** Acknowledged
-**Severity:** Medium → **keeps Medium**
-**Domain:** Implementation
-
-### What the Issue Claims
-
-Optional sections (Change Request Plan, Refactor Plan, Enhancement Plan) have checks that fire on all documents, creating false positives when a document doesn't include those sections.
-
-### Verification
-
-Checked `system/rust_dev/audit/deterministic/section/13-implementation/05-change_request_plan.yaml:9-19`:
-
-```yaml
-- id: implementation-sec-change_request_plan-001
-  description: "Change Request Plan section exists"
-  condition: "document has a section with semantic_type = 'change_request_plan'"
-  evidence:
-    type: section_presence
-    semantic_type: "change_request_plan"
-```
-
-The `scope: section` at file level means this check runs per-section. But the check fires per-document: if the document has no `change_request_plan` section, the check still fires and reports a finding.
-
-The documentation standard (`13-implementation-standards.md:475-483`) lists Change Request Plan as optional:
-
-| Section | Required |
-|---------|----------|
-| Generation Plan | ✓ |
-| Security Fix Plan | ✓ |
-| Change Request Plan | (empty = optional) |
-| Refactor Plan | (empty = optional) |
-| Enhancement Plan | (empty = optional) |
-
-**Confirmed.** Optional section checks use `severity: error` and `mandatory: true` with no optionality flag.
-
-### Root Cause
-
-The YAML schema has no `optional` or `condition` field to skip checks when a section is legitimately absent. Every `section_presence` check fires unconditionally.
-
-### Fix Required
-
-**Option A — Add `optional: true` flag to check definitions:**
-
-```yaml
-- id: implementation-sec-change_request_plan-001
-  optional: true  # Skip if section not in document scope
-  evidence:
-    type: section_presence
-    semantic_type: "change_request_plan"
-```
-
-When `optional: true`, the check should:
-- Pass (score=1.0, no finding) if section is absent
-- Fire normally if section exists but is empty/malformed
-
-**Option B — Use `severity: info` for optional section existence checks:**
-
-Lower severity so optional section absence doesn't block domain ceiling.
-
-### Implementation Status
-
-**Fixed.** Changes made to three section-level YAML files:
-
-| File | Check ID | Change |
-|------|----------|--------|
-| `section/13-implementation/05-change_request_plan.yaml` | `implementation-sec-change_request_plan-001` | `mandatory: true` → `false`, `severity: error` → `warning`, `weight: 1.5` → `0.5` |
-| `section/13-implementation/04-refactor_plan.yaml` | `implementation-sec-refactor_plan-001` | Same changes |
-| `section/13-implementation/06-enhancement_plan.yaml` | `implementation-sec-enhancement_plan-001` | Same changes |
-
-Content checks (rule 002) in each file remain `mandatory: true` — if a section IS present, it must have content.
-
----
-
-## STD-003: Implementation Standard Requires Upstream Docs That May Not Exist
-
-**Status:** Acknowledged — **reclassified from Low to High**
-**Domain:** Implementation
-**Additional finding:** rust_dev YAML references `prototype` domain which is **dropped from the profile**.
-
-### What the Issue Claims
-
-Implementation standard requires upstream docs from Feature Technical, Security, Build, and QA domains. These may not exist in all projects.
-
-### Verification
-
-Checked `system/rust_dev/audit/deterministic/document/13-implementation.yaml:49-64`:
-
-```yaml
-- id: impl-doc-004
-  description: "Document derives from required sources"
-  condition: "document references upstream Feature Technical, Engineering, and Prototype documents"
-  evidence:
-    type: cross_reference
-    expected:
-      - domain: feature-technical
-        direction: derives_from
-      - domain: engineering
-        direction: derives_from
-      - domain: prototype
-        direction: derives_from
-```
-
-**Critical finding:** `prototype` is listed as a required upstream source. But `SYSTEM.md:7` explicitly drops it:
-
-```toml
-dropped_from_base = ["06-design", "09-feature-design", "11-prototype"]
-```
-
-The `prototype` domain does not exist in the rust_dev profile. This check **guarantees** a finding on every implementation document — it is structurally impossible to satisfy.
-
-Additionally, `feature-technical` is tier_3 and may not exist in simpler projects. The check treats it as mandatory.
-
-### Root Cause
-
-The YAML was likely copied from `base_dev` without removing references to dropped domains. The MCP engine does not validate that `expected.domain` values exist in the active profile.
-
-### Fix Required
-
-**Immediate — remove `prototype` from `impl-doc-004`:**
-
-```yaml
-- id: impl-doc-004
-  evidence:
-    type: cross_reference
-    expected:
-      - domain: feature-technical
-        direction: derives_from
-      - domain: engineering
-        direction: derives_from
-      # prototype removed — dropped from rust_dev profile
-```
-
-**Also check section-level references.** `impl-sec-gen-005` in `section/13-implementation/01-generation_plan.yaml:61-73` also references `prototype`:
-
-```yaml
-- id: impl-sec-gen-005
-  description: "Generation plan references prototype"
-  evidence:
-    type: cross_reference
-    expected:
-      - domain: prototype
-        direction: derives_from
-```
-
-This must also be removed or made conditional.
-
-**Long-term — add profile-aware domain validation:**
-
-The MCP engine should reject `expected.domain` values that don't exist in the active profile's domain list.
-
-### Implementation Status
-
-**Fixed.** Changes made:
-
-| File | Check ID | Change |
-|------|----------|--------|
-| `document/13-implementation.yaml` | `impl-doc-004` | Removed `domain: prototype` from `expected` list |
-| `section/13-implementation/01-generation_plan.yaml` | `impl-sec-gen-005` | Replaced `prototype` reference with `security` domain cross-reference |
-
-Also updated condition text and messages to remove "Prototype" mentions.
-
----
-
-## STD-004: Vision Standard Has Literal Keyword Matching
-
-**Status:** Acknowledged
-**Severity:** Low → **keeps Low**
-**Domain:** Vision (affects all domains using `keyword_absence`)
-
-### What the Issue Claims
-
-`keyword_absence` uses substring matching. "aspires" doesn't satisfy "aspiration". "pipelines" triggers "pip" absence check.
-
-### Verification
-
-Checked `system/rust_dev/audit/deterministic/section/01-vision/09-success_criteria.yaml:27-33`:
-
-```yaml
-evidence:
-  type: keyword_absence
-  categories:
-    - programming_languages
-    - frameworks
-    - libraries
-```
-
-The `keyword_absence` type references categories (`programming_languages`, `frameworks`, etc.) which are defined elsewhere. These categories contain keyword lists. The MCP engine performs substring matching against these lists.
-
-Searched the codebase: no `word_boundary`, `match_mode`, or regex support exists in the YAML schema for `keyword_absence`.
-
-**Confirmed.** "pipelines" → contains "pip" → false positive on absence check. "aspires" → contains "asp" (if "asp" is in the list) → possible false positive.
-
-### Root Cause
-
-`keyword_absence` was designed for simplicity — substring matching is fast and covers most cases. But it fails on:
-- Words containing tech keywords as substrings (`pipelines` → `pip`)
-- Morphological variants (`aspires` → `aspiration`)
-
-### Fix Required
-
-**Option A — Add `match` field to keyword definitions (recommended):**
-
-```yaml
-evidence:
-  type: keyword_absence
-  categories:
-    - programming_languages
-  match: word_boundary  # Default: substring (backwards compatible)
-```
-
-**Option B — Use regex patterns in categories:**
-
-Allow categories to contain regex patterns instead of plain strings:
-
-```yaml
-keywords:
-  - pattern: "\\bpip\\b"
-  - pattern: "\\baspiration\\b"
-```
-
-**Option C — Pre-expand keyword lists (least invasive):**
-
-Add inflected forms to keyword lists:
-- `pip` → also block `pipelines`, `pipeline`, `piping`
-- `asp` → also block `aspires`, `aspired`
-
-This is a band-aid and doesn't scale.
-
-### Implementation Status
-
-**Not fixed — requires MCP engine change.** Filed as engine feature request. The `keyword_absence` evidence type needs a `match` field supporting `word_boundary` mode.
-
----
-
-## Additional Issue Found During Analysis
-
-### STD-005: rust_dev References Dropped Domains in Multiple Checks
-
-**Severity:** High (same root cause as STD-003)
-**Domain:** Multiple
-
-During analysis, `prototype` domain references were found in:
-
-| File | Check ID | Reference |
-|------|----------|-----------|
-| `document/13-implementation.yaml` | `impl-doc-004` | `domain: prototype` |
-| `section/13-implementation/01-generation_plan.yaml` | `impl-sec-gen-005` | `domain: prototype` |
-
-Both must be fixed when addressing STD-003.
-
-### Implementation Status
-
-**Fixed.** Additional change made:
-
-| File | Check ID | Change |
-|------|----------|--------|
-| `document/10-feature-technical.yaml` | `ft-doc-008` | Removed `"prototype"` keyword, added `"verified"` keyword, updated message |
-
----
-
-## Proposed Fix Order
-
-| Priority | Issue | Effort | Impact | Status |
-|----------|-------|--------|--------|--------|
-| 1 | STD-003 (+ STD-005) | Low | Eliminates guaranteed false findings | **Fixed** |
-| 2 | STD-002 | Medium | Eliminates optional section false positives | **Fixed** |
-| 3 | STD-001 | High | Requires MCP engine change for `scope: collection` | **Engine feature request** |
-| 4 | STD-004 | Medium | Requires MCP engine change for `match` mode | **Engine feature request** |
-
-**STD-003** was fixed first — it was a data bug (wrong domain references) fixed by editing YAML files. **STD-002** was fixed by making optional section checks non-mandatory. **STD-001** and **STD-004** require MCP engine changes and are filed as engine feature requests.
+This is the one place the tier-4 gap (§2/§10) has a real mechanical
+consequence: `init.py`'s `depends_on` for `implementation`'s phases
+must point at `tier3-fix`, not a nonexistent `tier4-fix` — an `init.py`
+generator that naively computes "depends on previous tier number minus
+one" would break here. It must instead depend on "whatever tier
+immediately precedes this one **in this system's own tier list**," not
+assume base_dev's numbering.
+
+## 6. Deterministic Audit via Script
+
+18 checks inherited from `base_dev` minus the 2 that targeted dropped
+domains (`design-tokens-in-implementation` for `06-design`,
+`mock-api-runs` for `11-prototype`) = 16 inherited, confirmed by the
+`script/windows` file-list diff. Plus 4 new, fully-implemented
+Rust-specific checks (§3): `cargo-audit` (security), `crate-dependency-graph`
+(architecture), `cargo-fmt` (engineering), `unsafe-code-scan`
+(engineering) — **20 working checks total**, the most complete
+check-script coverage of any system examined in this pass. One gap
+shared with `fastapi_dev`: `external-ref-isolation` is declared
+(schema+manifest) but has no executable in either system.
+
+## 7. Generation via Script (`scaffold.py`)
+
+Same mechanism as every dev-class system, 13 domains. The 9 net-new
+Rust-specific sections scaffold like any other; the 11 in-place
+rewrites (§3) don't affect `scaffold.py`'s logic at all since it reads
+whatever's present at scaffold time — the rewrites matter to the
+semantic content-fill phase (different prompt content) and to
+`validate.py`'s rules (different rule text), not to scaffolding.
+
+## 8. Report & Calculation via Script (`calculate.py` + `report.py`)
+
+`calculation/**` is a 0-diff copy of `base_dev`'s 7 formulas — no
+Rust-specific scoring logic exists or is implied. **Cross-check against
+the author guide's own §11.2 worked `calculate.py` example, which uses
+`rust_dev` as its illustrative system:** that example is a generic,
+invented-looking scoring stub (`return {"total": 82, "band": "Good",
+"breakdown": {"deterministic": 90, "semantic": 74}}`) and does not
+reflect this system's actual `calculation/` files (which use the real
+`deterministic_document_v1`/etc. stable-ID formulas shared with
+`base_dev`). The guide's choice of `rust_dev` as its example system
+appears to be illustrative naming only — the example's *content* isn't
+sourced from this system's real calculation formulas, so `calculate.py`
+should be built from the real `calculation/*.yaml` files (identical to
+`base_dev`'s), not from the guide's simplified example.
+
+## 9. Script Language Priority Applied
+
+- `scripts/init.py`, `scaffold.py`, `validate.py`, `calculate.py`,
+  `report.py`, `plan_generation.py` — `rust_dev`'s own, given the
+  extensive real customization in §3
+- 4 new checks (`cargo-audit`, `crate-dependency-graph`, `cargo-fmt`,
+  `unsafe-code-scan`) → consolidate each `.ps1`+`.sh` pair into a single
+  `.py`, same as the 16 inherited checks (`base_dev`'s proposal §9)
+- `external-ref-isolation.py` — greenfield, no existing implementation
+  to port (shared gap with `fastapi_dev`, §6)
+
+## 10. Open Questions / Risks Specific to `rust_dev`
+
+- **Tier 4's absence (not renumbered) needs an explicit decision before
+  `init.py` is built.** Confirmed real, not a read error — both
+  `tiers.yaml` and `SYSTEM.md`'s `[domain_tiers]` skip it consistently.
+  If this is intentional (preserving `base_dev`'s tier semantics as
+  stable identifiers), `init.py`'s phase-dependency logic must be
+  written to read the *actual* tier list in order, not assume
+  contiguous integers — flagged concretely in §5.
+- Given 11 shared-domain sections were rewritten in place (§3), this
+  system is the strongest evidence among the 4 concrete dev systems
+  that a subclass-level base (`dev/build/base_build/`, per the taxonomy
+  proposal §4.1's deferred-until-second-sibling rule) would have real
+  content to share if/when a second systems-language system (Go, C++,
+  Zig, ...) joins the `build` subclass — worth keeping in mind as a
+  forward pointer, not acted on now since `rust_dev` is still the only
+  member.
+- `external-ref-isolation`'s missing implementation (§6) is shared with
+  `fastapi_dev` — worth fixing once, wherever the real source of that
+  check ends up living (possibly `base_dev`, since it appears in two
+  unrelated concrete systems' schemas), rather than twice independently.
+
+## 11. Explicitly Out of Scope
+
+Actual script implementation, including `external-ref-isolation`'s
+missing executable. Deciding/renumbering the tier-4 gap — flagged as a
+finding requiring a decision, not resolved here. Any change to domain
+content beyond what's already authored.

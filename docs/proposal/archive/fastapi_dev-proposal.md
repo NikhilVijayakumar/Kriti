@@ -1,351 +1,165 @@
-# Backend Development using FastAPI - Knowledge System Proposal
-
-## Overview
-
-This proposal defines how to transform `fastapi_dev` from a clone of `base_dev` into a standalone engineering methodology for building backend systems using FastAPI.
-
-**Base System**: `base_dev` (canonical, unchanged)
-**Target System**: `fastapi_dev` (standalone, backend engineering methodology)
-
-**Core Shift**: This is NOT a FastAPI guide. This is YOUR backend engineering methodology implemented with FastAPI.
-
----
-
-## Pattern Sources
-
-Patterns derived from real-world implementations. These sources informed the standards but are NOT referenced in the generated standards.
-
-| Source | Location | Patterns Derived |
-|--------|----------|------------------|
-| **Astra** | `E:\Python\astra` | Repository pattern, Service layer, Transport abstraction, Error normalization |
-| **Prati** | `E:\Python\Prati` | Design tokens, Component architecture (for API contract design) |
-
----
-
-## External Reference Isolation (MANDATORY)
-
-**Rule**: All external references (Astra, Prati, Prana, etc.) are confined to THIS proposal document ONLY.
-
-**Generated standards must NOT contain:**
-- Names of external systems (Astra, Prati, Prana, etc.)
-- File paths to external repositories
-- References to specific implementations
-- Links to external documentation
-
-**Generated standards MUST contain:**
-- Generic patterns derived from external systems
-- Technology-agnostic concepts
-- Framework-specific guidance (FastAPI, Python, etc.)
-- Self-contained, independently usable standards
-
-**How patterns are "baked in":**
-
-| External Pattern | Standardized As (In Standard) |
-|------------------|------------------------------|
-| Astra Repository pattern | Repository pattern (generic) |
-| Astra Service layer | Service layer pattern (generic) |
-| Astra Transport abstraction | Transport-agnostic data access |
-| Astra Error normalization | Normalized response objects |
-| Prati Design tokens | Token-based styling (generic) |
-
-**Verification**: This leak-check is a natural fit for the `script/` audit pipeline (same shape as `secret-scan`). Currently unenforced — flagged as future work.
-
----
-
-## Core Philosophy (PRESERVE)
-
-All engineering principles from `base_dev` remain unchanged:
-
-- Documentation-first engineering
-- Deterministic compilation
-- Explicit architecture
-- Modular design
-- Traceability
-- Documentation-driven audit
-- Local-first workflow
-
----
-
-## System-Specific Files
-
-Each system gets its own copies of these files because domain tiers differ per system:
-
-| File | Why System-Specific |
-|------|---------------------|
-| `00-domain-relationships.md` | Domain tier ordering and cross-domain dependencies differ per system |
-| `plan/core/tiers.yaml` | Derived from `00-domain-relationships.md` — must match system's domain list |
-
-These files are NOT shared across systems. When creating `fastapi_dev`, copy these from `base_dev` then modify to reflect the system's domain scope.
-
----
-
-## Domain Scope
-
-### Domains KEPT (14 of 16)
-
-| Tier | Domain | Standard File | Action |
-|------|--------|---------------|--------|
-| 1 | 01-vision | `01-vision-standards.md` | KEEP + add backend vision |
-| 1 | 02-philosophy | `02-philosophy-standards.md` | KEEP |
-| 2 | 03-security | `03-security-standards.md` | KEEP + add API security |
-| 2 | 04-feature | `04-feature-standards.md` | KEEP + add backend feature definition |
-| 2 | 05-architecture | `05-architecture-standards.md` | KEEP + add layered architecture |
-| 2 | 07-engineering | `07-engineering-standards.md` | KEEP + add Python/FastAPI patterns |
-| 2 | 08-external-context | `08-external-context-standards.md` | KEEP + add technology categories |
-| 3 | 10-feature-technical | `10-feature-technical-standards.md` | KEEP + add implementation guidance |
-| 4 | 11-prototype | `11-prototype-standards.md` | KEEP + add API prototyping |
-| 5 | 13-implementation | `13-implementation-standards.md` | KEEP + add layer patterns |
-| 6 | 12-qa | `12-qa-standards.md` | KEEP + add pytest/httpx patterns |
-| 7 | 14-build | `14-build-standards.md` | KEEP + add package manager guidance |
-| 8 | 15-readme | `15-readme-standards.md` | KEEP + add backend README |
-| 8 | 16-product-guide | `16-product-guide-standards.md` | KEEP + add development workflow |
-
-### Domains REMOVED (2 of 16)
-
-| Domain | Reason |
-|--------|--------|
-| 06-design | UI/API design not relevant — backend has no visual layer |
-| 09-feature-design | UI feature design not relevant — backend features defined in 04-feature and 10-feature-technical |
-
-### Tier Reordering
-
-| Tier | base_dev | fastapi_dev |
-|------|----------|-------------|
-| 1 | 01-vision, 02-philosophy | 01-vision, 02-philosophy |
-| 2 | 03-security, 04-feature, 05-architecture, 06-design, 07-engineering, 08-external-context | 03-security, 04-feature, 05-architecture, 07-engineering, 08-external-context |
-| 3 | 09-feature-design, 10-feature-technical | 10-feature-technical |
-| 4 | 11-prototype | 11-prototype |
-| 5 | 13-implementation | 13-implementation |
-| 6 | 12-qa | 12-qa |
-| 7 | 14-build | 14-build |
-| 8 | 15-readme, 16-product-guide | 15-readme, 16-product-guide |
-
----
-
-## Section Slot Mapping
-
-Slot numbers match actual files on disk in `base_dev/templates/generation/section/{domain}/`. New slots are appended after the last existing slot.
-
-### 05-architecture (11 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-purpose.md` | MODIFY — add backend architecture purpose |
-| 02 | `02-system_overview.md` | KEEP — generic |
-| 03 | `03-component_model.md` | MODIFY — add layered architecture (Router/Service/Repository) |
-| 04 | `04-communication_paths.md` | MODIFY — add DI patterns, dependency direction |
-| 05 | `05-data_flow.md` | MODIFY — add ORM/Pydantic patterns |
-| 06 | `06-security_considerations.md` | KEEP — generic |
-| 07 | `07-rationale.md` | MODIFY — add module structure rationale |
-| 08 | `08-constraints.md` | MODIFY — add API contract constraints |
-| 09 | `09-traceability.md` | KEEP — generic |
-| 10 | `10-operational_readiness.md` | KEEP — generic |
-| 11 | `11-observability.md` | KEEP — generic |
-| 12 | `12-layered_architecture.md` | **NEW SLOT** — module boundaries, dependency direction |
-
-### 07-engineering (8 existing, ADD 2 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-guiding_principles.md` | MODIFY — add Python conventions |
-| 02 | `02-rationale.md` | MODIFY — add rationale for engineering choices |
-| 03 | `03-build_standards.md` | MODIFY — add build standards |
-| 04 | `04-testing_standards.md` | MODIFY — add testing standards |
-| 05 | `05-purpose.md` | MODIFY — add purpose |
-| 06 | `06-code_standards.md` | MODIFY — add type hints, async/await, pathlib |
-| 07 | `07-constraints.md` | MODIFY — add typed exceptions, Result pattern |
-| 08 | `08-traceability.md` | KEEP — generic |
-| 09 | `09-versioning.md` | **NEW SLOT** — API versioning, migration strategy |
-| 10 | `10-migration_strategy.md` | **NEW SLOT** — database migrations, schema evolution |
-
-### 10-feature-technical (17 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-purpose.md` | MODIFY — add backend implementation purpose |
-| 02-17 | (existing slots) | KEEP — generic |
-| 18 | `18-layer_implementation.md` | **NEW SLOT** — Router, Service, Repository patterns |
-
-### 12-qa (9 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-purpose.md` | MODIFY — add pytest patterns |
-| 02-09 | (existing slots) | KEEP — generic |
-| 10 | `10-api_testing.md` | **NEW SLOT** — httpx, load testing |
-
-### 13-implementation (6 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-purpose.md` | MODIFY — add feature scaffold plan |
-| 02 | (gap — slot 02 missing on disk) | — |
-| 03-07 | (existing slots) | KEEP — generic |
-| 08 | `08-feature_folder_structure.md` | **NEW SLOT** — directory layout |
-
-### 14-build (8 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-purpose.md` | MODIFY — add build purpose |
-| 02 | (gap — slot 02 missing on disk) | — |
-| 03 | `03-documentation_quality.md` | KEEP — generic |
-| 04 | `04-security_checks.md` | KEEP — generic |
-| 05 | `05-size_checks.md` | KEEP — generic |
-| 06 | `06-ml_artifact_management.md` | KEEP — generic |
-| 07 | `07-cicd_validation.md` | KEEP — generic |
-| 08 | `08-obfuscation_optimization.md` | KEEP — generic |
-| 09 | `09-versioning_naming.md` | KEEP — generic |
-| 10 | `10-api_validation.md` | **NEW SLOT** — API contract validation, schema checks |
-
-### 16-product-guide (6 existing, ADD 1 new)
-
-| Slot | Actual File on Disk | Action |
-|------|---------------------|--------|
-| 01 | `01-title.md` | KEEP — generic |
-| 02 | `02-body.md` | KEEP — generic |
-| 03 | `03-purpose.md` | KEEP — generic |
-| 04 | `04-product_context.md` | KEEP — generic |
-| 05 | `05-public_contract.md` | KEEP — generic |
-| 06 | `06-related.md` | KEEP — generic |
-| 07 | `07-development_workflow.md` | **NEW SLOT** — how we work |
-
----
-
-## Engineering Methodology
-
-### 1. Vision
-
-> How do we build backend systems in our ecosystem?
-
-**Answer**: We build layered, testable, maintainable backend systems with clear separation of concerns. FastAPI is our implementation technology, not our architecture.
-
-### 2. Architecture
-
-**Principle**: Architecture is YOURS. FastAPI is one implementation detail.
-
-| Pattern | Standard | Alternative | Override Allowed |
-|---------|----------|-------------|-----------------|
-| Layered Architecture | Required | Hexagonal, Clean | Yes, with justification |
-| Dependency Direction | Strict (Router→Service→Repository→Infra) | Bidirectional in same layer | No |
-| Module Boundaries | Feature isolation | Shared modules with DI | Yes, document in 00-domain-relationships |
-
-### 3. Engineering
-
-**Principle**: Engineering is MORE than FastAPI. Framework is one part.
-
-- Type hints EVERYWHERE
-- Async/await for I/O operations
-- No sync blocking in async context
-- Dependency injection for cross-cutting concerns
-- Response models for ALL endpoints
-- No business logic in routers
-
-### 4. Audit
-
-**Principle**: Audit ARCHITECTURAL DRIFT, not just syntax.
-
-Weight and severity adjustments happen inside `audit/deterministic/{domain}/*.yaml` files, NOT in `calculation/*.yaml`. The calculation layer is generic and shared across all systems.
-
-### 5. Templates
-
-Content is injected into existing numbered slots per domain. See **Section Slot Mapping** above.
-
-### 6. Product Guide
-
-Answers "How do we work?" not "What is FastAPI?"
-
-### 7. Engineering Decisions
-
-| Decision | Preferred Option | Alternative | Reason |
-|----------|-----------------|-------------|--------|
-| Framework | FastAPI | Flask, Django | Async support, auto-docs, type safety |
-| ORM | SQLAlchemy (async) | Tortoise, Peewee | Mature, async support, ecosystem |
-| Validation | Pydantic v2 | Marshmallow | Performance, FastAPI integration |
-| Migration | Alembic | yoyo | SQLAlchemy integration |
-| Testing | pytest | unittest | Fixtures, plugins, readability |
-
-### 8. External Context
-
-| Category | Purpose | Options |
-|----------|---------|---------|
-| ORM | Database abstraction | SQLAlchemy, Tortoise, SQLModel |
-| Validation | Data validation | Pydantic, Marshmallow |
-| Authentication | Identity verification | OAuth2, JWT, Session, API keys |
-| Caching | Performance | Redis, Memcached, in-memory |
-| Background Jobs | Async processing | Celery, RQ, Dramatiq |
-| Messaging | Event-driven | RabbitMQ, Kafka, Redis Pub/Sub |
-
----
-
-## New Subsystems (Not Integrated with Audit Script Pipeline)
-
-The following are NEW artifact types proposed for creation. They are NOT part of the existing `script/` audit verification infrastructure (mapping.yaml, manifests, schema files). They would require a separate subsystem if implemented.
-
-### Feature Scaffolding (Proposed)
-
-| Script | Purpose |
-|--------|---------|
-| `create-feature.sh/ps1` | Scaffold complete feature (router + service + repo + schemas) |
-| `create-router.sh/ps1` | Scaffold router with CRUD endpoints |
-| `create-service.sh/ps1` | Scaffold service with business logic |
-| `create-repository.sh/ps1` | Scaffold repository with data access |
-
----
-
-## Files to Modify
-
-### Domain Files
-
-| File | Action |
-|------|--------|
-| `00-domain-relationships.md` | REPLACE — system-specific domain tier ordering (14 domains, not 16) |
-| `plan/core/tiers.yaml` | REPLACE — derived from system's 00-domain-relationships.md |
-| `documentation-standards/01-vision-standards.md` | ADD — backend engineering vision |
-| `documentation-standards/02-philosophy-standards.md` | KEEP |
-| `documentation-standards/03-security-standards.md` | ADD — API security, authentication, authorization |
-| `documentation-standards/04-feature-standards.md` | ADD — backend feature definition |
-| `documentation-standards/05-architecture-standards.md` | ADD — layered architecture, module boundaries |
-| `documentation-standards/07-engineering-standards.md` | ADD — Python conventions, FastAPI patterns |
-| `documentation-standards/08-external-context-standards.md` | ADD — technology categories |
-| `documentation-standards/10-feature-technical-standards.md` | ADD — implementation guidance per layer |
-| `documentation-standards/11-prototype-standards.md` | ADD — API prototyping (Swagger, ReDoc) |
-| `documentation-standards/12-qa-standards.md` | ADD — pytest, httpx, API testing |
-| `documentation-standards/13-implementation-standards.md` | ADD — layer implementation patterns |
-| `documentation-standards/14-build-standards.md` | ADD — package manager agnostic |
-| `documentation-standards/15-readme-standards.md` | ADD — backend README conventions |
-| `documentation-standards/16-product-guide-standards.md` | ADD — development workflow |
-
-### Audit Knowledge (nested domain folders)
-
-| Path | Content |
-|------|---------|
-| `audit/semantic/section/05-architecture/12-layered_architecture.md` | Architectural drift rules |
-| `audit/semantic/section/07-engineering/10-versioning.md` | API versioning conventions |
-| `audit/semantic/section/10-feature-technical/21-layer_implementation.md` | Layer-specific rules |
-
-### Generation Templates (nested domain folders)
-
-| Path | Content |
-|------|---------|
-| `templates/generation/section/05-architecture/12-layered_architecture.md` | Module boundaries, dependency direction |
-| `templates/generation/section/07-engineering/09-versioning.md` | API versioning, migration strategy |
-| `templates/generation/section/07-engineering/10-migration_strategy.md` | Database migrations, schema evolution |
-| `templates/generation/section/10-feature-technical/18-layer_implementation.md` | Router, service, repository |
-| `templates/generation/section/12-qa/10-api_testing.md` | httpx, load testing |
-| `templates/generation/section/13-implementation/08-feature_folder_structure.md` | Directory layout |
-| `templates/generation/section/14-build/10-api_validation.md` | API contract validation |
-| `templates/generation/section/16-product-guide/07-development_workflow.md` | How we work |
-
----
-
-## Success Criteria
-
-- [ ] `fastapi_dev` is independently usable
-- [ ] Answers "How do we build backend systems?" not "What is FastAPI?"
-- [ ] Documents YOUR architecture, not framework documentation
-- [ ] Preserves core philosophy of `base_dev`
-- [ ] Provides clear engineering methodology
-- [ ] Enables consistent decision-making across projects
-- [ ] All file paths match engine glob patterns
-- [ ] No external system references in generated standards
+﻿# fastapi_dev — System Proposal
+
+## 1. Class / Position in Taxonomy
+
+Class `dev`, subclass `backend`, `extends: base_dev`, `drops:
+[06-design, 09-feature-design]`. Proposed path
+`dev/backend/fastapi_dev/` (currently flat at
+`samgraha/system/fastapi_dev/`). `SYSTEM.md`'s TOML frontmatter already
+declares this relationship informally, predating the `system.yaml`
+extends/drops mechanism: `base = "base_dev"`, `dropped_from_base =
+["06-design", "09-feature-design"]`, `technology = "Python / FastAPI"`,
+`methodology = "Layered Backend Engineering"`. `CHANGELOG.md` shows this
+system was substantially reworked recently (`[1.0.0] - 2026-07-15`,
+4 days before this proposal): new API-specific semantic audit rules,
+OpenAPI schema validation check added, Tier 3 realigned to
+`feature-technical` only, `11-prototype` refocused from visual mockups
+to API endpoints.
+
+## 2. What It Has
+
+14 domains (16 minus `06-design`, `09-feature-design`):
+vision, philosophy, security, feature, architecture, engineering,
+external-context, feature-technical, prototype, qa, implementation,
+build, readme, product-guide.
+
+**Tier structure changed by the drops** (confirmed by reading
+`plan/core/tiers.yaml` directly, not assumed):
+
+| Tier | Domains |
+|---|---|
+| 1 | vision, philosophy |
+| 2 | security, feature, architecture, engineering, external-context *(design removed)* |
+| 3 | feature-technical *(feature-design removed — was a 2-domain tier, now 1)* |
+| 4 | prototype |
+| 5 | implementation |
+| 6 | qa |
+| 7 | build |
+| 8 | readme, product-guide |
+
+Edges referencing the dropped domains are correctly removed too (e.g.
+no `design → feature-technical` edge) — `tiers.yaml` was properly
+regenerated post-drop, not left stale. This is the opposite of the
+LIM-001 concern documented for the academic systems (stale copy-pasted
+`loop.yaml`) — worth noting as a positive precedent.
+
+## 3. What It Inherits vs Overrides vs Adds
+
+Unlike `react_dev`/`electron_dev` (near-total zero-diff copies of
+`base_dev`), `fastapi_dev` has **real, substantive overrides** — the
+drops ripple into actual content changes, not just a smaller domain
+list:
+
+| Area | Result |
+|---|---|
+| `documentation-standards/*.md` | 14 files present (2 fewer than base_dev, as expected from drops) |
+| `calculation/**` | Identical to `base_dev`, 0 diff |
+| `templates/audit/**` | Identical to `base_dev`, 0 diff |
+| `templates/generation/document/*.md` | Same 14-file set as doc-standards (06, 09 absent) |
+| `audit/deterministic/document/*.yaml` | **11 files genuinely overridden** (content differs from base_dev's, not just present/absent) — `02-philosophy`, `02-philosophy-relationships`, `04-feature-relationships`, `05-architecture`, `07-engineering`, `08-external-context-relationships`, `10-feature-technical`, `10-feature-technical-relationships`, `12-qa`, `14-build`, `16-product-guide` all differ from base_dev's version, reflecting the removed design/feature-design references downstream |
+| `templates/generation/section/**` | 8 net-new files: `05-architecture/12-layered_architecture.md`, `07-engineering/{09-versioning,10-migration_strategy}.md`, `10-feature-technical/18-layer_implementation.md`, `12-qa/10-api_testing.md`, `13-implementation/08-feature_folder_structure.md`, `14-build/10-api_validation.md`, `16-product-guide/07-development_workflow.md`, plus `11-prototype/03-mock-apis.md` **replaced** with `03-prototype-endpoints.md` (renamed+rewritten, not just added — matches CHANGELOG's "refocused from visual mockups to API endpoints") |
+| `audit/deterministic/section/**` | 10 net-new files matching the new/renamed templates above |
+| `audit/semantic/section/**` | 8 net-new files: `03-security/10-api_auth_patterns.md`, `05-architecture/12-layered_architecture.md`, `07-engineering/{10-versioning,11-async_patterns,12-response_models}.md`, `10-feature-technical/21-layer_implementation.md` |
+| `script/mapping.yaml`, `script/policy.yaml` | Genuinely overridden (differ from base_dev's) |
+| `script/schema/03-security/`, `script/schema/14-build/` | 2 new check definitions added: `external-ref-isolation`, `openapi-schema-valid` — **schema+manifest only, no executable script — see §10** |
+| `plan/core/tiers.yaml` | Genuinely regenerated to match the 14-domain graph (§2) |
+| `script/windows/`, `script/ubuntu/` | **Identical to base_dev, 0 diff** — despite 2 new checks being declared in `mapping.yaml`/`schema/`, no corresponding `.ps1`/`.sh` exists for either (see §10) |
+
+## 4. Use Cases
+
+Same 4 use cases as `base_dev` (`repo_new`/`repo_existing` ×
+`case_1_no_documentation`/`case_2_has_documentation`) — the use-case
+*names* are unchanged by the domain drops, only the per-use-case tier
+content shrinks per §2.
+
+## 5. Workflow per Use Case (target `init.py` phase plan)
+
+`fastapi_dev` needs its own `init.py`, distinct from `base_dev`'s,
+because tier composition genuinely changed (tier 2 loses `design`, tier
+3 shrinks from 2 domains to 1). Partial phase table for
+`repo_new/case_1_no_documentation`, showing the delta from `base_dev`'s
+16-domain version:
+
+```
+tier2-{security,feature,architecture,engineering,external-context}-scaffold   script
+  # no tier2-design-scaffold phase — domain doesn't exist here
+tier2-external-context-content → tier2-engineering-content   # ordering exception unchanged
+tier2-validate/calculate/report/fix                          # same script pattern, fewer inputs
+
+tier3-feature-technical-scaffold    script   depends_on: [tier2-fix]
+  # no tier3-feature-design-scaffold phase — domain doesn't exist here,
+  # so tier 3 has one generation phase instead of two parallel ones
+tier3-feature-technical-content     semantic depends_on: [tier3-feature-technical-scaffold]
+tier3-validate/calculate/report/fix  # same pattern
+
+# tiers 1, 4-8 unchanged in shape from base_dev's plan
+```
+
+## 6. Deterministic Audit via Script
+
+18 checks inherited unchanged from `base_dev` (§3 — `script/windows`/`ubuntu`
+0-diff) — none of them targeted `06-design`/`09-feature-design` anyway,
+so nothing needed removing. On top, 2 new checks are *declared*
+(`external-ref-isolation` in `03-security`'s schema, `openapi-schema-valid`
+in `14-build`'s schema, plus an `api-endpoint-reachable` entry appearing
+in `mapping.yaml`) but **none of the three has an actual executable
+script** — see §10, this is the system's main gap.
+
+## 7. Generation via Script (`scaffold.py`)
+
+Same mechanism as every dev-class system. 14 domains instead of 16,
+plus the 8 net-new/renamed sections in §3. `11-prototype`'s
+`03-mock-apis.md`→`03-prototype-endpoints.md` rename is a real content
+swap, not additive — `scaffold.py`'s logic (read whatever's in
+`templates/generation/section/{domain}/`) handles this transparently
+since it doesn't hardcode section names, just reads what's present.
+
+## 8. Report & Calculation via Script (`calculate.py` + `report.py`)
+
+`calculation/**` is a 0-diff copy of `base_dev`'s 7 formulas. The
+14-domain section rollup uses the same `deterministic_section_v1`/
+`semantic_section_v1` formulas — per `calculation/README.md`'s own
+description ("unweighted average rollup... excluding absent optional
+sections"), the formula itself is domain-count-agnostic, so no formula
+change is needed for the 2 fewer domains, only fewer inputs at
+calculation time.
+
+## 9. Script Language Priority Applied
+
+- `scripts/init.py`, `scaffold.py`, `validate.py`, `calculate.py`,
+  `report.py`, `plan_generation.py` — same set as every dev-class
+  system, `fastapi_dev`'s own since its content genuinely differs from
+  `base_dev`'s (§3), not inherited wholesale like `react_dev`'s
+- **New, greenfield (no `.ps1`/`.sh` to port from) Python scripts
+  needed:** `external-ref-isolation.py`, `openapi-schema-valid.py`,
+  `api-endpoint-reachable.py` — these 3 checks exist only as
+  schema/manifest declarations today (§6/§10), so under the
+  script-language-priority policy they should be authored directly in
+  Python rather than as a `.ps1`+`.sh` pair that later needs
+  consolidating, since there's no existing implementation to port from.
+
+## 10. Open Questions / Risks Specific to `fastapi_dev`
+
+- **3 declared checks have no executable script.**
+  `external-ref-isolation` and `openapi-schema-valid` have a
+  `manifest.yaml`+`schema.json` pair under `script/schema/` but no
+  `.ps1`/`.sh` under `script/windows/`/`script/ubuntu/` — confirmed by
+  directly listing both directories, no matching files exist.
+  `api-endpoint-reachable` appears in `mapping.yaml` but has no schema
+  files either. These 3 checks are declared but unimplemented — a
+  `validate.py` built against the current `mapping.yaml` would either
+  error or silently skip them depending on how missing-script handling
+  is written; worth deciding which before `validate.py` exists.
+- The `SYSTEM.md` TOML manifest (`base = "base_dev"`,
+  `dropped_from_base = [...]`) is a hand-authored, informal precursor
+  to the same information now expressed in `system.yaml`'s `extends`/
+  `drops` fields — worth confirming these two files agree (they did, at
+  the time of this read) and considering whether `SYSTEM.md` becomes
+  redundant once `class`/`subclass` fields land in `system.yaml`
+  (taxonomy proposal §4), or whether it's kept as human-readable
+  changelog-adjacent context `system.yaml` doesn't carry.
+
+## 11. Explicitly Out of Scope
+
+Actual script implementation for the 3 gap checks in §10. Any change to
+domain content/rules themselves beyond what's already been authored.
