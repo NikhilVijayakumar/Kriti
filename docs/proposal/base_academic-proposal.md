@@ -10,6 +10,13 @@ introduction, methodology, conclusion, references) against the two
 systems' actual file content, and corrects it where the assumption
 doesn't hold.
 
+The system is implemented as a **samgraha knowledge standard** driven
+through the **MCP protocol** (JSON-RPC over stdio), matching the
+architecture proven by `python_hackathon`. All orchestration — usecase
+registration, step execution, semantic reasoning, score persistence —
+flows through samgraha's `mcp` binary, never through direct subprocess
+calls to scripts.
+
 ## 2. What It Should Have — Findings From Comparing Both Systems
 
 **Verdict up front: the 4 domain-name matches do not mean shared
@@ -168,18 +175,125 @@ characterization ("generate paper sections from project evidence,
 semantic-only audit") holds for both, confirmed directly, not just
 inferred from the evidence table.
 
-## 7. Workflow per Use Case (target `init.py` phase plan)
+## 7. Workflow per Use Case — MCP-Driven Architecture
 
-Shared *shape*, per-system domain lists: `generate(semantic, scaffold
-first if templates existed — see §9 caveat)` →
-`audit(semantic only, no deterministic step)` → `fix(semantic,
-document-level only, no section-scoped regenerate)`, gated tier-by-tier
-per each system's own `tiers.yaml`. This is genuinely different from
-`base_dev`'s pattern in one structural way worth naming explicitly:
-there is no `validate.py`-driven deterministic gate in the audit phase
-for either academic system today — the entire audit phase is one
-semantic LLM call per domain, not a script step feeding into a semantic
-step.
+All orchestration flows through **samgraha's MCP binary** (JSON-RPC
+over stdio), matching the architecture proven by `python_hackathon`.
+No script is ever subprocess-called directly by the orchestrator —
+every execution goes through `run_script_step` / `prepare_semantic_step`
+/ `complete_semantic_step`, which record an `execution` row in
+`knowledge.db` automatically.
+
+### 7.1 samgraha's Orchestration Tables (knowledge.db)
+
+Samgraha owns these tables, created and migrated by its Rust
+`crates/registry` const migrations (`schema/knowledge/*.sql`):
+
+| Table | Purpose |
+|-------|---------|
+| `usecase` | One row per declared usecase (standard, name, description) |
+| `script` | One row per registered script (name, location, purpose) |
+| `prompt` | One row per registered prompt (name, location) |
+| `step` | One row per step in a usecase's ordered sequence (kind: deterministic/semantic) |
+| `step_script` | Links deterministic steps to their script |
+| `step_prompt` | Links semantic steps to their prompt |
+| `execution` | Execution log: one row per actual run (step_id, repo_root, status, timestamp) |
+| `custom_data_tables` | Catalog of standard-owned tables in knowledge.db |
+
+### 7.2 Standard's Custom Tables (academic-specific)
+
+The standard owns its own normalized tables in the same `knowledge.db`
+file, catalogued via `standard.yaml`'s `custom_tables:` section and
+created by `init_schema.py`. Samgraha never creates or migrates these —
+it only records their existence in `custom_data_tables`:
+
+| Table | Purpose |
+|-------|---------|
+| `academic_papers` | One row per registered paper |
+| `academic_domains` | Lookup: scoring domains, weights |
+| `academic_semantic_runs` | One row per (paper, domain, model) semantic evaluation |
+| `academic_semantic_dimension_scores` | Per-dimension score+evidence for a semantic run |
+| `academic_semantic_findings` | Per-run strengths/weaknesses/recommendations |
+| `academic_narratives` | One row per (paper, domain) narrative-generation run |
+| `academic_narrative_sections` | Per-narrative {heading, text} sections |
+| `academic_templates` | Catalog of markdown/html report templates on disk |
+
+### 7.3 Standard Manifest (`standard.yaml`)
+
+The `standard.yaml` manifest registers all scripts, prompts, usecases,
+steps, and custom tables with samgraha at `register_standard` time.
+Every script entry follows samgraha's fixed capability-script contract:
+
+```
+scripts:
+  - name: <step-name>
+    location: <script.py>
+    purpose: "<description>"
+```
+
+Every script receives `--repo-root`, `--in` (JSON payload file), `--out`
+(JSON envelope file) and writes a result envelope `{status, message,
+written}` to `--out`. The `_adapter.py` module provides shared glue:
+`parse_step_args()` resolves `knowledge.db` from `--repo-root`, and
+`run_driver()` runs the actual driver script as a subprocess with
+translated CLI args.
+
+### 7.4 Semantic Triad Pattern
+
+Semantic steps follow samgraha's documented triad (three consecutive
+steps: pre-script → semantic → post-script):
+
+**Audit triad (per domain):**
+1. `run_domain_evidence.py` — gathers evidence from the paper's
+   implementation artifacts for the domain
+2. `audit/semantic/document/{domain}.prompt.md` — clean standalone
+   prompt extracted from the `*.yaml` rubric (the yaml itself stays as
+   the machine-readable spec, unregistered)
+3. `persist_domain_semantic_score.py` — persists the agent's
+   per-domain semantic score
+
+**Narrative triad (per domain + competition-wide):**
+1. `fetch_score_context.py` — reads this paper's/all papers' scores
+   from the normalized tables
+2. `analysis/{domain}.md` — narrative prompt for the agent to write over
+3. `persist_narrative.py` — persists the narrative sections
+
+### 7.5 Wrapper Scripts
+
+Every `wrap_*.py` is a thin subprocess adapter — no business logic
+changed, only the calling convention. The `_adapter.py` module provides
+shared glue for samgraha's fixed `--repo-root`/`--in`/`--out` contract:
+`parse_step_args()` resolves `knowledge.db`, `run_driver()` runs the
+driver as a subprocess and writes the samgraha capability envelope to
+`--out`.
+
+### 7.6 Full Workflow Orchestrator (`run_full_workflow.py`)
+
+Master orchestrator that drives every step through the **real MCP
+protocol** — spawns the built `mcp` binary, speaks JSON-RPC over stdio.
+Never subprocess-calls scripts directly, so every execution
+(deterministic or semantic) gets tracked exactly the way any MCP client
+driving samgraha normally would.
+
+Execution order:
+1. `register_standard` — (re)registers `standard.yaml`'s usecases/steps/
+   scripts/prompts into knowledge.db
+2. `schema-init` — creates academic-specific tables, seeds domains and
+   templates from the real filesystem
+3. `semantic-audit` / `narrative-analysis` — pre-script runs
+   automatically; semantic step is only STAGED (`prepare_semantic_step`
+   called, prompt fetched). Completing it needs an actual model reasoning
+   over that prompt — this is why samgraha splits
+   prepare/complete_semantic_step. Every staged-but-incomplete item is
+   written to the workflow report so an agent driving MCP directly knows
+   exactly which `step_id` to call next.
+4. `render` — run once; harmless to rerun later once semantic steps are
+   completed.
+
+Writes a JSON report (`ran`/`failed`/`pending_semantic`) next to
+`knowledge.db` so progress survives between runs — rerunning is
+idempotent for everything except re-staging semantic steps it already
+staged.
 
 ## 8. Deterministic Audit via Script
 
@@ -221,6 +335,7 @@ pre-check pattern (`val-001`/`val-002` style bounds-checking before
 trusting `calculate.py`'s output — a capability `base_dev`'s
 calculation shape doesn't have at all, worth considering whether it
 should be backported there too, out of scope for this document).
+
 `report.py` renders `templates/audit/summary/{domain}-report.md` per
 system (report templates themselves are domain-specific, only the
 calculation feeding them is shared).
@@ -254,6 +369,11 @@ generating anything at all (§9) — this is true independent of whether
 `base_academic` gets built, and arguably more urgent, since it affects
 whether either system can be used today, not just how cleanly they
 share infrastructure.
+
+**MCP dependency:** the full workflow orchestrator requires samgraha's
+`mcp` binary to be built (`cargo build --release` in the samgraha
+repo). Without it, scripts can still be invoked directly, but execution
+tracking and semantic step staging only work through MCP.
 
 ## 13. Explicitly Out of Scope
 
