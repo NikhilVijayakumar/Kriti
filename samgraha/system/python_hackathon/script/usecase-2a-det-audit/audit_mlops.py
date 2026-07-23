@@ -1,13 +1,18 @@
 import json
 import argparse
 import os
+import sys
 import yaml
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
 
 
 def run_mlops_audit(repo_path):
     """
     Checks for DVC and MLflow configurations with deeper inspection.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "dvc_configured": False,
         "mlflow_configured": False,

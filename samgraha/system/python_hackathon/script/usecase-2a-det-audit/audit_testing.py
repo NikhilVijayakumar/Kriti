@@ -9,12 +9,15 @@ import os
 import sys
 import glob
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
+
 
 def _check_module_installed(module_name):
     """Check if a Python module is available via import."""
     try:
         result = subprocess.run(
-            ["python", "-c", f"import {module_name}"],
+            [sys.executable, "-c", f"import {module_name}"],
             capture_output=True, text=True, timeout=10,
         )
         return result.returncode == 0
@@ -26,6 +29,7 @@ def run_testing_audit(repo_path):
     """
     Discovers test configurations and executes pytest to collect pass/fail/coverage.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "tests_directory_present": False,
         "pytest_config_present": False,
@@ -74,9 +78,13 @@ def run_testing_audit(repo_path):
         )
 
     # 3. Build pytest command dynamically
-    cmd = ["python", "-m", "pytest", "--tb=no", "-q"]
+    # Use -c /dev/null to avoid picking up parent directory's pyproject.toml
+    cmd = [sys.executable, "-m", "pytest", "--tb=no", "-q", "-c", "/dev/null"]
+    
+    # Use a temp file for JSON report to avoid mixing with stdout
+    json_report_path = os.path.join(repo_path, ".pytest_json_report.json")
     if has_json_report:
-        cmd += ["--json-report", "--json-report-file=-"]
+        cmd += ["--json-report", f"--json-report-file={json_report_path}"]
     if has_cov:
         cmd += ["--cov=.", "--cov-report=json:-"]
 
@@ -95,9 +103,10 @@ def run_testing_audit(repo_path):
         stderr = proc.stderr
 
         # Parse JSON report (test counts) if the plugin produced output
-        if has_json_report:
+        if has_json_report and os.path.exists(json_report_path):
             try:
-                report = json.loads(stdout)
+                with open(json_report_path, "r", encoding="utf-8") as f:
+                    report = json.load(f)
                 summary = report.get("summary", {})
                 result["total_tests"] = summary.get("total", 0)
                 result["failed_tests"] = summary.get("failed", 0)
@@ -105,11 +114,30 @@ def run_testing_audit(repo_path):
                     result["failed_tests"] == 0 and result["total_tests"] > 0
                 )
                 result["json_report_used"] = True
-            except (json.JSONDecodeError, KeyError):
+                
+                # Parse coverage if pytest-cov produced JSON
+                if has_cov:
+                    try:
+                        cov_report = report.get("coverage", {})
+                        cov_total = cov_report.get("totals", {}).get("percent_covered")
+                        if cov_total is not None:
+                            result["coverage_pct"] = round(cov_total, 2)
+                            result["coverage_used"] = True
+                    except (KeyError, TypeError):
+                        result["data_skipped"].append(
+                            "Coverage JSON present but unparseable"
+                        )
+            except (json.JSONDecodeError, KeyError, OSError) as e:
                 result["tests_passed"] = proc.returncode == 0
                 result["data_skipped"].append(
-                    "JSON report present but unparseable — used return code only"
+                    f"JSON report error: {e}"
                 )
+            finally:
+                # Clean up temp file
+                try:
+                    os.remove(json_report_path)
+                except OSError:
+                    pass
         else:
             # No JSON report plugin; parse -q output for a rough count
             result["tests_passed"] = proc.returncode == 0
@@ -130,22 +158,6 @@ def run_testing_audit(repo_path):
                             except (ValueError, IndexError):
                                 pass
                     break
-
-        # Parse coverage if pytest-cov produced JSON
-        if has_cov and result["json_report_used"]:
-            try:
-                cov_report = report.get("coverage", {})
-                cov_total = cov_report.get("totals", {}).get("percent_covered")
-                if cov_total is not None:
-                    result["coverage_pct"] = round(cov_total, 2)
-                    result["coverage_used"] = True
-            except (KeyError, TypeError):
-                result["data_skipped"].append(
-                    "Coverage JSON present but unparseable"
-                )
-
-        if not result["coverage_used"] and not has_cov:
-            pass  # already recorded in data_skipped
 
     except FileNotFoundError:
         result["error"] = "pytest not installed in environment"

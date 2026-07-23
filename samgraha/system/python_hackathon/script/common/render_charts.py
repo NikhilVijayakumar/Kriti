@@ -25,22 +25,11 @@ from math import pi
 
 
 SYSTEM_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
-DOMAINS = [
-    "01-infrastructure", "02-engineering", "03-testing",
-    "04-documentation", "05-security", "06-mlops",
-    "07-runtime", "08-team-workflow", "09-data-quality",
-    "10-ai-explanations",
-]
-DOMAIN_NAMES = [
-    "infrastructure", "engineering", "testing",
-    "documentation", "security", "mlops",
-    "runtime", "team_workflow", "data_quality",
-    "ai_explanations",
-]
-DOMAIN_SHORT = [
-    "Infra", "Eng", "Test", "Docs", "Sec",
-    "MLOps", "Runtime", "Team", "DataQ", "AIExpl",
-]
+# No hardcoded domain list here — chart_domain_weights() below reads
+# weights.yaml directly (the domain data it needs is already file-based, not
+# duplicated into a Python constant); every other chart function takes its
+# domain/team data as parameters from render_reports.py's build_chart_spec(),
+# which sources it from hackathon_domains via common/hackathon_schema.py.
 
 COLORS = {
     "primary": "#0969da",       # accent-fg
@@ -79,22 +68,28 @@ def _apply_style(ax):
 # Chart 1: Field Distribution
 # ---------------------------------------------------------------------------
 
-def chart_field_distribution(team_score, global_mean, global_stdev,
+def chart_field_distribution(team_score, global_median, global_mad,
                              domain_name, output_path):
     """
     Show where one team's score sits against the field distribution.
-    Uses a normal curve overlay on a bar histogram.
+    Uses a normal curve overlay on a bar histogram, centered/scaled by
+    median/MAD (not mean/stdev) so the curve matches the same robust
+    Z-score basis used to compute the team's bonus (see statistics.py).
     """
     _ensure_dir(output_path)
 
     fig, ax = plt.subplots(figsize=(6, 3.5))
 
-    # Generate synthetic distribution from mean/stdev
-    if global_stdev > 0:
-        x = np.linspace(max(0, global_mean - 3 * global_stdev),
-                        min(100, global_mean + 3 * global_stdev), 100)
-        y = (1 / (global_stdev * np.sqrt(2 * np.pi))) * np.exp(
-            -0.5 * ((x - global_mean) / global_stdev) ** 2
+    # MAD -> normal-consistent sigma estimate (same 1.4826 constant that is
+    # the inverse of statistics.py's 0.6745 Z-score scaling factor).
+    sigma_hat = 1.4826 * global_mad
+
+    # Generate synthetic distribution from median/sigma_hat
+    if sigma_hat > 0:
+        x = np.linspace(max(0, global_median - 3 * sigma_hat),
+                        min(100, global_median + 3 * sigma_hat), 100)
+        y = (1 / (sigma_hat * np.sqrt(2 * np.pi))) * np.exp(
+            -0.5 * ((x - global_median) / sigma_hat) ** 2
         )
         ax.fill_between(x, y, alpha=0.15, color=COLORS["primary"])
         ax.plot(x, y, color=COLORS["primary"], linewidth=1.5)
@@ -102,8 +97,8 @@ def chart_field_distribution(team_score, global_mean, global_stdev,
     # Team marker
     ax.axvline(x=team_score, color=COLORS["danger"], linewidth=2,
                linestyle="--", label=f"Team: {team_score:.1f}")
-    ax.axvline(x=global_mean, color=COLORS["primary"], linewidth=1.5,
-               linestyle="-", label=f"Mean: {global_mean:.1f}")
+    ax.axvline(x=global_median, color=COLORS["primary"], linewidth=1.5,
+               linestyle="-", label=f"Median: {global_median:.1f}")
 
     ax.set_title(f"Score Distribution — {domain_name}", fontsize=11,
                  fontweight="bold", color=COLORS["text"])
@@ -394,79 +389,77 @@ def generate_charts(spec, output_dir):
     Generate charts based on a specification dict.
 
     spec keys:
-      - domain_charts: {"{participant}_{domain}": {team_score, global_mean, ...}}
+      - domain_charts: {"{participant}_{domain}": {team_score, global_median, ...}}
       - rank_charts: {domain_name: {teams_data}} — once per domain
       - team_charts: {team_name: {domain_scores_list}}
+
+    Returns a list of {"chart_key", "team_name", "domain_key", "file_path"}
+    for every PNG actually written — chart_key matches
+    hackathon_visualization_types.chart_key exactly, so the caller (which
+    has a DB connection, this module deliberately doesn't) can record each
+    one via hackathon_schema.record_visualization() for backtrace.
     """
     os.makedirs(output_dir, exist_ok=True)
+    written = []
 
     # Rank distribution — once per domain (chart 2)
     for domain_name, data in spec.get("rank_charts", {}).items():
         if "teams_data" in data:
-            chart_rank_distribution(
-                data["teams_data"],
-                domain_name,
-                os.path.join(output_dir, f"{domain_name}-rank-distribution.png"),
-            )
+            path = os.path.join(output_dir, f"{domain_name}-rank-distribution.png")
+            chart_rank_distribution(data["teams_data"], domain_name, path)
+            written.append({"chart_key": "rank_distribution", "team_name": None, "domain_key": domain_name, "file_path": path})
 
     # Domain-specific charts (1, 3-5), keyed by "{participant}_{domain}"
-    for chart_key, data in spec.get("domain_charts", {}).items():
-        parts = chart_key.split("_", 1)
+    for key, data in spec.get("domain_charts", {}).items():
+        parts = key.split("_", 1)
         pname = parts[0] if len(parts) > 1 else "unknown"
-        domain_name = parts[1] if len(parts) > 1 else chart_key
-        safe_key = chart_key.replace("_", "-")
+        domain_name = parts[1] if len(parts) > 1 else key
+        safe_key = key.replace("_", "-")
 
         # 1. Field distribution
         if "team_score" in data:
+            path = os.path.join(output_dir, f"{safe_key}-field-distribution.png")
             chart_field_distribution(
-                data["team_score"],
-                data.get("global_mean", 0),
-                data.get("global_stdev", 0),
-                f"{pname} — {domain_name}",
-                os.path.join(output_dir, f"{safe_key}-field-distribution.png"),
+                data["team_score"], data.get("global_median", 0), data.get("global_mad", 0),
+                f"{pname} — {domain_name}", path,
             )
+            written.append({"chart_key": "field_distribution", "team_name": pname, "domain_key": domain_name, "file_path": path})
 
         # 3. Det vs sem contribution
         if "det_score" in data and "sem_score" in data:
+            path = os.path.join(output_dir, f"{safe_key}-det-sem-contribution.png")
             chart_det_sem_contribution(
-                data["det_score"],
-                data["sem_score"],
-                data.get("det_weight", 0.6),
-                data.get("sem_weight", 0.4),
-                f"{pname} — {domain_name}",
-                os.path.join(output_dir, f"{safe_key}-det-sem-contribution.png"),
+                data["det_score"], data["sem_score"], data.get("det_weight", 0.6), data.get("sem_weight", 0.4),
+                f"{pname} — {domain_name}", path,
             )
+            written.append({"chart_key": "det_sem_contribution", "team_name": pname, "domain_key": domain_name, "file_path": path})
 
         # 4. Rule pass rate
         if "rules" in data:
-            chart_rule_pass_rate(
-                data["rules"],
-                domain_name,
-                os.path.join(output_dir, f"{safe_key}-rule-pass-rate.png"),
-            )
+            path = os.path.join(output_dir, f"{safe_key}-rule-pass-rate.png")
+            chart_rule_pass_rate(data["rules"], domain_name, path)
+            written.append({"chart_key": "rule_pass_rate", "team_name": pname, "domain_key": domain_name, "file_path": path})
 
         # 5. Model spread
         if "model_results" in data:
-            chart_model_spread(
-                data["model_results"],
-                domain_name,
-                os.path.join(output_dir, f"{safe_key}-model-spread.png"),
-                mean_score=data.get("mean_score", 0),
-            )
+            path = os.path.join(output_dir, f"{safe_key}-model-spread.png")
+            chart_model_spread(data["model_results"], domain_name, path, mean_score=data.get("mean_score", 0))
+            written.append({"chart_key": "model_spread", "team_name": pname, "domain_key": domain_name, "file_path": path})
 
     # 6. Team radar charts
     for team_name, data in spec.get("team_charts", {}).items():
         if "domain_scores_list" in data:
-            chart_team_radar(
-                data["domain_scores_list"],
-                team_name,
-                os.path.join(output_dir, f"{team_name}-radar.png"),
-            )
+            path = os.path.join(output_dir, f"{team_name}-radar.png")
+            chart_team_radar(data["domain_scores_list"], team_name, path)
+            written.append({"chart_key": "team_radar", "team_name": team_name, "domain_key": None, "file_path": path})
 
     # 7. Domain weights (static, once)
-    chart_domain_weights(os.path.join(output_dir, "domain-weights.png"))
+    path = os.path.join(output_dir, "domain-weights.png")
+    chart_domain_weights(path)
+    written.append({"chart_key": "domain_weights", "team_name": None, "domain_key": None, "file_path": path})
 
     print(f"Charts written to {output_dir}")
+    return written
 
 
 # ---------------------------------------------------------------------------

@@ -1,11 +1,16 @@
 import json
 import argparse
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
 
 def run_infrastructure_audit(repo_path):
     """
     Verifies the presence of uv.lock and Docker infrastructure.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "uv_lock_present": False,
         "dockerfile_present": False,

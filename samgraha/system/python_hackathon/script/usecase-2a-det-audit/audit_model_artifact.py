@@ -19,6 +19,9 @@ import time
 import sys
 import glob
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
+
 ALLOWED_EXTENSIONS = {".pt", ".pth", ".pkl"}
 MAX_VRAM_MB = 12 * 1024  # 12 GB in MB
 MAX_INFERENCE_SECONDS = 30
@@ -66,10 +69,9 @@ def _detect_memory_method():
             if _os.name == "nt":
                 import ctypes
                 kernel32 = ctypes.windll.kernel32
-                ctypes.c_ulonglong
-                total_bytes = ctypes.c_ulonglong(0)
-                kernel32.GetPhysicallyInstalledMemory(ctypes.byref(total_bytes))
-                total_mb = total_bytes.value / (1024 * 1024)
+                total_kb = ctypes.c_ulonglong(0)
+                kernel32.GetPhysicallyInstalledSystemMemory(ctypes.byref(total_kb))
+                total_mb = total_kb.value / 1024
             else:
                 with open("/proc/meminfo") as f:
                     for line in f:
@@ -229,6 +231,7 @@ def run_model_artifact_audit(repo_path, entrypoint=None):
     """
     Full model artifact audit: file presence, format, memory estimate, inference speed, API contract.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "model_files_found": [],
         "invalid_format_files": [],
@@ -265,7 +268,7 @@ def run_model_artifact_audit(repo_path, entrypoint=None):
     method_name, check_fn = _detect_memory_method()
     mem = _check_memory_constraint(artifacts, method_name, check_fn)
     result["memory_check"] = mem
-    result["exceeds_vram_estimate"] = mem["exceeds"]
+    result["exceeds_vram_estimate"] = result["largest_model_mb"] > MAX_VRAM_MB
 
     # Inference check
     if entrypoint and os.path.exists(entrypoint):

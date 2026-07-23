@@ -1,0 +1,28 @@
+[MAIN]
+jobs = 1
+load-plugins = pylint.extensions.docparams
+
+[MESSAGES CONTROL]
+# Disable some checks that are too strict for hackathon code
+disable = C0114,C0115,C0116,C0103,R0903,R0913,R0902,W0212,W0611,W0612,W0613,W0621,C0301,C0303,C0304,C0305,R0401,R0801,R0911,R0912,R0914,R0915,W0107,C0209,R1705,R1710,R1720,R1721,R1722,R1723,R1724,R1725,R1726,R1727,R1728
+
+[FORMAT]
+max-line-length = 120
+max-module-lines = 1000
+
+[SIMILARITIES]
+min-similarity-lines = 6
+ignore-comments = yes
+ignore-docstrings = yes
+ignore-imports = yes
+
+[BASIC]
+good-names = i,j,k,v,e,x,_,fp,db,api,rl,env
+
+[DESIGN]
+max-args = 10
+max-locals = 20
+max-returns = 10
+max-branches = 15
+max-statements = 60
+max-attributes = 15

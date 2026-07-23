@@ -13,7 +13,6 @@ import argparse
 import json
 import os
 import sys
-import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,11 +21,8 @@ _script_dir = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(_script_dir, "common"))
 sys.path.insert(0, os.path.join(_script_dir, "usecase-1-init"))
 
-from db import get_conn, list_participants, register_participant, get_domain_scores
-from det_audit import run_domain_audit, DOMAIN_AUDIT_MODULES
-
-SYSTEM_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
-WEIGHTS_FILE = os.path.join(SYSTEM_DIR, "calculation", "weights.yaml")
+from hackathon_schema import get_conn, list_participants, register_participant, get_domain_scores, get_all_domains
+from det_audit import run_domain_audit
 
 
 def _load_teams():
@@ -49,7 +45,7 @@ def _sync_teams(conn, standard):
         if not team_name:
             continue
         existing = conn.execute(
-            "SELECT id FROM standard_participants WHERE standard=? AND team_name=?",
+            "SELECT id FROM hackathon_teams WHERE standard=? AND team_name=?",
             (standard, team_name),
         ).fetchone()
         if existing:
@@ -68,18 +64,9 @@ def _sync_teams(conn, standard):
     return count
 
 
-def _load_weights():
-    with open(WEIGHTS_FILE, "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
-    cfg["domains"] = {k.replace("-", "_"): v for k, v in cfg["domains"].items()}
-    return cfg
-
-
 def process_deterministic(conn, participant_id, repo_path, domains):
     """Run deterministic audit for all domains for one team."""
     for domain in domains:
-        if domain not in DOMAIN_AUDIT_MODULES:
-            continue
         print(f"  [{domain}] Running...", end=" ")
         score = run_domain_audit(conn, participant_id, domain, repo_path)
         if score is None:
@@ -88,7 +75,7 @@ def process_deterministic(conn, participant_id, repo_path, domains):
             print("OK")
 
 
-def process_participant(conn, participant, weights_cfg, deterministic_only=False):
+def process_participant(conn, participant, deterministic_only=False):
     """Process one team's full cycle."""
     tname = participant["team_name"]
     repo_path = participant["repo_path"]
@@ -98,12 +85,11 @@ def process_participant(conn, participant, weights_cfg, deterministic_only=False
     print(f"Processing: {tname} ({repo_path})")
     print(f"{'='*60}")
 
-    domains = list(weights_cfg["domains"].keys())
+    domains = [key for _id, key, _dir in get_all_domains(conn)]
 
     process_deterministic(conn, participant_id, repo_path, domains)
 
     if not deterministic_only:
-        from db import get_domain_scores
         rows = get_domain_scores(conn, participant_id)
         sem_by_domain = {}
         for r in rows:
@@ -142,8 +128,6 @@ def main():
         print(f"Registered '{name}' (id={pid})")
         return
 
-    weights_cfg = _load_weights()
-
     participants = list_participants(conn, args.standard)
     if not participants:
         print("No teams registered. Use --register NAME REPO_PATH METADATA_JSON")
@@ -158,7 +142,7 @@ def main():
     print(f"Processing {len(participants)} team(s) for {args.standard}")
 
     for p in participants:
-        process_participant(conn, p, weights_cfg, args.deterministic_only)
+        process_participant(conn, p, args.deterministic_only)
 
     print(f"\n{'='*60}")
     print("Done. Scores stored in DB.")

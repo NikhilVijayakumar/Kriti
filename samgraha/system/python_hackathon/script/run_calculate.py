@@ -19,7 +19,7 @@ _script = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_script, "common"))
 sys.path.insert(0, os.path.join(_script, "usecase-3-calculate"))
 
-from db import get_conn, get_all_scores_as_dict, list_participants
+from hackathon_schema import get_conn, get_all_scores_as_dict, list_participants
 from statistics import run_z_adjustment
 from leaderboard import _load_weights, build_leaderboard, render_leaderboard_md
 

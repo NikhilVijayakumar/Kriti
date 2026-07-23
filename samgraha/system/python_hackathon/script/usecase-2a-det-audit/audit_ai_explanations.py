@@ -1,8 +1,12 @@
 import json
 import argparse
 import os
+import sys
 import re
 import glob as globmod
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
 
 
 LLM_DEPENDENCIES = (
@@ -21,6 +25,7 @@ def run_ai_explanations_audit(repo_path):
     """
     Checks for AI/LLM integration: dependencies, prompt files, and configuration.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "llm_dependencies_found": [],
         "llm_dependency_count": 0,
@@ -28,7 +33,18 @@ def run_ai_explanations_audit(repo_path):
         "prompt_file_count": 0,
         "ai_config_detected": False,
         "api_key_env_refs": [],
+        "readme_text": "",
     }
+
+    for readme_name in ("README.md", "README.rst", "README.txt", "README"):
+        readme_path = os.path.join(repo_path, readme_name)
+        if os.path.isfile(readme_path):
+            try:
+                with open(readme_path, "r", encoding="utf-8", errors="ignore") as f:
+                    result["readme_text"] = f.read()
+            except OSError:
+                pass
+            break
 
     # 1. Scan dependency files for LLM-related packages
     dep_files = []

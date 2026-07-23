@@ -1,0 +1,471 @@
+# python_hackathon — samgraha new-schema standard manifest.
+#
+# Wraps the pre-existing .samgraha/scripts/ drivers under samgraha's fixed
+# --repo-root/--in/--out capability-script contract. Every deterministic
+# `script:` entry below is either:
+#   - a thin subprocess adapter (wrap_*.py) around an unmodified driver
+#     script — no scoring/business logic changed, only the calling
+#     convention; or
+#   - new glue (init_schema.py, run_domain_evidence.py, fetch_score_context.py,
+#     persist_domain_semantic_score.py, persist_narrative.py) that closes
+#     gaps usecases 2b/4 always had (no scripts/ driver existed for them,
+#     only a verify/ assertion expecting DB rows to exist) — these call
+#     existing logic (common/det_audit.py's run_audit_script,
+#     common/hackathon_schema.py's upsert/get functions) unchanged.
+#
+# db_path is resolved by every wrapper/glue script from --repo-root
+# (<repo_root>/.samgraha/knowledge.db), never hardcoded.
+#
+# Data model: python_hackathon owns its OWN tables (hackathon_teams,
+# hackathon_domain_scores, hackathon_narratives — see custom_tables below and
+# common/hackathon_schema.py) instead of reusing the archived doc-audit
+# tables (documents/standard_audit_runs/semantic_reports) the old db.py used.
+# Every driver script that used to import from db.py's table-backed functions
+# now imports the same-named functions from hackathon_schema.py instead — a
+# one-line import swap per file, no other logic touched. This also fixes a
+# real bug the old semantic_reports.domain NOT NULL constraint had: the
+# competition-wide narrative (team=null, domain=null) could never be stored;
+# hackathon_narratives has both columns nullable.
+#
+# Semantic steps follow samgraha's documented triad
+# (pre-script -> semantic -> post-script = three consecutive steps):
+#   usecase 2b: run_domain_evidence.py (gathers the same evidence a
+#     deterministic run would) -> audit/semantic/document/*.prompt.md
+#     (clean standalone prompt, extracted from the *.yaml rubric — the yaml
+#     itself stays as the machine-readable spec, unregistered) -> post:
+#     persist_domain_semantic_score.py
+#   usecase 4: fetch_score_context.py (reads this team's/all teams' scores)
+#     -> analysis/*.md -> post: persist_narrative.py
+
+name: python_hackathon
+
+scripts:
+  - name: init-schema
+    location: init_schema.py
+    purpose: "create python_hackathon's own tables (hackathon_teams/hackathon_domain_scores/hackathon_narratives) if missing"
+  - name: init-hackathon
+    location: wrap_init.py
+    purpose: "usecase 1 — register/refresh teams, run deterministic audits (wraps usecase-1-init/run_hackathon.py)"
+  - name: det-audit
+    location: wrap_det_audit.py
+    purpose: "usecase 2a — deterministic audit across all domains (wraps run_det_audit.py)"
+  - name: run-domain-evidence
+    location: run_domain_evidence.py
+    purpose: "usecase 2b pre-script — gather one domain's audit evidence for the agent to reason over (input: {team_name, domain})"
+  - name: persist-domain-semantic-score
+    location: persist_domain_semantic_score.py
+    purpose: "usecase 2b post-script — persist the agent's per-domain semantic score (input: {team_name, domain, model, result})"
+  - name: fetch-score-context
+    location: fetch_score_context.py
+    purpose: "usecase 4 pre-script — gather one team's (or all teams', if team_name is null) scores for the agent to write a narrative over (input: {team_name, domain})"
+  - name: persist-narrative
+    location: persist_narrative.py
+    purpose: "usecase 4 post-script — persist the agent's narrative sections (input: {team_name, domain, sections})"
+  - name: calculate
+    location: wrap_calculate.py
+    purpose: "usecase 3 — z-adjust and build the leaderboard (wraps run_calculate.py)"
+  - name: render-markdown
+    location: wrap_render_markdown.py
+    purpose: "usecase 5 — markdown reports + charts (wraps run_render.py)"
+  - name: render-html
+    location: wrap_render_html.py
+    purpose: "usecase 6 — HTML reports (wraps run_html.py)"
+  - name: export-pdf
+    location: wrap_export_pdf.py
+    purpose: "usecase 7 — per-team PDF export (wraps run_pdf.py)"
+
+prompts:
+  - name: semantic-audit-infrastructure
+    location: ../../audit/semantic/document/01-infrastructure.prompt.md
+  - name: semantic-audit-engineering
+    location: ../../audit/semantic/document/02-engineering.prompt.md
+  - name: semantic-audit-testing
+    location: ../../audit/semantic/document/03-testing.prompt.md
+  - name: semantic-audit-documentation
+    location: ../../audit/semantic/document/04-documentation.prompt.md
+  - name: semantic-audit-security
+    location: ../../audit/semantic/document/05-security.prompt.md
+  - name: semantic-audit-mlops
+    location: ../../audit/semantic/document/06-mlops.prompt.md
+  - name: semantic-audit-runtime
+    location: ../../audit/semantic/document/07-runtime.prompt.md
+  - name: semantic-audit-team_workflow
+    location: ../../audit/semantic/document/08-team-workflow.prompt.md
+  - name: semantic-audit-data_quality
+    location: ../../audit/semantic/document/09-data-quality.prompt.md
+  - name: semantic-audit-ai_explanations
+    location: ../../audit/semantic/document/10-ai-explanations.prompt.md
+  - name: narrative-leaderboard
+    location: ../../analysis/00-leaderboard.md
+  - name: narrative-infrastructure
+    location: ../../analysis/01-infrastructure.md
+  - name: narrative-engineering
+    location: ../../analysis/02-engineering.md
+  - name: narrative-testing
+    location: ../../analysis/03-testing.md
+  - name: narrative-documentation
+    location: ../../analysis/04-documentation.md
+  - name: narrative-security
+    location: ../../analysis/05-security.md
+  - name: narrative-mlops
+    location: ../../analysis/06-mlops.md
+  - name: narrative-runtime
+    location: ../../analysis/07-runtime.md
+  - name: narrative-team_workflow
+    location: ../../analysis/08-team-workflow.md
+  - name: narrative-data_quality
+    location: ../../analysis/09-data-quality.md
+  - name: narrative-ai_explanations
+    location: ../../analysis/10-ai-explanations.md
+
+custom_tables:
+  - table_name: hackathon_teams
+    purpose: "one row per registered team (replaces reuse of the archived doc-audit 'documents' table)"
+    owner_script: init-schema
+  - table_name: hackathon_domains
+    purpose: "lookup: the 10 scoring domains, weights, det/sem split — seeded from weights.yaml + calculation/aggregation/domain/*.yaml"
+    owner_script: init-schema
+  - table_name: hackathon_deterministic_scores
+    purpose: "one row per (team, domain) deterministic audit score (replaces reuse of 'standard_audit_runs')"
+    owner_script: init-schema
+  - table_name: hackathon_semantic_runs
+    purpose: "one row per (team, domain, model) semantic evaluation — an ensemble scores the same domain independently per model"
+    owner_script: init-schema
+  - table_name: hackathon_semantic_dimension_scores
+    purpose: "per-dimension score+evidence for a semantic run, normalized out of the agent's result JSON"
+    owner_script: init-schema
+  - table_name: hackathon_semantic_findings
+    purpose: "per-run strengths/weaknesses/recommendations, one row each"
+    owner_script: init-schema
+  - table_name: hackathon_narratives
+    purpose: "one row per (team, domain) narrative-generation run + which model wrote it; team/domain nullable for the competition-wide leaderboard narrative (replaces reuse of 'semantic_reports')"
+    owner_script: init-schema
+  - table_name: hackathon_narrative_sections
+    purpose: "per-narrative {heading, text} sections, normalized out of the agent's sections JSON"
+    owner_script: init-schema
+  - table_name: hackathon_templates
+    purpose: "catalog of markdown/html report templates on disk under templates/reports/**, seeded from the real filesystem"
+    owner_script: init-schema
+  - table_name: hackathon_visualization_types
+    purpose: "catalog of chart kinds render_charts.py can produce and their scope (per-domain/per-team/global)"
+    owner_script: init-schema
+  - table_name: hackathon_visualizations
+    purpose: "one row per chart file actually generated, for backtrace — a report step checks this before re-rendering"
+    owner_script: init-schema
+
+usecases:
+  - name: schema-init
+    description: "create python_hackathon's own tables before anything else writes to them"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Create hackathon_teams / hackathon_domain_scores / hackathon_narratives if missing"
+        script: init-schema
+
+  - name: init
+    description: "usecase 1 — register teams, run initial deterministic pass"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Sync teams.json, run deterministic audits per team"
+        script: init-hackathon
+
+  - name: deterministic-audit
+    description: "usecase 2a — deterministic audit across all 10 domains"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Run every domain's deterministic audit for all teams"
+        script: det-audit
+
+  - name: semantic-audit
+    description: "usecase 2b — per-domain semantic audit, agent-scored. Each domain is a pre-script/semantic/post-script triad: gather evidence, reason over the prompt, persist the result."
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Pre: gather infrastructure evidence. input: {team_name, domain: 'infrastructure'}"
+        script: run-domain-evidence
+      - order: 2
+        kind: semantic
+        description: "Score infrastructure domain using the pre-script's evidence"
+        prompt: semantic-audit-infrastructure
+      - order: 3
+        kind: deterministic
+        description: "Post: persist infrastructure semantic score. input: {team_name, domain: 'infrastructure', model, result}"
+        script: persist-domain-semantic-score
+      - order: 4
+        kind: deterministic
+        description: "Pre: gather engineering evidence. input: {team_name, domain: 'engineering'}"
+        script: run-domain-evidence
+      - order: 5
+        kind: semantic
+        description: "Score engineering domain using the pre-script's evidence"
+        prompt: semantic-audit-engineering
+      - order: 6
+        kind: deterministic
+        description: "Post: persist engineering semantic score. input: {team_name, domain: 'engineering', model, result}"
+        script: persist-domain-semantic-score
+      - order: 7
+        kind: deterministic
+        description: "Pre: gather testing evidence. input: {team_name, domain: 'testing'}"
+        script: run-domain-evidence
+      - order: 8
+        kind: semantic
+        description: "Score testing domain using the pre-script's evidence"
+        prompt: semantic-audit-testing
+      - order: 9
+        kind: deterministic
+        description: "Post: persist testing semantic score. input: {team_name, domain: 'testing', model, result}"
+        script: persist-domain-semantic-score
+      - order: 10
+        kind: deterministic
+        description: "Pre: gather documentation evidence. input: {team_name, domain: 'documentation'}"
+        script: run-domain-evidence
+      - order: 11
+        kind: semantic
+        description: "Score documentation domain using the pre-script's evidence"
+        prompt: semantic-audit-documentation
+      - order: 12
+        kind: deterministic
+        description: "Post: persist documentation semantic score. input: {team_name, domain: 'documentation', model, result}"
+        script: persist-domain-semantic-score
+      - order: 13
+        kind: deterministic
+        description: "Pre: gather security evidence. input: {team_name, domain: 'security'}"
+        script: run-domain-evidence
+      - order: 14
+        kind: semantic
+        description: "Score security domain using the pre-script's evidence"
+        prompt: semantic-audit-security
+      - order: 15
+        kind: deterministic
+        description: "Post: persist security semantic score. input: {team_name, domain: 'security', model, result}"
+        script: persist-domain-semantic-score
+      - order: 16
+        kind: deterministic
+        description: "Pre: gather mlops evidence. input: {team_name, domain: 'mlops'}"
+        script: run-domain-evidence
+      - order: 17
+        kind: semantic
+        description: "Score mlops domain using the pre-script's evidence"
+        prompt: semantic-audit-mlops
+      - order: 18
+        kind: deterministic
+        description: "Post: persist mlops semantic score. input: {team_name, domain: 'mlops', model, result}"
+        script: persist-domain-semantic-score
+      - order: 19
+        kind: deterministic
+        description: "Pre: gather runtime evidence. input: {team_name, domain: 'runtime'}"
+        script: run-domain-evidence
+      - order: 20
+        kind: semantic
+        description: "Score runtime domain using the pre-script's evidence"
+        prompt: semantic-audit-runtime
+      - order: 21
+        kind: deterministic
+        description: "Post: persist runtime semantic score. input: {team_name, domain: 'runtime', model, result}"
+        script: persist-domain-semantic-score
+      - order: 22
+        kind: deterministic
+        description: "Pre: gather team_workflow evidence. input: {team_name, domain: 'team_workflow'}"
+        script: run-domain-evidence
+      - order: 23
+        kind: semantic
+        description: "Score team_workflow domain using the pre-script's evidence"
+        prompt: semantic-audit-team_workflow
+      - order: 24
+        kind: deterministic
+        description: "Post: persist team_workflow semantic score. input: {team_name, domain: 'team_workflow', model, result}"
+        script: persist-domain-semantic-score
+      - order: 25
+        kind: deterministic
+        description: "Pre: gather data_quality evidence. input: {team_name, domain: 'data_quality'}"
+        script: run-domain-evidence
+      - order: 26
+        kind: semantic
+        description: "Score data_quality domain using the pre-script's evidence"
+        prompt: semantic-audit-data_quality
+      - order: 27
+        kind: deterministic
+        description: "Post: persist data_quality semantic score. input: {team_name, domain: 'data_quality', model, result}"
+        script: persist-domain-semantic-score
+      - order: 28
+        kind: deterministic
+        description: "Pre: gather ai_explanations evidence. input: {team_name, domain: 'ai_explanations'}"
+        script: run-domain-evidence
+      - order: 29
+        kind: semantic
+        description: "Score ai_explanations domain using the pre-script's evidence"
+        prompt: semantic-audit-ai_explanations
+      - order: 30
+        kind: deterministic
+        description: "Post: persist ai_explanations semantic score. input: {team_name, domain: 'ai_explanations', model, result}"
+        script: persist-domain-semantic-score
+
+  - name: narrative-analysis
+    description: "usecase 4 — per-domain + competition-wide narrative, agent-written. Each is a pre-script/semantic/post-script triad: gather score context, write the narrative over the prompt, persist the sections."
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Pre: gather all teams' scores for the competition-wide narrative. input: {team_name: null, domain: null}"
+        script: fetch-score-context
+      - order: 2
+        kind: semantic
+        description: "Write competition-wide leaderboard narrative"
+        prompt: narrative-leaderboard
+      - order: 3
+        kind: deterministic
+        description: "Post: persist competition-wide narrative. input: {team_name: null, domain: null, sections}"
+        script: persist-narrative
+      - order: 4
+        kind: deterministic
+        description: "Pre: gather this team's infrastructure scores. input: {team_name, domain: 'infrastructure'}"
+        script: fetch-score-context
+      - order: 5
+        kind: semantic
+        description: "Write infrastructure narrative"
+        prompt: narrative-infrastructure
+      - order: 6
+        kind: deterministic
+        description: "Post: persist infrastructure narrative. input: {team_name, domain: 'infrastructure', sections}"
+        script: persist-narrative
+      - order: 7
+        kind: deterministic
+        description: "Pre: gather this team's engineering scores. input: {team_name, domain: 'engineering'}"
+        script: fetch-score-context
+      - order: 8
+        kind: semantic
+        description: "Write engineering narrative"
+        prompt: narrative-engineering
+      - order: 9
+        kind: deterministic
+        description: "Post: persist engineering narrative. input: {team_name, domain: 'engineering', sections}"
+        script: persist-narrative
+      - order: 10
+        kind: deterministic
+        description: "Pre: gather this team's testing scores. input: {team_name, domain: 'testing'}"
+        script: fetch-score-context
+      - order: 11
+        kind: semantic
+        description: "Write testing narrative"
+        prompt: narrative-testing
+      - order: 12
+        kind: deterministic
+        description: "Post: persist testing narrative. input: {team_name, domain: 'testing', sections}"
+        script: persist-narrative
+      - order: 13
+        kind: deterministic
+        description: "Pre: gather this team's documentation scores. input: {team_name, domain: 'documentation'}"
+        script: fetch-score-context
+      - order: 14
+        kind: semantic
+        description: "Write documentation narrative"
+        prompt: narrative-documentation
+      - order: 15
+        kind: deterministic
+        description: "Post: persist documentation narrative. input: {team_name, domain: 'documentation', sections}"
+        script: persist-narrative
+      - order: 16
+        kind: deterministic
+        description: "Pre: gather this team's security scores. input: {team_name, domain: 'security'}"
+        script: fetch-score-context
+      - order: 17
+        kind: semantic
+        description: "Write security narrative"
+        prompt: narrative-security
+      - order: 18
+        kind: deterministic
+        description: "Post: persist security narrative. input: {team_name, domain: 'security', sections}"
+        script: persist-narrative
+      - order: 19
+        kind: deterministic
+        description: "Pre: gather this team's mlops scores. input: {team_name, domain: 'mlops'}"
+        script: fetch-score-context
+      - order: 20
+        kind: semantic
+        description: "Write mlops narrative"
+        prompt: narrative-mlops
+      - order: 21
+        kind: deterministic
+        description: "Post: persist mlops narrative. input: {team_name, domain: 'mlops', sections}"
+        script: persist-narrative
+      - order: 22
+        kind: deterministic
+        description: "Pre: gather this team's runtime scores. input: {team_name, domain: 'runtime'}"
+        script: fetch-score-context
+      - order: 23
+        kind: semantic
+        description: "Write runtime narrative"
+        prompt: narrative-runtime
+      - order: 24
+        kind: deterministic
+        description: "Post: persist runtime narrative. input: {team_name, domain: 'runtime', sections}"
+        script: persist-narrative
+      - order: 25
+        kind: deterministic
+        description: "Pre: gather this team's team_workflow scores. input: {team_name, domain: 'team_workflow'}"
+        script: fetch-score-context
+      - order: 26
+        kind: semantic
+        description: "Write team_workflow narrative"
+        prompt: narrative-team_workflow
+      - order: 27
+        kind: deterministic
+        description: "Post: persist team_workflow narrative. input: {team_name, domain: 'team_workflow', sections}"
+        script: persist-narrative
+      - order: 28
+        kind: deterministic
+        description: "Pre: gather this team's data_quality scores. input: {team_name, domain: 'data_quality'}"
+        script: fetch-score-context
+      - order: 29
+        kind: semantic
+        description: "Write data_quality narrative"
+        prompt: narrative-data_quality
+      - order: 30
+        kind: deterministic
+        description: "Post: persist data_quality narrative. input: {team_name, domain: 'data_quality', sections}"
+        script: persist-narrative
+      - order: 31
+        kind: deterministic
+        description: "Pre: gather this team's ai_explanations scores. input: {team_name, domain: 'ai_explanations'}"
+        script: fetch-score-context
+      - order: 32
+        kind: semantic
+        description: "Write ai_explanations narrative"
+        prompt: narrative-ai_explanations
+      - order: 33
+        kind: deterministic
+        description: "Post: persist ai_explanations narrative. input: {team_name, domain: 'ai_explanations', sections}"
+        script: persist-narrative
+
+  - name: calculate
+    description: "usecase 3 — z-adjust scores, build leaderboard"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Compute adjusted scores and leaderboard files"
+        script: calculate
+
+  - name: render-markdown
+    description: "usecase 5 — markdown reports + charts"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Render markdown reports and PNG charts"
+        script: render-markdown
+
+  - name: render-html
+    description: "usecase 6 — HTML reports"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Render standalone HTML reports"
+        script: render-html
+
+  - name: export-pdf
+    description: "usecase 7 — per-team PDF export"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Merge HTML reports into per-team PDFs"
+        script: export-pdf

@@ -18,7 +18,7 @@ import sys
 _script = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_script, "common"))
 
-from db import get_conn, list_participants
+from hackathon_schema import get_conn, list_participants
 
 SYSTEM_DIR = os.path.join(_script, "..")
 
@@ -59,7 +59,12 @@ def main():
             sys.exit(1)
 
     reports_dir = os.path.join(SYSTEM_DIR, "reports")
-    html_dir = args.html_dir or os.path.join(reports_dir, "html")
+    
+    if args.output_dir and not args.html_dir:
+        html_dir = os.path.join(os.path.dirname(args.output_dir), "html")
+    else:
+        html_dir = args.html_dir or os.path.join(reports_dir, "html")
+        
     out_dir = args.output_dir or os.path.join(reports_dir, "pdfs")
     os.makedirs(out_dir, exist_ok=True)
 

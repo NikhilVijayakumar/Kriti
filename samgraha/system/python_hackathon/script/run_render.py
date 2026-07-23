@@ -18,7 +18,7 @@ _script = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_script, "common"))
 sys.path.insert(0, os.path.join(_script, "usecase-3-calculate"))
 
-from db import get_conn, get_all_scores_as_dict, list_participants
+from hackathon_schema import get_conn, get_all_scores_as_dict, list_participants, record_visualization
 from statistics import run_z_adjustment
 from leaderboard import _load_weights, build_leaderboard
 from render_reports import render_all, build_chart_spec
@@ -63,7 +63,14 @@ def main():
     chart_spec = build_chart_spec(conn, results, domain_stats,
                                   adjusted_scores, weights_cfg)
     charts_dir = os.path.join(out_dir, "charts")
-    generate_charts(chart_spec, charts_dir)
+    written = generate_charts(chart_spec, charts_dir)
+
+    # Record every chart actually generated, for backtrace — a future run
+    # can check hackathon_schema.get_visualization() before re-rendering.
+    team_ids = {p["team_name"]: p["id"] for p in list_participants(conn, args.standard)}
+    for w in written:
+        team_id = team_ids.get(w["team_name"]) if w["team_name"] else None
+        record_visualization(conn, w["chart_key"], w["file_path"], team_id=team_id, domain_key=w["domain_key"])
 
     print(f"\nDone. Reports -> {out_dir}")
 

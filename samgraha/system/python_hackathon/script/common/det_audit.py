@@ -18,6 +18,11 @@ import yaml
 
 AUDIT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "usecase-2a-det-audit")
 
+# Bootstrap source only — read once by hackathon_schema.seed_domains() into
+# hackathon_domains.audit_module at schema-init time, same status as
+# weights.yaml. run_domain_audit() below reads the DB column at runtime, not
+# this dict — every domain-to-module lookup after schema-init goes through
+# the DB, same as weights/order/display_name.
 DOMAIN_AUDIT_MODULES = {
     "infrastructure": "audit_infrastructure",
     "engineering": "audit_python",
@@ -77,7 +82,7 @@ def run_domain_audit(conn, participant_id, domain, repo_path):
     Evaluates rules, stores score in DB.
     Returns score (0-100) or None on failure.
     """
-    from db import upsert_domain_score
+    from hackathon_schema import upsert_domain_score, get_audit_module
 
     # evaluate_rules lives in usecase-2a-det-audit/, load dynamically
     _spec = importlib.util.spec_from_file_location(
@@ -87,7 +92,9 @@ def run_domain_audit(conn, participant_id, domain, repo_path):
     _spec.loader.exec_module(_mod)
     evaluate_domain = _mod.evaluate_domain
 
-    module_name = DOMAIN_AUDIT_MODULES.get(domain)
+    # audit_module comes from hackathon_domains (seeded from DOMAIN_AUDIT_MODULES
+    # once, at schema-init time) — not read from that in-code dict at runtime.
+    module_name = get_audit_module(conn, domain)
     if not module_name:
         return None
 

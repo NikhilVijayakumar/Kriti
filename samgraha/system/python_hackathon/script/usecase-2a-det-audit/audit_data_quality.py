@@ -1,7 +1,11 @@
 import json
 import argparse
 import os
+import sys
 import re
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
 
 
 DATAHUB_URL_PATTERNS = [
@@ -35,6 +39,7 @@ def run_data_quality_audit(repo_path):
     """
     Checks for data artifacts: data files, data directories, and data-hub URL references.
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "data_files_found": False,
         "data_file_count": 0,
@@ -45,6 +50,7 @@ def run_data_quality_audit(repo_path):
         "datahub_url_count": 0,
         "codebase_split_patterns_found": [],
         "codebase_split_pattern_count": 0,
+        "readme_text": "",
     }
 
     # Check for data directories
@@ -99,6 +105,8 @@ def run_data_quality_audit(repo_path):
                 content = f.read()
         except OSError:
             continue
+
+        result["readme_text"] = content
 
         for pat in DATAHUB_URL_PATTERNS:
             matches = pat.findall(content)

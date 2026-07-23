@@ -17,8 +17,8 @@ import sys
 _script = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_script, "common"))
 
-from db import get_conn, list_participants, get_domain_scores
-from det_audit import run_domain_audit, DOMAIN_AUDIT_MODULES
+from hackathon_schema import get_conn, list_participants, get_domain_scores, get_all_domains
+from det_audit import run_domain_audit
 
 
 def run_team(conn, participant, skip_existing=False):
@@ -26,6 +26,7 @@ def run_team(conn, participant, skip_existing=False):
     tname = participant["team_name"]
     repo_path = participant["repo_path"]
     pid = participant["id"]
+    domain_keys = [key for _id, key, _dir in get_all_domains(conn)]
 
     if not repo_path or not os.path.isdir(repo_path):
         print(f"  SKIP {tname}: repo_path not found ({repo_path})")
@@ -34,14 +35,14 @@ def run_team(conn, participant, skip_existing=False):
     if skip_existing:
         existing = {r["domain"] for r in get_domain_scores(conn, pid)
                     if r["kind"] == "deterministic"}
-        if len(existing) >= len(DOMAIN_AUDIT_MODULES):
-            print(f"  SKIP {tname}: already has {len(existing)}/{len(DOMAIN_AUDIT_MODULES)} deterministic scores")
-            return len(DOMAIN_AUDIT_MODULES), 0
+        if len(existing) >= len(domain_keys):
+            print(f"  SKIP {tname}: already has {len(existing)}/{len(domain_keys)} deterministic scores")
+            return len(domain_keys), 0
 
     print(f"\n  {tname} ({repo_path})")
     passed, failed = 0, 0
 
-    for domain in DOMAIN_AUDIT_MODULES:
+    for domain in domain_keys:
         score = run_domain_audit(conn, pid, domain, repo_path)
         if score is None:
             failed += 1

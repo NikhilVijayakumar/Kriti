@@ -1,123 +1,44 @@
 """
-db.py — SQLite schema and helpers for python_hackathon scoring.
+db.py — SQLite helpers for python_hackathon scoring.
 
-Tables:
-  standard_participants  — who's competing (keyed by team_name)
-  standard_domain_scores — per (team, domain, kind, model) scores
-  standard_narratives    — agent-written narrative sections
+Uses samgraha's knowledge.db instead of a standalone hackathon.db.
+
+Mapping:
+  documents              — one row per team (path=team_name, metadata=JSON)
+  standard_audit_runs    — per (team, domain) deterministic/semantic scores
+  audit_results          — individual findings per team
+  semantic_reports       — narrative sections per (team, domain)
 """
 import sqlite3
 import os
 import json
 from datetime import datetime, timezone
 
-DEFAULT_DB = os.path.join(
-    os.path.dirname(__file__), "..", "..", "hackathon.db"
-)
-_WEIGHTS_FILE = os.path.join(
-    os.path.dirname(__file__), "..", "..", "calculation", "weights.yaml"
-)
+# Default to knowledge.db in .samgraha/
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DB = os.path.join(_SCRIPT_DIR, "..", "..", "knowledge.db")
+_WEIGHTS_FILE = os.path.join(_SCRIPT_DIR, "..", "..", "calculation", "weights.yaml")
+_STANDARD = "python_hackathon"
 
 
 def get_canonical_domains():
-    """Return domain key list from weights.yaml, normalized to underscores.
-    Single source of truth — never hardcode domain names elsewhere."""
+    """Return domain key list from weights.yaml, normalized to underscores."""
     import yaml
     with open(_WEIGHTS_FILE, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     return [k.replace("-", "_") for k in cfg["domains"]]
 
-SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS standard_participants (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    standard            TEXT    NOT NULL,
-    team_name           TEXT    NOT NULL,
-    repo_path           TEXT    NOT NULL,
-    team_leader         TEXT,
-    members_json        TEXT,
-    repo_https          TEXT,
-    repo_ssh            TEXT,
-    team_code           TEXT,
-    metadata_json       TEXT,
-    registered_at       TEXT    NOT NULL,
-    UNIQUE(standard, team_name)
-);
-
-CREATE TABLE IF NOT EXISTS standard_domain_scores (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    participant_id  INTEGER NOT NULL REFERENCES standard_participants(id),
-    domain          TEXT    NOT NULL,
-    kind            TEXT    NOT NULL,
-    model           TEXT    NOT NULL DEFAULT '',
-    score           REAL    NOT NULL,
-    raw_evidence_json TEXT,
-    created_at      TEXT    NOT NULL,
-    UNIQUE(participant_id, domain, kind, model)
-);
-CREATE INDEX IF NOT EXISTS idx_sds_participant_domain
-    ON standard_domain_scores(participant_id, domain);
-
-CREATE TABLE IF NOT EXISTS standard_narratives (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    participant_id  INTEGER REFERENCES standard_participants(id),
-    domain          TEXT,
-    sections_json   TEXT    NOT NULL,
-    created_at      TEXT    NOT NULL
-);
-"""
-
 
 def get_conn(db_path=None):
-    """Open a connection, creating the DB and schema if needed."""
+    """Open a connection to knowledge.db."""
     path = db_path or DEFAULT_DB
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"knowledge.db not found at {path}. Run samgraha init first.")
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
-    conn.executescript(SCHEMA_SQL)
-    # Migrate old schemas: participant_name -> team_name
-    _migrate(conn)
     return conn
-
-
-def _migrate(conn):
-    """Handle schema evolution for existing databases."""
-    cols = {row[1] for row in conn.execute("PRAGMA table_info(standard_participants)")}
-
-    # Old schema had participant_name — migrate to team_name
-    if "participant_name" in cols and "team_name" not in cols:
-        try:
-            conn.execute("ALTER TABLE standard_participants ADD COLUMN team_name TEXT")
-        except sqlite3.OperationalError:
-            pass
-        conn.execute(
-            "UPDATE standard_participants SET team_name=participant_name WHERE team_name IS NULL"
-        )
-        conn.commit()
-    elif "participant_name" in cols and "team_name" in cols:
-        # Both exist — fill any NULL team_names from participant_name
-        conn.execute(
-            "UPDATE standard_participants SET team_name=participant_name WHERE team_name IS NULL"
-        )
-        conn.commit()
-
-    # Drop redundant columns if they exist (SQLite doesn't support DROP COLUMN
-    # before 3.35.0, so we silently ignore).
-    for col in ("presentation_order", "time_slot"):
-        if col in cols:
-            try:
-                conn.execute(f"ALTER TABLE standard_participants DROP COLUMN {col}")
-            except (sqlite3.OperationalError, AttributeError):
-                pass
-
-    # Ensure team_code column exists
-    if "team_code" not in cols:
-        try:
-            conn.execute("ALTER TABLE standard_participants ADD COLUMN team_code TEXT")
-        except sqlite3.OperationalError:
-            pass
-
-    conn.commit()
 
 
 def now_iso():
@@ -125,34 +46,47 @@ def now_iso():
 
 
 # ---------------------------------------------------------------------------
-# Participant helpers
+# Team (document) helpers
 # ---------------------------------------------------------------------------
 
 def register_participant(conn, standard, team_name, repo_path,
                          team_leader=None, members=None,
                          repo_https=None, repo_ssh=None, team_code=None,
                          metadata=None):
-    """Insert or ignore a team. Returns participant id."""
+    """Insert or ignore a team as a document in knowledge.db. Returns document id."""
     cur = conn.execute(
-        "SELECT id FROM standard_participants WHERE standard=? AND team_name=?",
+        "SELECT id FROM documents WHERE standard=? AND path=?",
         (standard, team_name),
     )
     row = cur.fetchone()
     if row:
         return row["id"]
+
+    team_meta = {
+        "repo_path": repo_path,
+        "team_leader": team_leader or "",
+        "members": members or [],
+        "repo_https": repo_https or "",
+        "repo_ssh": repo_ssh or "",
+        "team_code": team_code or "",
+    }
+    if metadata:
+        team_meta.update(metadata)
+
+    ts = now_iso()
     cur = conn.execute(
-        "INSERT INTO standard_participants "
-        "(standard, team_name, repo_path, team_leader, "
-        " members_json, repo_https, repo_ssh, team_code, "
-        " metadata_json, registered_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO documents (path, hash, standard, title, body, metadata, created_at, updated_at, quality) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            standard, team_name, repo_path,
-            team_leader,
-            json.dumps(members) if members else None,
-            repo_https, repo_ssh, team_code,
-            json.dumps(metadata) if metadata else None,
-            now_iso(),
+            team_name,
+            "",  # hash — not applicable for teams
+            standard,
+            team_name,
+            f"Hackathon team: {team_name}",
+            json.dumps(team_meta),
+            ts,
+            ts,
+            "{}",
         ),
     )
     conn.commit()
@@ -160,65 +94,119 @@ def register_participant(conn, standard, team_name, repo_path,
 
 
 def list_participants(conn, standard):
-    """Return all teams for a standard."""
-    return conn.execute(
-        "SELECT id, team_name, repo_path FROM standard_participants WHERE standard=?",
+    """Return all teams for a standard. Returns rows with id, team_name (=path), repo_path."""
+    rows = conn.execute(
+        "SELECT id, path as team_name, metadata FROM documents WHERE standard=?",
         (standard,),
     ).fetchall()
+    result = []
+    for r in rows:
+        meta = json.loads(r["metadata"]) if r["metadata"] else {}
+        result.append({
+            "id": r["id"],
+            "team_name": r["team_name"],
+            "repo_path": meta.get("repo_path", ""),
+        })
+    return result
 
 
-def get_team_profile(conn, participant_id):
-    """Return team metadata dict for reports. All fields nullable except id."""
+def get_team_profile(conn, document_id):
+    """Return team metadata dict for reports."""
     row = conn.execute(
-        "SELECT * FROM standard_participants WHERE id=?", (participant_id,)
+        "SELECT * FROM documents WHERE id=?", (document_id,)
     ).fetchone()
     if not row:
         return None
-    members = json.loads(row["members_json"]) if row["members_json"] else []
+    meta = json.loads(row["metadata"]) if row["metadata"] else {}
+    members = meta.get("members", [])
+    if isinstance(members, str):
+        try:
+            members = json.loads(members)
+        except json.JSONDecodeError:
+            members = [members]
+
+    # Normalize to display strings — members may be {"name","employee_id"} dicts
+    # (from teams.json) or plain strings; templates expect plain text.
+    def _fmt_member(m):
+        if isinstance(m, dict):
+            name = m.get("name", "")
+            emp_id = m.get("employee_id", "")
+            return f"{name} ({emp_id})" if emp_id else name
+        return str(m)
+
+    members = [_fmt_member(m) for m in members]
+
     return {
-        "team_name": row["team_name"],
-        "team_leader": row["team_leader"] or "",
-        "team_code": row["team_code"] or "",
+        "team_name": row["path"],
+        "team_leader": meta.get("team_leader", ""),
+        "team_code": meta.get("team_code", ""),
         "members": members,
-        "repo_https": row["repo_https"] or "",
-        "repo_ssh": row["repo_ssh"] or "",
-        "repo_path": row["repo_path"],
+        "repo_https": meta.get("repo_https", ""),
+        "repo_ssh": meta.get("repo_ssh", ""),
+        "repo_path": meta.get("repo_path", ""),
     }
 
 
 # ---------------------------------------------------------------------------
-# Domain-score helpers
+# Domain-score helpers (standard_audit_runs)
 # ---------------------------------------------------------------------------
 
 def upsert_domain_score(conn, participant_id, domain, kind, model, score, evidence=None):
-    """Insert or update a domain score row (UNIQUE on participant+domain+kind+model)."""
-    evidence_json = json.dumps(evidence) if evidence is not None else None
+    """Insert or update a domain score in standard_audit_runs.
+
+    participant_id is the document_id (team).
+    kind: 'deterministic' or 'semantic'
+    model: '' for deterministic, model name for semantic
+    """
+    report_data = json.loads(evidence) if isinstance(evidence, str) else (evidence or {})
+    report_data["_document_id"] = participant_id
+    report_data["_kind"] = kind
+    report_json = json.dumps(report_data)
     ts = now_iso()
-    cur = conn.execute(
-        "UPDATE standard_domain_scores SET score=?, raw_evidence_json=?, created_at=? "
-        "WHERE participant_id=? AND domain=? AND kind=? AND model=?",
-        (score, evidence_json, ts, participant_id, domain, kind, model),
-    )
-    if cur.rowcount == 0:
+
+    # Use exact match on document_id embedded in report
+    existing = conn.execute(
+        "SELECT id FROM standard_audit_runs "
+        "WHERE standard=? AND pipeline=? AND COALESCE(model, '')=? "
+        "AND json_extract(report, '$._document_id')=?",
+        (_STANDARD, domain, model or '', participant_id),
+    ).fetchone()
+
+    if existing:
         conn.execute(
-            "INSERT INTO standard_domain_scores (participant_id, domain, kind, model, score, raw_evidence_json, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (participant_id, domain, kind, model, score, evidence_json, ts),
+            "UPDATE standard_audit_runs SET score=?, report=?, created_at=? WHERE id=?",
+            (score, report_json, ts, existing["id"]),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO standard_audit_runs (standard, pipeline, model, score, report, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (_STANDARD, domain, model or '', score, report_json, ts),
         )
     conn.commit()
 
 
 def get_domain_scores(conn, participant_id, domain=None):
-    """Return all score rows for a participant, optionally filtered by domain."""
-    if domain:
-        return conn.execute(
-            "SELECT * FROM standard_domain_scores WHERE participant_id=? AND domain=?",
-            (participant_id, domain),
-        ).fetchall()
-    return conn.execute(
-        "SELECT * FROM standard_domain_scores WHERE participant_id=?",
-        (participant_id,),
+    """Return all score rows for a team, optionally filtered by domain."""
+    rows = conn.execute(
+        "SELECT * FROM standard_audit_runs WHERE standard=? "
+        "AND json_extract(report, '$._document_id')=?",
+        (_STANDARD, participant_id),
     ).fetchall()
+    if domain:
+        rows = [r for r in rows if r["pipeline"] == domain]
+    # Reshape to match old API: domain, kind, score, model
+    result = []
+    for r in rows:
+        report = json.loads(r["report"]) if r["report"] else {}
+        result.append({
+            "domain": r["pipeline"],
+            "kind": report.get("_kind", "deterministic"),
+            "score": r["score"],
+            "model": r["model"] or "",
+            "raw_evidence_json": r["report"],
+        })
+    return result
 
 
 def get_all_scores_as_dict(conn, standard, mode="both"):
@@ -226,21 +214,18 @@ def get_all_scores_as_dict(conn, standard, mode="both"):
     Returns aggregated_scores dict shaped for statistics.py:
       {team_name: {domain: {"raw_score": float, "deterministic_score": float,
        "semantic_mean": float, "model_breakdown": {model: score}}}}
-
-    Domains with zero audit data for a team get raw_score=0.0 (z-score
-    population includes everyone, per loop.yaml z_score_population_rule).
-
-    mode: "both" (default) | "det" (zero out semantic) | "sem" (zero out deterministic)
     """
     import yaml
-    agg_dir = os.path.join(os.path.dirname(__file__), "..", "..", "calculation", "aggregation", "domain")
+    import glob as globmod
+    agg_dir = os.path.join(_SCRIPT_DIR, "..", "..", "calculation", "aggregation", "domain")
     all_domains = get_canonical_domains()
 
     participants = list_participants(conn, standard)
     result = {}
     for p in participants:
         tname = p["team_name"]
-        rows = get_domain_scores(conn, p["id"])
+        pid = p["id"]
+        rows = get_domain_scores(conn, pid)
         domains = {}
         for r in rows:
             d = r["domain"]
@@ -254,8 +239,6 @@ def get_all_scores_as_dict(conn, standard, mode="both"):
         team_output = {}
         for d in all_domains:
             if d not in domains:
-                # Zero audit data for this domain — inject 0.0 so
-                # statistics.py includes this team in the z-score population.
                 team_output[d] = {
                     "raw_score": 0.0,
                     "deterministic_score": 0.0,
@@ -269,14 +252,12 @@ def get_all_scores_as_dict(conn, standard, mode="both"):
             sem_scores = list(data["semantic_models"].values())
             sem_mean = sum(sem_scores) / len(sem_scores) if sem_scores else 0.0
 
-            # --mode filter: zero out the excluded kind
             if mode == "det":
                 sem_mean = 0.0
             elif mode == "sem":
                 det = 0.0
 
             det_w, sem_w = 0.60, 0.40
-            import glob as globmod
             matches = globmod.glob(os.path.join(agg_dir, f"*-{d.replace('_', '-')}.yaml"))
             if matches:
                 try:
@@ -311,61 +292,45 @@ def missing_semantic_combos(conn, standard, target_models):
     for p in participants:
         for d in domains:
             for m in target_models:
-                row = conn.execute(
-                    "SELECT id FROM standard_domain_scores "
-                    "WHERE participant_id=? AND domain=? AND kind='semantic' AND model=?",
-                    (p["id"], d, m),
-                ).fetchone()
-                if not row:
+                rows = get_domain_scores(conn, p["id"], domain=d)
+                has_semantic = any(r["kind"] == "semantic" and r["model"] == m for r in rows)
+                if not has_semantic:
                     missing.append((p["team_name"], d, m))
     return missing
 
 
 # ---------------------------------------------------------------------------
-# Narrative helpers
+# Narrative helpers (semantic_reports)
 # ---------------------------------------------------------------------------
 
 def upsert_narrative(conn, participant_id, domain, sections):
-    """
-    Insert or update a narrative. sections is a list of {"heading": ..., "text": ...}.
-    For the competition-wide narrative, participant_id and domain are NULL.
-    """
+    """Insert or update a narrative in semantic_reports."""
     sections_json = json.dumps(sections)
     ts = now_iso()
-    if participant_id is None and domain is None:
-        existing = conn.execute(
-            "SELECT id FROM standard_narratives WHERE participant_id IS NULL AND domain IS NULL"
-        ).fetchone()
-    else:
-        existing = conn.execute(
-            "SELECT id FROM standard_narratives WHERE participant_id=? AND domain=?",
-            (participant_id, domain),
-        ).fetchone()
+    existing = conn.execute(
+        "SELECT id FROM semantic_reports WHERE document_id=? AND domain=?",
+        (participant_id, domain),
+    ).fetchone()
     if existing:
         conn.execute(
-            "UPDATE standard_narratives SET sections_json=?, created_at=? WHERE id=?",
+            "UPDATE semantic_reports SET findings=?, created_at=? WHERE id=?",
             (sections_json, ts, existing["id"]),
         )
     else:
         conn.execute(
-            "INSERT INTO standard_narratives (participant_id, domain, sections_json, created_at) "
-            "VALUES (?, ?, ?, ?)",
-            (participant_id, domain, sections_json, ts),
+            "INSERT INTO semantic_reports (report_uuid, stage, domain, document_id, score, findings, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (f"narrative-{participant_id}-{domain}", "narrative", domain, participant_id, 0, sections_json, ts),
         )
     conn.commit()
 
 
 def get_narrative(conn, participant_id, domain):
-    """Get narrative sections for a (participant, domain) or the competition-wide one."""
-    if participant_id is None and domain is None:
-        row = conn.execute(
-            "SELECT sections_json FROM standard_narratives WHERE participant_id IS NULL AND domain IS NULL"
-        ).fetchone()
-    else:
-        row = conn.execute(
-            "SELECT sections_json FROM standard_narratives WHERE participant_id=? AND domain=?",
-            (participant_id, domain),
-        ).fetchone()
+    """Get narrative sections for a (participant, domain)."""
+    row = conn.execute(
+        "SELECT findings FROM semantic_reports WHERE document_id=? AND domain=?",
+        (participant_id, domain),
+    ).fetchone()
     if row:
-        return json.loads(row["sections_json"])
+        return json.loads(row["findings"])
     return None

@@ -1,7 +1,11 @@
 import json
 import argparse
 import os
+import sys
 import re
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "common"))
+from repo import resolve_code_root
 
 
 def run_documentation_audit(repo_path):
@@ -9,6 +13,7 @@ def run_documentation_audit(repo_path):
     Checks for documentation artifacts: README presence, structure, and link validity.
     External links are treated as unverifiable (offline-only standard).
     """
+    repo_path = resolve_code_root(repo_path)
     result = {
         "readme_present": False,
         "readme_has_installation_section": False,

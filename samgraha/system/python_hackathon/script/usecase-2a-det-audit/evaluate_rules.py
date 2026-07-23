@@ -6,6 +6,7 @@ condition against the audit script's raw output, and computes a 0-100 score
 using calculation/deterministic/document.yaml's weighted_pass_rate formula.
 """
 import os
+import re
 import yaml
 import glob as globmod
 
@@ -24,8 +25,8 @@ RULE_EVIDENCE_MAP = {
 
 
 def _domain_dirname(domain_name):
-    """Map a domain name like 'team-workflow' to its directory prefix like '08-team-workflow'."""
-    matches = globmod.glob(os.path.join(RULES_DIR, f"*-{domain_name}.yaml"))
+    """Map a domain name like 'team-workflow' or 'team_workflow' to its directory prefix like '08-team-workflow'."""
+    matches = globmod.glob(os.path.join(RULES_DIR, f"*-{domain_name.replace('_', '-')}.yaml"))
     if matches:
         return os.path.splitext(os.path.basename(matches[0]))[0]
     return None
@@ -80,8 +81,10 @@ def _evaluate_condition(rule, evidence):
             val = evidence[target]
             return bool(val), f"{target}: {'present' if val else 'missing'}"
         # Fuzzy match: target "uv.lock" may map to evidence key "uv_lock_present"
+        # (evidence keys are always snake_case, so normalize case too --
+        # target "Dockerfile" must still match evidence key "dockerfile_present")
         if target:
-            normalized = target.replace(".", "_").replace("-", "_")
+            normalized = target.replace(".", "_").replace("-", "_").lower()
             for suffix in ("_present", ""):
                 key = normalized + suffix
                 if key in evidence:
@@ -130,6 +133,11 @@ def _evaluate_condition(rule, evidence):
 
     if ev_type == "tool_execution":
         val = evidence.get(target, 0)
+        if val is None:
+            # Tool didn't run (e.g. pylint_score is null when pylint wasn't
+            # configured) -- treat as "no measurement", which fails a
+            # threshold check the same as an explicit 0 would.
+            val = 0
         threshold = ev.get("threshold", 0)
         op = ev.get("op", "gte")
         if op == "gte":
@@ -159,15 +167,23 @@ def _evaluate_condition(rule, evidence):
         return bool(val), f"{target}: {val}"
 
     if ev_type == "regex_match":
+        # Patterns variant: search the rule's own patterns against readme_text
+        # (target is typically "README.md" -- a filename, not an evidence key,
+        # so this must be checked before the "target" branch below).
+        patterns = ev.get("patterns")
+        if patterns and "readme_text" in evidence:
+            text = evidence.get("readme_text") or ""
+            matched = [p for p in patterns if re.search(p, text, re.IGNORECASE)]
+            return len(matched) > 0, f"README patterns matched: {len(matched)}/{len(patterns)} ({', '.join(matched[:3])})"
+        # Legacy patterns variant (data-quality): check datahub_url_count
+        if patterns:
+            count = evidence.get("datahub_url_count", 0)
+            return count > 0, f"data-hub URLs: {count} found"
         # Standard: check list/count in evidence
         if target:
             val = evidence.get(target, [])
             passed = len(val) > 0 if isinstance(val, list) else bool(val)
             return passed, f"{target}: {len(val) if isinstance(val, list) else 'found'} matches"
-        # Patterns variant (data-quality): check datahub_url_count
-        if "patterns" in ev:
-            count = evidence.get("datahub_url_count", 0)
-            return count > 0, f"data-hub URLs: {count} found"
         val = evidence.get(target, [])
         return bool(val), f"{target}: {val}"
 
