@@ -1,9 +1,11 @@
-"""gather_enrichment_context.py — pre-script for enrichment triads
-(literature-review, mathematics, figures). Gathers current draft + analysis
-docs + citation notes.
+"""gather_plagiarism_context.py — pre-script for plagiarism-forensic-audit
+triads. Gathers current draft text.
 
-Expected --in payload: {paper_id: int, domain: str, enrichment_kind: str}
+Expected --in payload: {paper_id: int, domain: str}
 """
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "common"))
 from _adapter import parse_step_args, write_envelope, SCRIPTS_DIR
 import sys
 
@@ -15,25 +17,23 @@ def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload["paper_id"]
     domain = payload["domain"]
-    enrichment_kind = payload["enrichment_kind"]
 
     conn = academic_schema.get_conn(db_path)
     try:
         draft = academic_schema.get_narrative(conn, paper_id, domain)
-        latest_info = academic_schema.get_latest_narrative_info(conn, paper_id, domain)
+        plagiarism = academic_schema.get_plagiarism_finding(conn, paper_id, domain)
     finally:
         conn.close()
 
     context = {
         "current_draft": draft or [],
         "domain": domain,
-        "enrichment_kind": enrichment_kind,
-        "latest_stage": latest_info[0] if latest_info else None,
-        "latest_iteration": latest_info[1] if latest_info else 0,
+        "previous_verdict": plagiarism["verdict"] if plagiarism else None,
+        "previous_run": plagiarism["run_number"] if plagiarism else 0,
     }
 
     write_envelope(out_path, status="ok",
-                   message=f"gathered enrichment context for {domain}/{enrichment_kind}",
+                   message=f"gathered plagiarism context for {domain}",
                    context=context)
 
 

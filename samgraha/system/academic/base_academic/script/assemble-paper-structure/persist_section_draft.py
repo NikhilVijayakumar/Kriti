@@ -4,6 +4,9 @@ triads. Persists section content to academic_narratives + narrative_sections.
 Expected --in payload: {paper_id: int, domain: str, stage: str, iteration: int,
   sections: [{heading: str, text: str}], model: str, validated: bool}
 """
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "common"))
 from _adapter import parse_step_args, write_envelope, SCRIPTS_DIR
 import sys
 
