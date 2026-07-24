@@ -5,23 +5,25 @@ catalogued via standard.yaml's custom_tables.
 Tables (DDL source of truth: schema/*.sql files, read by ensure_schema):
   academic_papers              — one row per registered paper (repo + system)
   academic_repos               — one row per (repo_root, system) classification result
+                                 (2-state: NO_DOCS / HAS_DOCS)
   academic_domains             — lookup: scoring domains for the concrete system
   academic_modules             — one row per detected module in a repo
   academic_module_analysis     — per (module, analysis_kind) section content
   academic_cross_module_analysis — per (repo, analysis_kind) section content
   academic_narratives          — one row per (paper, domain) — stores section drafts
-                                 with stage (generate/deepen/humanize) + iteration
+                                 with stage (generate/humanize) + iteration
   academic_narrative_sections  — per-narrative {heading, text} sections
   academic_semantic_runs       — append-only, one row per (paper, domain, model, run_number)
   academic_semantic_dimension_scores — per-dimension score+evidence for a semantic run
   academic_semantic_findings   — per-run strengths/weaknesses/recommendations
-  academic_plagiarism_findings — per (paper, domain, run, pass_type): PASS/FAIL + flagged spans
+  academic_plagiarism_findings — per (paper, domain, run, pass_type, check_kind): PASS/FAIL + flagged spans
   academic_humanize_passes     — per (paper, domain, iteration): change summary + risk flags
   academic_templates           — catalog of markdown report templates on disk
   academic_score_history       — one row per calculate.py run (trend tracking)
   academic_visualization_types — chart type catalog
   academic_visualizations      — one row per rendered chart image
-  academic_report_history      — one row per assemble-final-document run
+  academic_report_history      — one row per render run (paper or audit track)
+  academic_deterministic_findings — per (paper, domain, run): deterministic audit verdict + findings
 """
 import json
 import os
@@ -95,8 +97,7 @@ def get_paper(conn, paper_id):
 # ---------------------------------------------------------------------------
 
 def upsert_repo_classification(conn, standard, repo_root, classification,
-                                has_implementation=False, has_analysis_docs=False,
-                                module_count=0, metadata=None):
+                                has_implementation=False, module_count=0, metadata=None):
     ts = now_iso()
     existing = conn.execute(
         "SELECT id FROM academic_repos WHERE standard=? AND repo_root=?",
@@ -104,18 +105,18 @@ def upsert_repo_classification(conn, standard, repo_root, classification,
     ).fetchone()
     if existing:
         conn.execute(
-            "UPDATE academic_repos SET classification=?, has_implementation=?, has_analysis_docs=?, "
+            "UPDATE academic_repos SET classification=?, has_implementation=?, "
             "module_count=?, metadata=?, updated_at=? WHERE id=?",
-            (classification, int(has_implementation), int(has_analysis_docs),
+            (classification, int(has_implementation),
              module_count, json.dumps(metadata or {}), ts, existing["id"]),
         )
         conn.commit()
         return existing["id"]
     cur = conn.execute(
         "INSERT INTO academic_repos (standard, repo_root, classification, has_implementation, "
-        "has_analysis_docs, module_count, metadata, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (standard, repo_root, classification, int(has_implementation), int(has_analysis_docs),
+        "module_count, metadata, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (standard, repo_root, classification, int(has_implementation),
          module_count, json.dumps(metadata or {}), ts, ts),
     )
     conn.commit()
@@ -447,17 +448,18 @@ def get_score_history(conn, paper_id, domain_key=None):
 
 
 # ---------------------------------------------------------------------------
-# Plagiarism helpers — supports pass_type for 3-pass flow
+# Plagiarism helpers — supports pass_type + check_kind for 3-pass flow
 # ---------------------------------------------------------------------------
 
 def upsert_plagiarism_finding(conn, paper_id, domain, run_number, verdict,
-                               flagged_spans=None, model="", pass_type="forensic"):
+                               flagged_spans=None, model="", pass_type="forensic",
+                               check_kind="semantic"):
     domain_id = get_domain_id(conn, domain)
     ts = now_iso()
     existing = conn.execute(
         "SELECT id FROM academic_plagiarism_findings "
-        "WHERE paper_id=? AND domain_id=? AND run_number=? AND pass_type=?",
-        (paper_id, domain_id, run_number, pass_type),
+        "WHERE paper_id=? AND domain_id=? AND run_number=? AND pass_type=? AND check_kind=?",
+        (paper_id, domain_id, run_number, pass_type, check_kind),
     ).fetchone()
     if existing:
         conn.execute(
@@ -467,16 +469,32 @@ def upsert_plagiarism_finding(conn, paper_id, domain, run_number, verdict,
     else:
         conn.execute(
             "INSERT INTO academic_plagiarism_findings "
-            "(paper_id, domain_id, run_number, pass_type, verdict, flagged_spans, model, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (paper_id, domain_id, run_number, pass_type, verdict,
+            "(paper_id, domain_id, run_number, pass_type, check_kind, verdict, flagged_spans, model, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (paper_id, domain_id, run_number, pass_type, check_kind, verdict,
              json.dumps(flagged_spans or []), model, ts),
         )
     conn.commit()
 
 
-def get_plagiarism_finding(conn, paper_id, domain, run_number=None, pass_type="forensic"):
+def get_plagiarism_finding(conn, paper_id, domain, run_number=None, pass_type="forensic",
+                           check_kind=None):
     domain_id = get_domain_id(conn, domain)
+    if check_kind:
+        if run_number:
+            row = conn.execute(
+                "SELECT * FROM academic_plagiarism_findings "
+                "WHERE paper_id=? AND domain_id=? AND run_number=? AND pass_type=? AND check_kind=?",
+                (paper_id, domain_id, run_number, pass_type, check_kind),
+            ).fetchone()
+            return dict(row) if row else None
+        row = conn.execute(
+            "SELECT * FROM academic_plagiarism_findings "
+            "WHERE paper_id=? AND domain_id=? AND pass_type=? AND check_kind=? "
+            "ORDER BY run_number DESC LIMIT 1",
+            (paper_id, domain_id, pass_type, check_kind),
+        ).fetchone()
+        return dict(row) if row else None
     if run_number:
         row = conn.execute(
             "SELECT * FROM academic_plagiarism_findings "
@@ -491,6 +509,64 @@ def get_plagiarism_finding(conn, paper_id, domain, run_number=None, pass_type="f
         (paper_id, domain_id, pass_type),
     ).fetchone()
     return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Deterministic findings helpers — append-only, one row per (paper, domain, run)
+# ---------------------------------------------------------------------------
+
+def record_deterministic_findings(conn, paper_id, domain, verdict, findings=None):
+    """Append a deterministic audit result. Never updates existing rows."""
+    domain_id = get_domain_id(conn, domain)
+    if domain_id is None:
+        raise ValueError(f"unknown domain '{domain}' — not in academic_domains")
+    ts = now_iso()
+    max_run = conn.execute(
+        "SELECT COALESCE(MAX(run_number), 0) FROM academic_deterministic_findings "
+        "WHERE paper_id=? AND domain_id=?",
+        (paper_id, domain_id),
+    ).fetchone()[0]
+    cur = conn.execute(
+        "INSERT INTO academic_deterministic_findings "
+        "(paper_id, domain_id, run_number, verdict, findings, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (paper_id, domain_id, max_run + 1, verdict,
+         json.dumps(findings or []), ts),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def get_latest_deterministic_findings(conn, paper_id, domain):
+    """Get the most recent deterministic audit for a (paper, domain)."""
+    domain_id = get_domain_id(conn, domain)
+    if domain_id is None:
+        return None
+    row = conn.execute(
+        "SELECT * FROM academic_deterministic_findings "
+        "WHERE paper_id=? AND domain_id=? "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def get_deterministic_findings_history(conn, paper_id, domain=None):
+    """Return deterministic findings history rows, optionally filtered by domain."""
+    if domain:
+        domain_id = get_domain_id(conn, domain)
+        rows = conn.execute(
+            "SELECT * FROM academic_deterministic_findings "
+            "WHERE paper_id=? AND domain_id=? ORDER BY run_number",
+            (paper_id, domain_id),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM academic_deterministic_findings "
+            "WHERE paper_id=? ORDER BY run_number",
+            (paper_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 # ---------------------------------------------------------------------------
@@ -581,45 +657,49 @@ def get_visualization(conn, chart_key, paper_id=None, domain_key=None, content_h
 
 
 # ---------------------------------------------------------------------------
-# Report history helpers
+# Report history helpers — supports report_kind for dual-track rendering
 # ---------------------------------------------------------------------------
 
-def record_report(conn, paper_id, format, file_path, final_score=None, score_band=None):
-    """Record a new report, setting prior is_latest=0 for same paper+format."""
+def record_report(conn, paper_id, format, file_path, final_score=None,
+                  score_band=None, report_kind="paper"):
+    """Record a new report, setting prior is_latest=0 for same paper+report_kind+format."""
     ts = now_iso()
     conn.execute(
         "UPDATE academic_report_history SET is_latest=0 "
-        "WHERE paper_id=? AND format=? AND is_latest=1",
-        (paper_id, format),
+        "WHERE paper_id=? AND report_kind=? AND format=? AND is_latest=1",
+        (paper_id, report_kind, format),
     )
     cur = conn.execute(
-        "INSERT INTO academic_report_history (paper_id, format, final_score, score_band, file_path, is_latest, created_at) "
-        "VALUES (?, ?, ?, ?, ?, 1, ?)",
-        (paper_id, format, final_score, score_band, file_path, ts),
+        "INSERT INTO academic_report_history (paper_id, report_kind, format, final_score, score_band, file_path, is_latest, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
+        (paper_id, report_kind, format, final_score, score_band, file_path, ts),
     )
     conn.commit()
     return cur.lastrowid
 
 
-def get_latest_report(conn, paper_id, format):
+def get_latest_report(conn, paper_id, format, report_kind="paper"):
     row = conn.execute(
-        "SELECT * FROM academic_report_history WHERE paper_id=? AND format=? AND is_latest=1",
-        (paper_id, format),
+        "SELECT * FROM academic_report_history WHERE paper_id=? AND format=? AND report_kind=? AND is_latest=1",
+        (paper_id, format, report_kind),
     ).fetchone()
     return dict(row) if row else None
 
 
-def list_report_history(conn, paper_id, format=None):
+def list_report_history(conn, paper_id, format=None, report_kind=None):
+    conditions = ["paper_id=?"]
+    params = [paper_id]
     if format:
-        rows = conn.execute(
-            "SELECT * FROM academic_report_history WHERE paper_id=? AND format=? ORDER BY created_at DESC",
-            (paper_id, format),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM academic_report_history WHERE paper_id=? ORDER BY created_at DESC",
-            (paper_id,),
-        ).fetchall()
+        conditions.append("format=?")
+        params.append(format)
+    if report_kind:
+        conditions.append("report_kind=?")
+        params.append(report_kind)
+    where = " AND ".join(conditions)
+    rows = conn.execute(
+        f"SELECT * FROM academic_report_history WHERE {where} ORDER BY created_at DESC",
+        params,
+    ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -628,29 +708,28 @@ def list_report_history(conn, paper_id, format=None):
 # ---------------------------------------------------------------------------
 
 def seed_templates(conn, system_dir):
-    """Scan templates/ for known template kinds and catalog them."""
-    templates_dir = os.path.join(system_dir, "templates")
-    if not os.path.isdir(templates_dir):
-        return
-
-    template_specs = [
-        ("generation", "document", "templates/generation/document"),
-        ("generation", "module", "templates/generation/analysis/module"),
-        ("generation", "cross_module", "templates/generation/analysis/cross_module"),
-        ("generation", "enrichment", "templates/generation/enrichment"),
-        ("generation", "humanizer", "templates/generation"),
-        ("audit", "document", "templates/audit"),
-        ("audit", "plagiarism", "templates/audit/plagiarism"),
+    """Scan prompt/ (dispatched semantic prompt content) and templates/
+    (scaffold manifests/output templates a script reads directly) and
+    catalog both. scope = the immediate subdirectory name relative to
+    each root (a usecase folder under prompt/, or whatever's left under
+    templates/) — directory-driven, not a hand-maintained list, so a new
+    usecase folder is picked up without touching this function."""
+    roots = [
+        ("prompt", os.path.join(system_dir, "prompt")),
+        ("scaffold", os.path.join(system_dir, "templates")),
     ]
 
-    for kind, scope, rel_dir in template_specs:
-        abs_dir = os.path.join(system_dir, rel_dir)
-        if not os.path.isdir(abs_dir):
+    for kind, root_dir in roots:
+        if not os.path.isdir(root_dir):
             continue
-        for fname in os.listdir(abs_dir):
-            if fname.endswith((".md", ".yaml")):
+        for dirpath, _dirnames, filenames in os.walk(root_dir):
+            rel = os.path.relpath(dirpath, root_dir)
+            scope = "root" if rel == "." else rel.replace(os.sep, "/")
+            for fname in filenames:
+                if not fname.endswith((".md", ".yaml", ".html")):
+                    continue
                 name = fname.rsplit(".", 1)[0]
-                file_path = os.path.join(abs_dir, fname)
+                file_path = os.path.join(dirpath, fname)
                 existing = conn.execute(
                     "SELECT id FROM academic_templates WHERE template_kind=? AND scope=? AND name=?",
                     (kind, scope, name),

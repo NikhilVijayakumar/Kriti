@@ -1,13 +1,13 @@
--- One row per assemble-final-document.py run.
--- Tracks report generation history with is_latest flag.
--- Every new run sets prior is_latest=1 rows (same paper+format) to 0,
--- then inserts the new row with is_latest=1.
--- Because all data lives in the DB, regenerating any past report is just
--- re-running assemble-final-document.py against the same paper_id.
+-- One row per render run (paper track or audit track).
+-- Tracks report generation history with is_latest flag per track.
+-- report_kind distinguishes paper renders from audit-report renders,
+-- so both tracks can produce format='html' for the same paper without
+-- collision. "Latest" is scoped per (paper, report_kind, format).
 
 CREATE TABLE IF NOT EXISTS academic_report_history (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     paper_id      INTEGER NOT NULL REFERENCES academic_papers(id) ON DELETE CASCADE,
+    report_kind   TEXT    NOT NULL DEFAULT 'paper' CHECK (report_kind IN ('paper','audit')),
     format        TEXT    NOT NULL CHECK (format IN ('markdown','html','pdf','docx')),
     final_score   REAL,
     score_band    TEXT,
@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS academic_report_history (
     created_at    TEXT    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_report_history_lookup
-    ON academic_report_history(paper_id, format, is_latest);
+    ON academic_report_history(paper_id, report_kind, format, is_latest);

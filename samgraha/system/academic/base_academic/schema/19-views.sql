@@ -37,13 +37,25 @@ FROM academic_v_domain_means dm
 JOIN academic_domains d ON d.id = dm.domain_id
 GROUP BY dm.paper_id;
 
--- Latest report per (paper, format)
+-- Latest report per (paper, report_kind, format)
 CREATE VIEW IF NOT EXISTS academic_v_latest_report AS
 SELECT r.*
 FROM academic_report_history r
 INNER JOIN (
-    SELECT paper_id, format, MAX(id) AS max_id
+    SELECT paper_id, report_kind, format, MAX(id) AS max_id
     FROM academic_report_history
     WHERE is_latest = 1
-    GROUP BY paper_id, format
+    GROUP BY paper_id, report_kind, format
 ) latest ON r.id = latest.max_id;
+
+-- Latest deterministic audit verdict per (paper, domain)
+CREATE VIEW IF NOT EXISTS academic_v_latest_deterministic AS
+SELECT df.*
+FROM academic_deterministic_findings df
+INNER JOIN (
+    SELECT paper_id, domain_id, MAX(run_number) AS max_run
+    FROM academic_deterministic_findings
+    GROUP BY paper_id, domain_id
+) latest ON df.paper_id = latest.paper_id
+        AND df.domain_id = latest.domain_id
+        AND df.run_number = latest.max_run;

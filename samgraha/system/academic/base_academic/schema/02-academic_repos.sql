@@ -1,25 +1,22 @@
 -- One row per (repo_root, standard) classification result.
--- classify-repo writes this; the 4-state classification determines which
--- entry usecase the orchestrator dispatches to.
+-- classify-repo writes this; the 2-state classification determines whether
+-- the pipeline proceeds or refuses.
 --
--- CHECK constraint uses the 4-state model:
---   NO_DOCS_NO_IMPL   — refuse: nothing to draft from
---   DOCS_ONLY         — draft-from-docs-only (unvalidated)
---   IMPL_NO_ANALYSIS  — generate-analysis-docs first, then fall through
---   IMPL_WITH_ANALYSIS — generate-paper-draft directly
+-- CHECK constraint uses the 2-state model:
+--   NO_DOCS  — refuse: repo has no author-supplied documentation
+--   HAS_DOCS — proceed: repo has documentation, pipeline runs
 --
--- has_implementation/has_analysis_docs are redundant with the classification
--- value but kept for fast query without string matching.
+-- has_implementation is kept as metadata (useful for claim grounding later)
+-- but no longer drives classification branching.
 
 CREATE TABLE IF NOT EXISTS academic_repos (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     standard      TEXT    NOT NULL,
     repo_root     TEXT    NOT NULL,
     classification TEXT   NOT NULL CHECK (classification IN (
-        'NO_DOCS_NO_IMPL', 'DOCS_ONLY', 'IMPL_NO_ANALYSIS', 'IMPL_WITH_ANALYSIS'
+        'NO_DOCS', 'HAS_DOCS'
     )),
     has_implementation INTEGER NOT NULL DEFAULT 0,
-    has_analysis_docs  INTEGER NOT NULL DEFAULT 0,
     module_count  INTEGER NOT NULL DEFAULT 0,
     metadata      TEXT    NOT NULL DEFAULT '{}',
     created_at    TEXT    NOT NULL,
