@@ -343,26 +343,34 @@ def get_latest_narrative_info(conn, paper_id, domain):
 # Semantic score helpers — APPEND-ONLY (no UPDATE, no DELETE)
 # ---------------------------------------------------------------------------
 
-def upsert_semantic_score(conn, paper_id, domain, model, score, result=None):
+def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
+                          scope="section", computed_against=None):
     """Append a new semantic run.  Never updates or deletes existing rows.
-    run_number auto-increments per (paper, domain, model)."""
-    domain_id = get_domain_id(conn, domain)
-    if domain_id is None:
-        raise ValueError(f"unknown domain '{domain}' — not in academic_domains")
+    run_number auto-increments per (paper, domain, scope, model).
+    scope='cross-section' or 'document' → domain must be None.
+    computed_against is a dict of {domain_key: iteration} snapshots for
+    cross-section/document runs, so staleness can be detected when humanize
+    changes a domain draft."""
+    domain_id = None
+    if scope == "section":
+        domain_id = get_domain_id(conn, domain)
+        if domain_id is None:
+            raise ValueError(f"unknown domain '{domain}' — not in academic_domains")
     ts = now_iso()
     result = result or {}
     reasoning = result.get("reasoning", "")
 
     max_run = conn.execute(
         "SELECT COALESCE(MAX(run_number), 0) FROM academic_semantic_runs "
-        "WHERE paper_id=? AND domain_id=? AND model=?",
-        (paper_id, domain_id, model or ""),
+        "WHERE paper_id=? AND domain_id IS ? AND scope=? AND model=?",
+        (paper_id, domain_id, scope, model or ""),
     ).fetchone()[0]
     cur = conn.execute(
         "INSERT INTO academic_semantic_runs "
-        "(standard, paper_id, domain_id, model, run_number, overall_score, reasoning, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (_STANDARD, paper_id, domain_id, model or "", max_run + 1, score, reasoning, ts),
+        "(standard, paper_id, domain_id, scope, model, run_number, overall_score, reasoning, computed_against, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (_STANDARD, paper_id, domain_id, scope, model or "", max_run + 1, score, reasoning,
+         json.dumps(computed_against or {}), ts),
     )
     run_id = cur.lastrowid
 
@@ -383,36 +391,324 @@ def upsert_semantic_score(conn, paper_id, domain, model, score, result=None):
     conn.commit()
 
 
-def get_domain_scores(conn, paper_id, domain=None):
+def get_domain_scores(conn, paper_id, domain=None, scope="section"):
     domain_filter = "AND d.key=?" if domain else ""
     params = (paper_id, domain) if domain else (paper_id,)
     rows = conn.execute(
         f"SELECT d.key AS domain, s.model, s.overall_score, s.reasoning "
         f"FROM academic_semantic_runs s JOIN academic_domains d ON d.id=s.domain_id "
-        f"WHERE s.paper_id=? {domain_filter}",
-        params,
+        f"WHERE s.paper_id=? AND s.scope=? {domain_filter}",
+        (paper_id, scope) + params,
     ).fetchall()
     return [dict(r) for r in rows]
 
 
-def get_latest_semantic_score(conn, paper_id, domain, model=""):
-    """Get the most recent semantic run for a (paper, domain, model)."""
-    domain_id = get_domain_id(conn, domain)
-    if model:
-        row = conn.execute(
-            "SELECT * FROM academic_semantic_runs "
-            "WHERE paper_id=? AND domain_id=? AND model=? "
-            "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, domain_id, model),
-        ).fetchone()
+def get_latest_semantic_score(conn, paper_id, domain, model="", scope="section"):
+    """Get the most recent semantic run for a (paper, domain, model, scope)."""
+    if scope == "section":
+        domain_id = get_domain_id(conn, domain)
+        where = "WHERE paper_id=? AND domain_id=? AND scope=?"
+        params = (paper_id, domain_id, scope)
     else:
-        row = conn.execute(
-            "SELECT * FROM academic_semantic_runs "
-            "WHERE paper_id=? AND domain_id=? "
-            "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, domain_id),
-        ).fetchone()
+        where = "WHERE paper_id=? AND domain_id IS NULL AND scope=?"
+        params = (paper_id, scope)
+    if model:
+        where += " AND model=?"
+        params += (model,)
+    row = conn.execute(
+        f"SELECT * FROM academic_semantic_runs {where} "
+        "ORDER BY run_number DESC LIMIT 1",
+        params,
+    ).fetchone()
     return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Usecase dependency / completion predicates
+# ---------------------------------------------------------------------------
+
+# Registry: usecase_name → (description, predicate_fn)
+# predicate_fn(conn, paper_id) → (complete: bool, detail: list[str])
+_USECASE_PREDICATES = {}
+
+
+def _register_usecase(name, description):
+    """Decorator to register a usecase completion predicate."""
+    def decorator(fn):
+        _USECASE_PREDICATES[name] = (description, fn)
+        return fn
+    return decorator
+
+
+def usecase_status(conn, paper_id, usecase_name):
+    """Returns (complete: bool, detail: list[str]) for a usecase's
+    completion criteria. Same predicate backs both the CLI verify script
+    and the runtime dependency gate."""
+    if usecase_name not in _USECASE_PREDICATES:
+        return False, [f"unknown usecase '{usecase_name}'"]
+    _, fn = _USECASE_PREDICATES[usecase_name]
+    return fn(conn, paper_id)
+
+
+@_register_usecase("schema-init", "20 academic_* tables exist")
+def _uc_schema_init(conn, paper_id):
+    tables = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' "
+        "AND name LIKE 'academic_%'"
+    ).fetchall()
+    names = {r[0] for r in tables}
+    required = {
+        "academic_papers", "academic_repos", "academic_domains",
+        "academic_modules", "academic_module_analysis",
+        "academic_cross_module_analysis", "academic_narratives",
+        "academic_narrative_sections", "academic_semantic_runs",
+        "academic_semantic_dimension_scores", "academic_semantic_findings",
+        "academic_plagiarism_findings", "academic_humanize_passes",
+        "academic_templates", "academic_score_history",
+        "academic_deterministic_findings",
+        "academic_visualization_types", "academic_visualizations",
+        "academic_report_history",
+    }
+    missing = required - names
+    if missing:
+        return False, [f"missing tables: {', '.join(sorted(missing))}"]
+    return True, ["all tables present"]
+
+
+@_register_usecase("classify-repo", "academic_repos has HAS_DOCS classification")
+def _uc_classify_repo(conn, paper_id):
+    row = conn.execute(
+        "SELECT r.classification FROM academic_repos r "
+        "JOIN academic_papers p ON p.standard=r.standard AND p.repo_root=r.repo_root "
+        "WHERE p.id=?",
+        (paper_id,),
+    ).fetchone()
+    if not row:
+        return False, ["no classification row"]
+    if row["classification"] != "HAS_DOCS":
+        return False, [f"classification={row['classification']}"]
+    return True, [f"classification={row['classification']}"]
+
+
+@_register_usecase("novelty-analysis", "at least 1 cross-module novelty analysis exists")
+def _uc_novelty(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_cross_module_analysis "
+        "WHERE paper_id=? AND analysis_kind='novelty'",
+        (paper_id,),
+    ).fetchone()
+    count = row[0]
+    if count < 1:
+        return False, [f"novelty analyses: {count}"]
+    return True, [f"novelty analyses: {count}"]
+
+
+@_register_usecase("gap-analysis", "at least 1 cross-module gap analysis exists")
+def _uc_gaps(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_cross_module_analysis "
+        "WHERE paper_id=? AND analysis_kind='gaps'",
+        (paper_id,),
+    ).fetchone()
+    count = row[0]
+    if count < 1:
+        return False, [f"gap analyses: {count}"]
+    return True, [f"gap analyses: {count}"]
+
+
+@_register_usecase("mathematics-and-diagrams", "at least 1 math/architecture analysis exists")
+def _uc_math(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_cross_module_analysis "
+        "WHERE paper_id=? AND analysis_kind IN ('mathematics','architecture')",
+        (paper_id,),
+    ).fetchone()
+    count = row[0]
+    if count < 1:
+        return False, [f"math/arch analyses: {count}"]
+    return True, [f"math/arch analyses: {count}"]
+
+
+@_register_usecase("assemble-paper-structure",
+                    "every structural domain has an academic_narratives row")
+def _uc_assemble(conn, paper_id):
+    domains = conn.execute(
+        "SELECT key FROM academic_domains "
+        "ORDER BY sort_order"
+    ).fetchall()
+    missing = []
+    for (dk,) in domains:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_narratives "
+            "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains WHERE key=?)",
+            (paper_id, dk),
+        ).fetchone()
+        if row[0] < 1:
+            missing.append(dk)
+    if missing:
+        return False, [f"missing narratives: {', '.join(missing)}"]
+    return True, [f"all {len(domains)} domains have narratives"]
+
+
+@_register_usecase("deterministic-audit",
+                    "every domain has a PASS deterministic verdict")
+def _uc_det_audit(conn, paper_id):
+    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
+    failed = []
+    for (dk,) in domains:
+        row = conn.execute(
+            "SELECT verdict FROM academic_deterministic_findings "
+            "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains WHERE key=?) "
+            "ORDER BY run_number DESC LIMIT 1",
+            (paper_id, dk),
+        ).fetchone()
+        if not row or row["verdict"] != "PASS":
+            failed.append(dk)
+    if failed:
+        return False, [f"non-PASS domains: {', '.join(failed)}"]
+    return True, [f"all {len(domains)} domains PASS"]
+
+
+@_register_usecase("semantic-audit",
+                    "every domain has >= 1 semantic run with scope='section'")
+def _uc_sem_audit(conn, paper_id):
+    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
+    missing = []
+    for (dk,) in domains:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_semantic_runs "
+            "WHERE paper_id=? AND scope='section' "
+            "AND domain_id=(SELECT id FROM academic_domains WHERE key=?)",
+            (paper_id, dk),
+        ).fetchone()
+        if row[0] < 1:
+            missing.append(dk)
+    if missing:
+        return False, [f"unscored domains: {', '.join(missing)}"]
+    return True, [f"all {len(domains)} domains scored"]
+
+
+@_register_usecase("plagiarism-forensic-audit",
+                    "every domain has a forensic plagiarism verdict")
+def _uc_plagiarism(conn, paper_id):
+    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
+    missing = []
+    for (dk,) in domains:
+        row = conn.execute(
+            "SELECT verdict FROM academic_plagiarism_findings "
+            "WHERE paper_id=? AND pass_type='forensic' "
+            "AND domain_id=(SELECT id FROM academic_domains WHERE key=?) "
+            "ORDER BY run_number DESC LIMIT 1",
+            (paper_id, dk),
+        ).fetchone()
+        if not row:
+            missing.append(dk)
+    if missing:
+        return False, [f"unaudited domains: {', '.join(missing)}"]
+    return True, [f"all {len(domains)} domains audited"]
+
+
+@_register_usecase("humanize",
+                    "all humanize-flagged domains have >= 1 humanize pass")
+def _uc_humanize(conn, paper_id):
+    flagged = conn.execute(
+        "SELECT DISTINCT domain_id FROM academic_plagiarism_findings "
+        "WHERE paper_id=? AND verdict='FAIL' AND pass_type='forensic'",
+        (paper_id,),
+    ).fetchall()
+    unhumanized = []
+    for (did,) in flagged:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_humanize_passes "
+            "WHERE paper_id=? AND domain_id=?",
+            (paper_id, did),
+        ).fetchone()
+        if row[0] < 1:
+            dk = conn.execute(
+                "SELECT key FROM academic_domains WHERE id=?", (did,)
+            ).fetchone()
+            unhumanized.append(dk["key"] if dk else f"id={did}")
+    if unhumanized:
+        return False, [f"unhumanized: {', '.join(unhumanized)}"]
+    return True, [f"all flagged domains humanized"]
+
+
+@_register_usecase("cross-section-semantic-audit",
+                    ">= 1 run with scope='cross-section'")
+def _uc_cross_section(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_semantic_runs "
+        "WHERE paper_id=? AND scope='cross-section'",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no cross-section runs"]
+    return True, [f"cross-section runs: {row[0]}"]
+
+
+@_register_usecase("document-semantic-audit",
+                    ">= 1 run with scope='document'")
+def _uc_document(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_semantic_runs "
+        "WHERE paper_id=? AND scope='document'",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no document runs"]
+    return True, [f"document runs: {row[0]}"]
+
+
+@_register_usecase("calculate",
+                    "academic_score_history has a whole-paper row")
+def _uc_calculate(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_score_history "
+        "WHERE paper_id=? AND domain_id IS NULL",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no whole-paper score row"]
+    return True, [f"whole-paper score rows: {row[0]}"]
+
+
+@_register_usecase("render-charts",
+                    ">= 1 visualization exists for this paper")
+def _uc_render_charts(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_visualizations "
+        "WHERE paper_id=?",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no visualizations"]
+    return True, [f"visualizations: {row[0]}"]
+
+
+@_register_usecase("render-audit-report",
+                    ">= 1 report_history row with report_kind like 'audit-%'")
+def _uc_render_audit(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_report_history "
+        "WHERE paper_id=? AND report_kind LIKE 'audit-%'",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no audit report rows"]
+    return True, [f"audit report rows: {row[0]}"]
+
+
+@_register_usecase("render-paper",
+                    ">= 1 report_history row with report_kind='paper'")
+def _uc_render_paper(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_report_history "
+        "WHERE paper_id=? AND report_kind='paper'",
+        (paper_id,),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no paper report rows"]
+    return True, [f"paper report rows: {row[0]}"]
 
 
 # ---------------------------------------------------------------------------
