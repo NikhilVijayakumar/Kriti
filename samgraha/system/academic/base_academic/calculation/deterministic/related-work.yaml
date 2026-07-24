@@ -1,0 +1,20 @@
+id: related-work
+domain: related-work
+checks:
+  - id: rw-001
+    name: min_citation_count
+    rule: min_citation_count
+    severity: warning
+    config: { min: 5 }
+    description: "Minimum citation count met"
+  - id: rw-002
+    name: has_subsections
+    rule: regex_match
+    severity: warning
+    config: { pattern: "^##\\s" }
+    description: "Taxonomy structure (subsections) present"
+  - id: rw-003
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

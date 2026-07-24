@@ -1,0 +1,26 @@
+id: experimental-setup
+domain: experimental-setup
+checks:
+  - id: es-001
+    name: hardware_specified
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:GPU|CPU|RAM|hardware|server|machine)" }
+    description: "Hardware specification present"
+  - id: es-002
+    name: software_versions
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:version|v\\d+\\.\\d+|\\d+\\.\\d+)" }
+    description: "Software versions listed"
+  - id: es-003
+    name: dataset_described
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:dataset|corpus|data\\s+source|preprocessing)" }
+    description: "Dataset source and preprocessing described"
+  - id: es-004
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

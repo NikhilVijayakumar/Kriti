@@ -1,0 +1,24 @@
+id: conclusion
+domain: conclusion
+checks:
+  - id: co-001
+    name: no_citations
+    rule: no_citations
+    severity: warning
+    description: "No citation markers in conclusion"
+  - id: co-002
+    name: no_new_results
+    rule: no_new_results
+    severity: critical
+    description: "No numeric results not already in results"
+  - id: co-003
+    name: length_proportion
+    rule: length_proportion
+    severity: warning
+    config: { compare_to: introduction, max_ratio: 1.5 }
+    description: "Conclusion length proportionate to introduction"
+  - id: co-004
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

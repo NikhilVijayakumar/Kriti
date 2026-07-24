@@ -1,0 +1,32 @@
+id: results
+domain: results
+checks:
+  - id: re-001
+    name: metrics_reported
+    rule: regex_match
+    severity: critical
+    config: { pattern: "(?i)(?:accuracy|precision|recall|F1|RMSE|MAE|AUC|latency|throughput)" }
+    description: "Standard metrics reported"
+  - id: re-002
+    name: significance_test
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:p-value|confidence interval|t-test|wilcoxon|mcnemar|significance)" }
+    description: "Statistical significance test named"
+  - id: re-003
+    name: numbers_match_abstract
+    rule: cross_reference_numbers
+    severity: critical
+    config: { other_domain: abstract }
+    description: "Numbers in results match abstract"
+  - id: re-004
+    name: tables_figures_captioned
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:Table \\d|Figure \\d|Fig\\. \\d)" }
+    description: "Tables/figures referenced from prose"
+  - id: re-005
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

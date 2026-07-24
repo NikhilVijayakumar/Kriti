@@ -1,0 +1,29 @@
+id: methodology
+domain: methodology
+checks:
+  - id: me-001
+    name: pseudocode_present
+    rule: contains_pseudocode
+    severity: warning
+    description: "Pseudocode or algorithm block present"
+  - id: me-002
+    name: diagram_present
+    rule: contains_mermaid_diagram
+    severity: warning
+    description: "Architecture/flowchart diagram present"
+  - id: me-003
+    name: complexity_notation
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:O\\(|complexity|time complexity|space complexity)" }
+    description: "Complexity analysis (Big-O or equivalent) present"
+  - id: me-004
+    name: equations_explained
+    rule: contains_equation
+    severity: warning
+    description: "Equations/formulas present"
+  - id: me-005
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

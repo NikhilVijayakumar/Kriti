@@ -1,0 +1,20 @@
+id: title-and-metadata
+domain: title-and-metadata
+checks:
+  - id: tm-001
+    name: title_length
+    rule: word_count_in_range
+    severity: warning
+    config: { min: 5, max: 50 }
+    description: "Title length within reasonable range"
+  - id: tm-002
+    name: keywords_present
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:keywords|index.terms)" }
+    description: "Keyword/index-terms list present"
+  - id: tm-003
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers (TODO, XXX, [Author Name])"
