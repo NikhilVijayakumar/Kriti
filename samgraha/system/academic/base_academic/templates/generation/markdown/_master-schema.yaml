@@ -6,7 +6,7 @@
 # to know which file to write a generated domain into.
 #
 # Single generic list, not a paper:/journal: split — see
-# docs/proposal/base_academic-data-pipeline-proposal.md §6.2. No concrete
+# docs/proposal/base_academic-template-restructure-proposal.md §4. No concrete
 # system needs a different section order between its paper and journal
 # outputs today; a system that does can override this whole file.
 #

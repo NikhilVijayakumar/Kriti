@@ -6,7 +6,7 @@
 **Inputs**:
 - `_master-schema.yaml` section order
 - Each domain's latest `academic_narratives` row
-- `templates/generation/document/html/_master-schema.html`
+- `templates/generation/html/_master-schema.html`
 
 **Action**: Concatenate domain drafts per `_master-schema.yaml` order,
 rasterize mermaid blocks (hard-fail if `mmdc` unavailable), render through
