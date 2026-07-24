@@ -1,26 +1,25 @@
-# Use-case 5a — Plagiarism Forensic Audit
+# Use-case 5b — Plagiarism Forensic Audit
 
-**Script**: 5-step per-domain flow —
-`gather-plagiarism-context` (det) →
-`deterministic-fingerprint-check` (det — burstiness, n-gram repetition,
-banned phrases) →
-`plagiarism-fingerprint-audit` (sem — hollow-sentence detection,
-structural mechanicalness) →
-`targeted-rewrite` (sem, conditional — only if step 2 or 3 flagged
-any High/Critical) →
-`persist-plagiarism-findings` (det)
+**Depends on**: `assemble-paper-structure` (per domain — each domain must
+have a draft before plagiarism checking)
+
+**Script**: 5-step per-domain — `deterministic-fingerprint-check` (det) →
+`gather-plagiarism-context` → `plagiarism-fingerprint-audit` (prompt) →
+`targeted-rewrite` (prompt, conditional) → `persist-plagiarism-findings`
 
 **Inputs**:
-- Current draft for the domain
-- `templates/audit/plagiarism-fingerprint.md` (Pass 1)
-- `templates/generation/document/targeted-rewrite.md` (Pass 2)
+- Each domain's latest `academic_narratives` draft
+- Banned phrases, reference corpus
 
-**Action**: Split into deterministic pre-screen (cheap) + semantic
-judgment (expensive). Pass 2 is conditional — only runs if prior steps
-flagged anything.
+**Action**: Deterministic pre-screen (burstiness, n-gram repetition,
+banned phrases) + semantic forensic audit + conditional targeted rewrite.
 
-**Completion criteria**:
-- One `academic_plagiarism_findings` row per (domain, pass_type, check_kind)
-- PASS/FAIL verdict + flagged spans present
+**Completion criteria** (checked by verify script):
+- Every domain has a forensic plagiarism verdict:
+  `SELECT verdict FROM academic_plagiarism_findings WHERE paper_id=? AND pass_type='forensic'` exists
+  for all domains
 
-**Rule**: Runs after assemble-paper-structure. Accumulates per re-run.
+**Verify script**: `script/verify/uc5b_plagiarism.py --paper-id <id>`
+
+**Rule**: Runs after assemble-paper-structure. 5-step per-domain expanded
+at runtime.

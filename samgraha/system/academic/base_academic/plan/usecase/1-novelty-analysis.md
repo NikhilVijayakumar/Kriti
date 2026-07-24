@@ -1,22 +1,23 @@
 # Use-case 1 — Novelty Analysis
 
-**Script**: Per-module triad — `gather-module-evidence` →
-`module-analysis-novelty` (prompt) → `persist-module-analysis`, then
-cross-module rollup with `gather-cross-module-evidence` →
-`cross-module-analysis-novelty` → `persist-cross-module-analysis`
+**Depends on**: `classify-repo` (HAS_DOCS)
+
+**Script**: Per-module + cross-module triads — `gather-module-evidence` →
+`module-analysis-novelty` (prompt) → `persist-module-analysis` +
+`gather-cross-module-evidence` → `cross-module-analysis-novelty` (prompt) →
+`persist-cross-module-analysis`
 
 **Inputs**:
-- Repo documentation (README, docs/, docstrings) as primary evidence
-- Module source code as corroborating evidence (never invented)
-- `templates/generation/analysis/{module,cross_module}/novelty.md`
+- Module source files, imports, docstrings
+- Cross-module evidence (import graph, module summaries)
 
-**Action**: Identify what's novel in each module and across modules, citing
-documentation passages. `[NEEDS AUTHOR INPUT]` where docs don't support a
-claim that source code alone would suggest.
+**Action**: Identify what's novel in the codebase, sourced from actual
+documentation. Per-module novelty + cross-module novelty.
 
-**Completion criteria**:
-- One `academic_module_analysis` row per (module, novelty) — `module_count` rows
-- One `academic_cross_module_analysis` row for novelty
+**Completion criteria** (checked by verify script):
+- `SELECT COUNT(*) FROM academic_cross_module_analysis WHERE paper_id=? AND analysis_kind='novelty'` >= 1
 
-**Rule**: Runs after classify-repo confirms HAS_DOCS. Part of the analysis
-phase (usecases 1-3), before paper assembly.
+**Verify script**: `script/verify/uc1_novelty.py --paper-id <id>`
+
+**Rule**: Runs after classify-repo (HAS_DOCS only). Accumulates —
+re-running adds new analyses, never overwrites.

@@ -1,4 +1,6 @@
-# Use-case 0 — Classify Repo
+# Use-case 0b — Classify Repo
+
+**Depends on**: `schema-init`
 
 **Script**: `classify_repo.py` (deterministic, single step)
 
@@ -16,8 +18,9 @@
 Also records `has_implementation` as metadata (useful for claim grounding)
 but it no longer drives branching.
 
-**Completion criteria**:
-1. Exactly one `academic_repos` row exists for this `(standard, repo_root)`
-2. `classification` is one of `NO_DOCS` or `HAS_DOCS`
+**Completion criteria** (checked by verify script):
+- `SELECT classification FROM academic_repos WHERE paper_id=?` = `HAS_DOCS`
 
-**Rule**: Always runs first. Idempotent — re-running produces the same classification.
+**Verify script**: `script/verify/uc0b_classify_repo.py --paper-id <id>`
+
+**Rule**: Always runs first after schema-init. Idempotent — re-running produces the same classification.

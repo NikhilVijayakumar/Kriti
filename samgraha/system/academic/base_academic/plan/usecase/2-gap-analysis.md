@@ -1,17 +1,22 @@
 # Use-case 2 — Gap Analysis
 
-**Script**: Per-module triad — `gather-module-evidence` →
-`module-analysis-gaps` (prompt) → `persist-module-analysis`, then
-cross-module rollup.
+**Depends on**: `classify-repo` (HAS_DOCS)
 
-**Inputs**: Same as novelty-analysis, with `.../gaps.md` templates.
+**Script**: Per-module + cross-module triads — `gather-module-evidence` →
+`module-analysis-gaps` (prompt) → `persist-module-analysis` +
+`gather-cross-module-evidence` → `cross-module-analysis-gaps` (prompt) →
+`persist-cross-module-analysis`
 
-**Action**: Identify gaps — things the documentation implies should exist
-but doesn't cover, or areas where the approach has known limitations.
-Each finding becomes a future-scope item in usecase 4, not dropped.
+**Inputs**:
+- Module source files, imports, docstrings
+- Cross-module evidence (import graph, module summaries)
 
-**Completion criteria**:
-- One `academic_module_analysis` row per (module, gaps)
-- One `academic_cross_module_analysis` row for gaps
+**Action**: Identify gaps in the codebase, sourced from actual documentation.
+Per-module gaps + cross-module gaps.
 
-**Rule**: Required upstream for assemble-paper-structure's `future-scope` domain.
+**Completion criteria** (checked by verify script):
+- `SELECT COUNT(*) FROM academic_cross_module_analysis WHERE paper_id=? AND analysis_kind='gaps'` >= 1
+
+**Verify script**: `script/verify/uc2_gaps.py --paper-id <id>`
+
+**Rule**: Runs after classify-repo (HAS_DOCS only). Accumulates.

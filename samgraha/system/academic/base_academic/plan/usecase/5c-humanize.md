@@ -1,19 +1,24 @@
-# Use-case 5b — Humanize
+# Use-case 5c — Humanize
 
-**Script**: Per-domain triad — `gather-humanize-context` →
-`humanize-section` (prompt) → `persist-humanize-pass`
+**Depends on**: `plagiarism-forensic-audit` (only for domains with FAIL
+verdict after targeted rewrite)
+
+**Script**: Per-domain triad — `gather-humanize-context` → `humanize-section`
+(prompt) → `persist-humanize-pass`
 
 **Inputs**:
-- Draft + flagged spans from `academic_plagiarism_findings`
-- `templates/generation/humanifier.md`
+- Domains with plagiarism FAIL verdicts
+- Flagged spans from plagiarism findings
 
-**Action**: Whole-section rewrite using Pass 1(/2)'s findings as context.
-Reserved for sections the cheaper targeted rewrite doesn't fix.
+**Action**: Full 3-layer humanize rewrite — triggered only for domains
+still above risk threshold after targeted rewrite in 5b.
 
-**Completion criteria**:
-- One `academic_humanize_passes` row per (domain, iteration) for every
-  domain flagged FAIL by plagiarism audit
+**Completion criteria** (checked by verify script):
+- All flagged domains have >= 1 humanize pass:
+  `SELECT DISTINCT domain_key FROM academic_plagiarism_findings WHERE paper_id=? AND verdict='FAIL'`
+  — each must have `SELECT COUNT(*) FROM academic_humanize_passes WHERE paper_id=? AND domain_key=?` >= 1
 
-**Rule**: Triggered only for domains that still FAIL after targeted rewrite.
-Loops with plagiarism-audit up to `max_iterations: 5`, falling back to
-`human_review`.
+**Verify script**: `script/verify/uc5c_humanize.py --paper-id <id>`
+
+**Rule**: Only runs for domains still flagged after plagiarism forensic audit.
+Re-runnable — adds new passes, never overwrites.

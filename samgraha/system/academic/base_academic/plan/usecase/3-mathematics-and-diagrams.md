@@ -1,22 +1,25 @@
 # Use-case 3 — Mathematics and Diagrams
 
-**Script**: Per-module triads — `gather-module-evidence` →
-`module-analysis-mathematics` + `module-analysis-architecture` (two
-semantic prompts per module) → `persist-module-analysis`, then
-cross-module: `architecture` + `dependencies` + `interactions`.
+**Depends on**: `classify-repo` (HAS_DOCS)
+
+**Script**: Per-module (math + architecture) + cross-module triads —
+`gather-module-evidence` → `module-analysis-mathematics` +
+`module-analysis-architecture` → `persist-module-analysis` +
+`gather-cross-module-evidence` → `cross-module-analysis-mathematics` +
+`cross-module-analysis-architecture` + `cross-module-analysis-dependencies` +
+`cross-module-analysis-interactions` → `persist-cross-module-analysis`
 
 **Inputs**:
-- Repo documentation as primary evidence
-- `templates/generation/analysis/{module,cross_module}/{mathematics,architecture,dependencies,interactions}.md`
-- `prompt/common/mermaid-diagram-standards.md` conventions
+- Module source files, imports, docstrings
+- Cross-module evidence (import graph, module summaries)
 
-**Action**: Derive mathematical formalization (LaTeX) and mermaid diagrams
-(classDiagram for module architecture, flowchart TD + classDef tiers for
-cross-module dependencies/interactions). All sourced from documentation.
+**Action**: Derive mathematical formalization and mermaid diagrams from
+documentation. Per-module math + architecture + cross-module math +
+architecture + dependencies + interactions.
 
-**Completion criteria**:
-- One `academic_module_analysis` row per (module, mathematics) and (module, architecture)
-- Three `academic_cross_module_analysis` rows: architecture, dependencies, interactions
+**Completion criteria** (checked by verify script):
+- `SELECT COUNT(*) FROM academic_cross_module_analysis WHERE paper_id=? AND analysis_kind IN ('mathematics','architecture')` >= 1
 
-**Rule**: Merges old usecase 1's mathematics kind + old usecase 3's figures kind.
-Single place where `prompt/common/mermaid-diagram-standards.md` conventions apply.
+**Verify script**: `script/verify/uc3_math_diagrams.py --paper-id <id>`
+
+**Rule**: Runs after classify-repo (HAS_DOCS only). Accumulates.

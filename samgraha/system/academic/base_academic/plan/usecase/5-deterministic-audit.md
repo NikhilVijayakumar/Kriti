@@ -1,19 +1,24 @@
 # Use-case 5 — Deterministic Audit
 
-**Script**: `deterministic_audit.py` (deterministic, single step per domain)
+**Depends on**: `assemble-paper-structure` (per domain — each domain must
+have an `academic_narratives` row before its deterministic audit runs)
+
+**Script**: `deterministic-audit.py` (det, per-domain single step)
 
 **Inputs**:
-- Current draft for the domain
-- `calculation/deterministic/{domain}.yaml` rules (mechanical checks)
+- Each domain's latest `academic_narratives` draft
+- `calculation/deterministic/{domain}.yaml` rule files
 
-**Action**: Run deterministic mechanical checks before semantic scoring.
-Cheap fail-fast: missing required mermaid diagram, under reference-count
-floor, banned AI-fingerprint phrases — these don't need a model call.
+**Action**: Run deterministic mechanical checks against each domain's draft.
+Cheap fail-fast before semantic scoring — deterministic FAIL short-circuits
+semantic for that domain.
 
-**Completion criteria**:
-- One `academic_deterministic_findings` row per domain
-- PASS/FAIL verdict + per-check findings JSON
+**Completion criteria** (checked by verify script):
+- Every domain has a PASS deterministic verdict:
+  `SELECT verdict FROM academic_deterministic_findings WHERE paper_id=? AND domain_id=?` = `PASS`
+  for all domains
 
-**Rule**: Runs before semantic-audit. Deterministic FAIL short-circuits
-semantic for that domain (saves model cost). Domain clears only when
-both deterministic AND semantic PASS in the same pass.
+**Verify script**: `script/verify/uc5_det_audit.py --paper-id <id>`
+
+**Rule**: Runs after assemble-paper-structure. Per-domain single-step
+expanded at runtime. Re-runnable.

@@ -1,24 +1,25 @@
 # Use-case 4 — Assemble Paper Structure
 
-**Script**: Per-domain triad — `gather-domain-evidence` →
-`generate-section` (prompt) → `persist-section-draft`, plus
-conditional 4th step for `literature-review` on cite_context domains.
+**Depends on**: `novelty-analysis` + `gap-analysis` + `mathematics-and-diagrams`
+
+**Script**: Per-domain triads — `gather-domain-evidence` → `generate-section`
+(prompt) → `persist-section-draft` + conditional `literature-review-pass`
+(prompt) for domains in `CITE_CONTEXT_DOMAINS`
 
 **Inputs**:
-- `academic_module_analysis` / `academic_cross_module_analysis` from uses 1-3
-- `templates/generation/document/{domain}.md` + `_master-schema.yaml`
-- `_master-schema.yaml`'s `cite_context:` list (default: related-work,
-  introduction, discussion)
+- Repo documentation, analysis docs, novelty/gap/math findings
+- `templates/generation/markdown/{domain}.md` per structural domain
 
-**Action**: Generate every structural domain, citing documentation as
-primary evidence. Gaps become `future-scope` content, not dropped.
-Claims backed by implementation evidence get `validated=true`.
+**Action**: Generate every structural domain from documentation, weaving
+in novelty/gap/math findings. Conditional literature-review for cite-context
+domains (introduction, related-work, discussion).
 
-Conditional literature-review pass adds external citation context for
-domains listed in `cite_context:`.
+**Completion criteria** (checked by verify script):
+- Every structural domain has >= 1 `academic_narratives` row:
+  `SELECT key FROM academic_domains WHERE kind='structural'` — each must
+  have `SELECT COUNT(*) FROM academic_narratives WHERE paper_id=? AND domain_key=?` >= 1
 
-**Completion criteria**:
-- One `academic_narratives` row (stage=`generate`) per structural domain
-- Conditional literature-review step completed for cite_context domains
+**Verify script**: `script/verify/uc4_assemble.py --paper-id <id>`
 
-**Rule**: Unifies old usecases 2a and 2b — one usecase under the 2-state gate.
+**Rule**: Runs after novelty + gap + math all have results. Per-domain
+triads expanded at runtime by `expand_triads()`.
