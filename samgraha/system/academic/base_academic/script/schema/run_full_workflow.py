@@ -450,6 +450,44 @@ def expand_triads(db_path, standard, domains, module_names=None,
             count += 3
             order += 3
 
+    # --- 9. cross-section-semantic-audit: single triad ---
+    uc_id = _lookup_usecase_id(con, standard, "cross-section-semantic-audit")
+    if uc_id:
+        _truncate_usecase_steps(con, uc_id, 3)
+        gather_xs_script = _lookup_script_id(con, "gather-cross-section-evidence")
+        xs_prompt = _lookup_prompt_id(con, "cross-section-semantic-audit")
+        persist_xs_script = _lookup_script_id(con, "persist-domain-semantic-score")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Gather cross-section evidence",
+                     script_id=gather_xs_script)
+        _insert_step(con, uc_id, order + 1, "semantic",
+                     "Cross-section consistency review",
+                     prompt_id=xs_prompt)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Persist cross-section score",
+                     script_id=persist_xs_script)
+        count += 3
+
+    # --- 10. document-semantic-audit: single triad ---
+    uc_id = _lookup_usecase_id(con, standard, "document-semantic-audit")
+    if uc_id:
+        _truncate_usecase_steps(con, uc_id, 3)
+        gather_doc_script = _lookup_script_id(con, "gather-document-evidence")
+        doc_prompt = _lookup_prompt_id(con, "document-semantic-audit")
+        persist_doc_script = _lookup_script_id(con, "persist-domain-semantic-score")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Gather document evidence",
+                     script_id=gather_doc_script)
+        _insert_step(con, uc_id, order + 1, "semantic",
+                     "Document holistic review",
+                     prompt_id=doc_prompt)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Persist document score",
+                     script_id=persist_doc_script)
+        count += 3
+
     con.close()
     return count
 
@@ -675,7 +713,26 @@ def main():
             # Humanize loop is driven by an agent reading the workflow report
             # and calling prepare/complete_semantic_step for FAIL domains.
 
-        # --- Phase 9: Calculate + Render ---
+            # --- Phase 9: Cross-section + Document semantic audit ---
+            print("\n== cross-section-semantic-audit ==")
+            xs_steps = steps_of(steps, "cross-section-semantic-audit")
+            if xs_steps:
+                xs_input = {"paper_id": paper_id, "scope": "cross-section"}
+                stage_semantic_triad(session, repo_root,
+                                     xs_steps[0], xs_steps[1], xs_steps[2],
+                                     xs_input, report,
+                                     label="cross-section-semantic-audit")
+
+            print("\n== document-semantic-audit ==")
+            doc_steps = steps_of(steps, "document-semantic-audit")
+            if doc_steps:
+                doc_input = {"paper_id": paper_id, "scope": "document"}
+                stage_semantic_triad(session, repo_root,
+                                     doc_steps[0], doc_steps[1], doc_steps[2],
+                                     doc_input, report,
+                                     label="document-semantic-audit")
+
+        # --- Phase 10: Calculate + Render ---
         for usecase in ("calculate", "render-audit-report", "render-paper"):
             uc_steps = steps_of(steps, usecase)
             if uc_steps:

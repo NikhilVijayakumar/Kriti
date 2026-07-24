@@ -73,6 +73,14 @@ scripts:
   - name: persist-humanize-pass
     location: ../humanize/persist_humanize_pass.py
     purpose: "persist humanize rewrite result + change summary + risk flags"
+  # --- cross-section-semantic-audit usecase ---
+  - name: gather-cross-section-evidence
+    location: ../cross-section-audit/gather_cross_section_evidence.py
+    purpose: "concatenate all domain section texts for cross-section consistency review"
+  # --- document-semantic-audit usecase ---
+  - name: gather-document-evidence
+    location: ../document-audit/gather_document_evidence.py
+    purpose: "concatenate all domain section texts for whole-document holistic review"
   # --- calculate usecase ---
   - name: calculate
     location: ../calculate/calculate.py
@@ -125,6 +133,12 @@ prompts:
   # --- humanize usecase ---
   - name: humanize-section
     location: ../../prompt/humanize/humanifier.md
+  # --- cross-section-semantic-audit usecase ---
+  - name: cross-section-semantic-audit
+    location: ../../prompt/cross-section-audit/cross-section-semantic-audit.md
+  # --- document-semantic-audit usecase ---
+  - name: document-semantic-audit
+    location: ../../prompt/document-audit/document-semantic-audit.md
   # --- shared / not yet wired into any usecase's dispatch ---
   - name: module-analysis-summary
     location: ../../prompt/_shared/module-analysis-summary.md
@@ -245,17 +259,32 @@ usecases:
     description: "Pass 3: full 3-layer humanize rewrite — triggered only for domains still above risk threshold"
     steps: []
 
+  - name: cross-section-semantic-audit
+    description: "consistency review across all sections for terminology, claims, and narrative coherence"
+    steps: []
+    # Single-step expanded at runtime
+
+  - name: document-semantic-audit
+    description: "whole-document holistic review as one continuous document"
+    steps: []
+    # Single-step expanded at runtime
+
   - name: calculate
-    description: "calculate final scores from semantic + deterministic buckets, track trend"
+    description: "calculate final scores from semantic + deterministic buckets + cross-section/document coherence, track trend"
     steps: []
     # Single-step, expanded at runtime when calculate.py is built
+
+  - name: render-charts
+    description: "generate chart images from score/audit data (domain-score-bar, heatmap, cross-section, document)"
+    steps: []
+    # Single-step, expanded at runtime
 
   - name: render-audit-report
     description: "score-driven audit report with charts and trend visualization"
     steps: []
-    # Single-step, expanded at runtime when generate-audit-report.py is built
+    # Depends on render-charts; single-step expanded at runtime
 
   - name: render-paper
     description: "assemble paper from domain drafts, render through HTML/PDF/DOCX"
     steps: []
-    # Single-step, expanded at runtime when assemble-final-document.py is built
+    # Depends on document-semantic-audit; single-step expanded at runtime
