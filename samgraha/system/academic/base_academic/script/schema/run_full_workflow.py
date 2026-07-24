@@ -6,16 +6,14 @@ standard. Drives every step through the REAL MCP protocol (spawns the built
 
 Execution order:
   1. register_standard — (re)registers standard.yaml
-  2. expand_triads — inserts domain-expanded steps into knowledge.db
-  3. schema-init — creates academic_* tables, seeds domains/templates
-  4. classify-repo — determines repo state (4-state: NO_DOCS_NO_IMPL,
-     DOCS_ONLY, IMPL_NO_ANALYSIS, IMPL_WITH_ANALYSIS)
-  5. [if IMPL_NO_ANALYSIS] generate-analysis-docs
-  6. draft-from-docs-only OR generate-paper-draft (per classification)
-  7. deepen-sections — literature review / mathematics / figures
-  8. semantic-audit — score against rubric
-  9. plagiarism-forensic-audit → humanize (loop until PASS or max_iterations)
-  10. calculate / render — scoring + report assembly
+  2. schema-init — creates academic_* tables, seeds domains/templates
+  3. classify-repo — determines repo state (2-state: NO_DOCS / HAS_DOCS)
+  4. expand_triads — inserts domain-expanded steps into knowledge.db
+  5. novelty-analysis → gap-analysis → mathematics-and-diagrams (§2.1-2.3)
+  6. assemble-paper-structure (§2.4)
+  7. deterministic-audit → semantic-audit → fix-loop (§2.5)
+  8. plagiarism-forensic-audit → humanize (loop until PASS or max_iterations)
+  9. calculate / render-audit-report / render-paper (§4, §7)
 """
 import argparse
 import json
@@ -23,6 +21,11 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+
+
+# Domains that receive literature-review enrichment (conditional 4th step
+# in assemble-paper-structure, gated by _master-schema.yaml's cite_context:).
+CITE_CONTEXT_DOMAINS = {"related-work", "introduction", "discussion"}
 
 
 class McpSession:
@@ -122,10 +125,7 @@ def steps_of(steps, usecase):
 
 # ---------------------------------------------------------------------------
 # Dynamic triad expansion — inserts steps into knowledge.db for usecases
-# that have steps: [] in standard.yaml. This is the fix for the "expanded
-# at runtime" pattern: the orchestrator knows the domain list after
-# classify-repo runs, so it inserts the concrete steps before trying to
-# dispatch them.
+# that have steps: [] in standard.yaml.
 # ---------------------------------------------------------------------------
 
 def _lookup_script_id(con, name):
@@ -172,8 +172,7 @@ def _insert_step(con, usecase_id, order, kind, description, script_id=None, prom
 
 
 def _truncate_usecase_steps(con, usecase_id, max_order):
-    """Delete steps with step_order > max_order for a usecase.
-    Called before expand_triads inserts to handle shrinking domain/module sets."""
+    """Delete steps with step_order > max_order for a usecase."""
     con.execute(
         "DELETE FROM step WHERE usecase_id=? AND step_order>?",
         (usecase_id, max_order),
@@ -181,211 +180,273 @@ def _truncate_usecase_steps(con, usecase_id, max_order):
     con.commit()
 
 
-def expand_triads(db_path, standard, domains, module_names=None, enrichment_kinds=None):
+def expand_triads(db_path, standard, domains, module_names=None,
+                  cite_context_domains=None):
     """Insert expanded triad steps into knowledge.db for usecases that have
-    steps: [] in standard.yaml. Called after register_standard + schema-init
-    so that script/prompt/usecase rows already exist.
+    steps: [] in standard.yaml.
 
-    Truncates stale steps (orphan cleanup) before inserting, so shrinking
-    domain/module sets don't leave orphaned rows.
-
-    Returns the number of steps inserted.
+    New usecase sequence (per proposal §2):
+      0. classify-repo (single step, not expanded)
+      1. novelty-analysis
+      2. gap-analysis
+      3. mathematics-and-diagrams
+      4. assemble-paper-structure (+ conditional literature-review step)
+      5. deterministic-audit
+      6. semantic-audit
+      7. plagiarism-forensic-audit (5-step: det pre-screen + sem + conditional Pass 2)
+      8. humanize
+      9. deterministic-fingerprint-check (standalone, used by plagiarism)
     """
-    if enrichment_kinds is None:
-        enrichment_kinds = ["literature-review", "mathematics", "figures"]
     if module_names is None:
         module_names = []
+    if cite_context_domains is None:
+        cite_context_domains = CITE_CONTEXT_DOMAINS
 
     con = sqlite3.connect(db_path)
     con.row_factory = sqlite3.Row
     count = 0
 
-    # --- draft-from-docs-only: 3 steps per domain ---
-    uc_id = _lookup_usecase_id(con, standard, "draft-from-docs-only")
-    if uc_id:
-        _truncate_usecase_steps(con, uc_id, 3 * len(domains))
-        pre_script = _lookup_script_id(con, "gather-domain-evidence")
-        sem_prompt = _lookup_prompt_id(con, "generate-section-docs-only")
-        post_script = _lookup_script_id(con, "persist-section-draft")
+    gather_mod_script = _lookup_script_id(con, "gather-module-evidence")
+    persist_mod_script = _lookup_script_id(con, "persist-module-analysis")
+    gather_xmod_script = _lookup_script_id(con, "gather-cross-module-evidence")
+    persist_xmod_script = _lookup_script_id(con, "persist-cross-module-analysis")
+    gather_domain_script = _lookup_script_id(con, "gather-domain-evidence")
+    persist_domain_script = _lookup_script_id(con, "persist-section-draft")
+
+    # --- 1. novelty-analysis: per-module + cross-module triads ---
+    uc_id = _lookup_usecase_id(con, standard, "novelty-analysis")
+    if uc_id and module_names:
+        # 1 discover-modules + (modules * 3) + (1 cross-module * 3)
+        expected = 1 + len(module_names) * 3 + 3
+        _truncate_usecase_steps(con, uc_id, expected)
+        discover_script = _lookup_script_id(con, "discover-modules")
+        novelty_prompt = _lookup_prompt_id(con, "module-analysis-novelty")
+        xnovelty_prompt = _lookup_prompt_id(con, "cross-module-analysis-novelty")
         order = 1
-        for domain in domains:
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Discover module boundaries", script_id=discover_script)
+        order += 1
+        for mod_name in module_names:
             _insert_step(con, uc_id, order, "deterministic",
-                         f"Pre: gather docs for {domain}", script_id=pre_script)
+                         f"Pre: gather evidence for {mod_name}", script_id=gather_mod_script)
             _insert_step(con, uc_id, order + 1, "semantic",
-                         f"Draft {domain} from docs only", prompt_id=sem_prompt)
+                         f"Write novelty analysis for {mod_name}", prompt_id=novelty_prompt)
             _insert_step(con, uc_id, order + 2, "deterministic",
-                         f"Post: persist {domain} draft", script_id=post_script)
+                         f"Post: persist novelty for {mod_name}", script_id=persist_mod_script)
+            count += 3
+            order += 3
+        # Cross-module novelty
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Pre: gather cross-module evidence for novelty",
+                     script_id=gather_xmod_script)
+        _insert_step(con, uc_id, order + 1, "semantic",
+                     "Write cross-module novelty", prompt_id=xnovelty_prompt)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Post: persist cross-module novelty",
+                     script_id=persist_xmod_script)
+        count += 3
+
+    # --- 2. gap-analysis: per-module + cross-module triads ---
+    uc_id = _lookup_usecase_id(con, standard, "gap-analysis")
+    if uc_id and module_names:
+        expected = 1 + len(module_names) * 3 + 3
+        _truncate_usecase_steps(con, uc_id, expected)
+        discover_script = _lookup_script_id(con, "discover-modules")
+        gaps_prompt = _lookup_prompt_id(con, "module-analysis-gaps")
+        xgaps_prompt = _lookup_prompt_id(con, "cross-module-analysis-gaps")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Discover module boundaries", script_id=discover_script)
+        order += 1
+        for mod_name in module_names:
+            _insert_step(con, uc_id, order, "deterministic",
+                         f"Pre: gather evidence for {mod_name}", script_id=gather_mod_script)
+            _insert_step(con, uc_id, order + 1, "semantic",
+                         f"Write gap analysis for {mod_name}", prompt_id=gaps_prompt)
+            _insert_step(con, uc_id, order + 2, "deterministic",
+                         f"Post: persist gaps for {mod_name}", script_id=persist_mod_script)
+            count += 3
+            order += 3
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Pre: gather cross-module evidence for gaps",
+                     script_id=gather_xmod_script)
+        _insert_step(con, uc_id, order + 1, "semantic",
+                     "Write cross-module gaps", prompt_id=xgaps_prompt)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Post: persist cross-module gaps",
+                     script_id=persist_xmod_script)
+        count += 3
+
+    # --- 3. mathematics-and-diagrams: per-module (math + architecture) + cross-module ---
+    uc_id = _lookup_usecase_id(con, standard, "mathematics-and-diagrams")
+    if uc_id and module_names:
+        # Per module: math prompt + architecture prompt (2 semantic per module)
+        # Cross-module: architecture + dependencies + interactions (3 semantic)
+        mod_triads = len(module_names) * 2 * 3  # 2 prompts per module
+        xmod_triads = 3 * 3  # 3 cross-module prompts
+        expected = 1 + mod_triads + xmod_triads
+        _truncate_usecase_steps(con, uc_id, expected)
+        discover_script = _lookup_script_id(con, "discover-modules")
+        math_prompt = _lookup_prompt_id(con, "module-analysis-mathematics")
+        arch_prompt = _lookup_prompt_id(con, "module-analysis-architecture")
+        xarch_prompt = _lookup_prompt_id(con, "cross-module-analysis-architecture")
+        xdeps_prompt = _lookup_prompt_id(con, "cross-module-analysis-dependencies")
+        xinter_prompt = _lookup_prompt_id(con, "cross-module-analysis-interactions")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Discover module boundaries", script_id=discover_script)
+        order += 1
+        for mod_name in module_names:
+            # Mathematics
+            _insert_step(con, uc_id, order, "deterministic",
+                         f"Pre: gather evidence for {mod_name}", script_id=gather_mod_script)
+            _insert_step(con, uc_id, order + 1, "semantic",
+                         f"Formalize mathematics for {mod_name}", prompt_id=math_prompt)
+            _insert_step(con, uc_id, order + 2, "deterministic",
+                         f"Post: persist math for {mod_name}", script_id=persist_mod_script)
+            count += 3
+            order += 3
+            # Architecture diagrams
+            _insert_step(con, uc_id, order, "deterministic",
+                         f"Pre: gather evidence for {mod_name}", script_id=gather_mod_script)
+            _insert_step(con, uc_id, order + 1, "semantic",
+                         f"Write architecture diagram for {mod_name}", prompt_id=arch_prompt)
+            _insert_step(con, uc_id, order + 2, "deterministic",
+                         f"Post: persist architecture for {mod_name}", script_id=persist_mod_script)
+            count += 3
+            order += 3
+        # Cross-module: architecture, dependencies, interactions
+        for kind_prompt, kind_label in [
+            (xarch_prompt, "architecture"), (xdeps_prompt, "dependencies"),
+            (xinter_prompt, "interactions"),
+        ]:
+            _insert_step(con, uc_id, order, "deterministic",
+                         f"Pre: gather cross-module evidence for {kind_label}",
+                         script_id=gather_xmod_script)
+            _insert_step(con, uc_id, order + 1, "semantic",
+                         f"Write cross-module {kind_label}", prompt_id=kind_prompt)
+            _insert_step(con, uc_id, order + 2, "deterministic",
+                         f"Post: persist cross-module {kind_label}",
+                         script_id=persist_xmod_script)
             count += 3
             order += 3
 
-    # --- generate-paper-draft: 3 steps per domain ---
-    uc_id = _lookup_usecase_id(con, standard, "generate-paper-draft")
+    # --- 4. assemble-paper-structure: per-domain triads + conditional literature-review ---
+    uc_id = _lookup_usecase_id(con, standard, "assemble-paper-structure")
     if uc_id:
-        _truncate_usecase_steps(con, uc_id, 3 * len(domains))
-        pre_script = _lookup_script_id(con, "gather-domain-evidence")
-        sem_prompt = _lookup_prompt_id(con, "generate-section")
-        post_script = _lookup_script_id(con, "persist-section-draft")
+        # Base: 3 steps per domain
+        # Plus 1 conditional step per domain in cite_context
+        cite_count = sum(1 for d in domains if d in cite_context_domains)
+        expected = 3 * len(domains) + cite_count
+        _truncate_usecase_steps(con, uc_id, expected)
+        lit_prompt = _lookup_prompt_id(con, "literature-review-pass")
         order = 1
         for domain in domains:
             _insert_step(con, uc_id, order, "deterministic",
-                         f"Pre: gather analysis docs for {domain}", script_id=pre_script)
+                         f"Pre: gather docs + analysis for {domain}",
+                         script_id=gather_domain_script)
             _insert_step(con, uc_id, order + 1, "semantic",
-                         f"Generate {domain} from analysis docs", prompt_id=sem_prompt)
+                         f"Generate {domain}", prompt_id=_lookup_prompt_id(con, "generate-section"))
             _insert_step(con, uc_id, order + 2, "deterministic",
-                         f"Post: persist {domain} draft", script_id=post_script)
+                         f"Post: persist {domain} draft", script_id=persist_domain_script)
             count += 3
             order += 3
+            # Conditional literature-review step for cite_context domains
+            if domain in cite_context_domains and lit_prompt:
+                _insert_step(con, uc_id, order, "semantic",
+                             f"Literature-review pass for {domain}",
+                             prompt_id=lit_prompt)
+                count += 1
+                order += 1
 
-    # --- deepen-sections: 3 steps per (domain, enrichment_kind) ---
-    uc_id = _lookup_usecase_id(con, standard, "deepen-sections")
+    # --- 5. deterministic-audit: per-domain triads ---
+    uc_id = _lookup_usecase_id(con, standard, "deterministic-audit")
     if uc_id:
-        _truncate_usecase_steps(con, uc_id, 3 * len(domains) * len(enrichment_kinds))
-        pre_script = _lookup_script_id(con, "gather-enrichment-context")
-        post_script = _lookup_script_id(con, "persist-section-draft")
-        prompt_map = {
-            "literature-review": _lookup_prompt_id(con, "literature-review-pass"),
-            "mathematics": _lookup_prompt_id(con, "mathematics-pass"),
-            "figures": _lookup_prompt_id(con, "figures-pass"),
-        }
+        _truncate_usecase_steps(con, uc_id, 3 * len(domains))
+        det_audit_script = _lookup_script_id(con, "deterministic-audit")
         order = 1
         for domain in domains:
-            for kind in enrichment_kinds:
-                sem_prompt = prompt_map.get(kind)
-                _insert_step(con, uc_id, order, "deterministic",
-                             f"Pre: gather enrichment context for {domain}/{kind}",
-                             script_id=pre_script)
-                _insert_step(con, uc_id, order + 1, "semantic",
-                             f"{kind} pass over {domain}",
-                             prompt_id=sem_prompt)
-                _insert_step(con, uc_id, order + 2, "deterministic",
-                             f"Post: persist enriched {domain}/{kind}",
-                             script_id=post_script)
-                count += 3
-                order += 3
+            _insert_step(con, uc_id, order, "deterministic",
+                         f"Gather + check deterministic rules for {domain}",
+                         script_id=det_audit_script)
+            # Persist is done inside deterministic-audit.py directly
+            count += 1
+            order += 1
 
-    # --- semantic-audit: 3 steps per domain ---
+    # --- 6. semantic-audit: per-domain triads (unchanged shape) ---
     uc_id = _lookup_usecase_id(con, standard, "semantic-audit")
     if uc_id:
         _truncate_usecase_steps(con, uc_id, 3 * len(domains))
-        pre_script = _lookup_script_id(con, "gather-domain-evidence")
         sem_prompt = _lookup_prompt_id(con, "semantic-audit")
-        post_script = _lookup_script_id(con, "persist-domain-semantic-score")
+        persist_sem_script = _lookup_script_id(con, "persist-domain-semantic-score")
         order = 1
         for domain in domains:
             _insert_step(con, uc_id, order, "deterministic",
                          f"Pre: gather draft + rubric for {domain}",
-                         script_id=pre_script)
+                         script_id=gather_domain_script)
             _insert_step(con, uc_id, order + 1, "semantic",
                          f"Score {domain} against rubric",
                          prompt_id=sem_prompt)
             _insert_step(con, uc_id, order + 2, "deterministic",
                          f"Post: persist {domain} score",
-                         script_id=post_script)
+                         script_id=persist_sem_script)
             count += 3
             order += 3
 
-    # --- 5a-plagiarism-forensic-audit: 3 steps per domain ---
-    # Pass 1: forensic audit (flag spans). Pass 2: targeted rewrite (fix flagged spans).
-    # Both run within the same usecase; the fix_loop decides if 5b is needed.
+    # --- 7. plagiarism-forensic-audit: 5 steps per domain ---
+    # Step 1: gather context (det)
+    # Step 2: deterministic fingerprint pre-screen (det)
+    # Step 3: semantic fingerprint audit (sem)
+    # Step 4: targeted rewrite — conditional on step 2 or 3 flags (sem)
+    # Step 5: persist findings (det)
     uc_id = _lookup_usecase_id(con, standard, "plagiarism-forensic-audit")
     if uc_id:
-        _truncate_usecase_steps(con, uc_id, 3 * len(domains))
-        pre_script = _lookup_script_id(con, "gather-plagiarism-context")
+        # Max possible: 5 steps per domain (step 4 always inserted; orchestrator
+        # skips it if no flags)
+        _truncate_usecase_steps(con, uc_id, 5 * len(domains))
+        gather_plag_script = _lookup_script_id(con, "gather-plagiarism-context")
+        det_fp_script = _lookup_script_id(con, "deterministic-fingerprint-check")
         forensic_prompt = _lookup_prompt_id(con, "plagiarism-fingerprint-audit")
         targeted_prompt = _lookup_prompt_id(con, "targeted-rewrite")
-        post_script = _lookup_script_id(con, "persist-plagiarism-findings")
+        persist_plag_script = _lookup_script_id(con, "persist-plagiarism-findings")
         order = 1
         for domain in domains:
             _insert_step(con, uc_id, order, "deterministic",
-                         f"Pre: gather draft for plagiarism check {domain}",
-                         script_id=pre_script)
-            _insert_step(con, uc_id, order + 1, "semantic",
+                         f"Gather plagiarism context for {domain}",
+                         script_id=gather_plag_script)
+            _insert_step(con, uc_id, order + 1, "deterministic",
+                         f"Deterministic fingerprint check for {domain}",
+                         script_id=det_fp_script)
+            _insert_step(con, uc_id, order + 2, "semantic",
                          f"Forensic audit {domain}",
                          prompt_id=forensic_prompt)
-            _insert_step(con, uc_id, order + 2, "deterministic",
-                         f"Post: persist forensic findings for {domain}",
-                         script_id=post_script)
-            count += 3
-            order += 3
+            _insert_step(con, uc_id, order + 3, "semantic",
+                         f"Targeted rewrite {domain} (conditional)",
+                         prompt_id=targeted_prompt)
+            _insert_step(con, uc_id, order + 4, "deterministic",
+                         f"Persist plagiarism findings for {domain}",
+                         script_id=persist_plag_script)
+            count += 5
+            order += 5
 
-    # --- 5b-humanize: 3 steps per domain ---
-    # Pass 3: full 3-layer humanize rewrite (triggered only if targeted rewrite
-    # didn't bring section under risk threshold).
+    # --- 8. humanize: per-domain triads (unchanged shape) ---
     uc_id = _lookup_usecase_id(con, standard, "humanize")
     if uc_id:
         _truncate_usecase_steps(con, uc_id, 3 * len(domains))
-        pre_script = _lookup_script_id(con, "gather-humanize-context")
-        sem_prompt = _lookup_prompt_id(con, "humanize-section")
-        post_script = _lookup_script_id(con, "persist-humanize-pass")
+        gather_hum_script = _lookup_script_id(con, "gather-humanize-context")
+        hum_prompt = _lookup_prompt_id(con, "humanize-section")
+        persist_hum_script = _lookup_script_id(con, "persist-humanize-pass")
         order = 1
         for domain in domains:
             _insert_step(con, uc_id, order, "deterministic",
-                         f"Pre: gather humanize context for {domain}",
-                         script_id=pre_script)
+                         f"Gather humanize context for {domain}",
+                         script_id=gather_hum_script)
             _insert_step(con, uc_id, order + 1, "semantic",
                          f"3-layer humanize rewrite {domain}",
-                         prompt_id=sem_prompt)
+                         prompt_id=hum_prompt)
             _insert_step(con, uc_id, order + 2, "deterministic",
-                         f"Post: persist humanized {domain}",
-                         script_id=post_script)
-            count += 3
-            order += 3
-
-    # --- generate-analysis-docs: discover-modules (step 1) + per-module triads ---
-    uc_id = _lookup_usecase_id(con, standard, "generate-analysis-docs")
-    if uc_id and module_names:
-        module_kinds = ["summary", "architecture", "mathematics", "novelty", "gaps"]
-        cross_kinds = ["architecture", "dependencies", "interactions", "patterns",
-                        "gaps", "mathematics", "novelty"]
-        # 1 discover-modules step + (modules * module_kinds * 3) + (cross_kinds * 3)
-        expected_steps = 1 + len(module_names) * len(module_kinds) * 3 + len(cross_kinds) * 3
-        _truncate_usecase_steps(con, uc_id, expected_steps)
-        discover_script = _lookup_script_id(con, "discover-modules")
-        gather_mod_script = _lookup_script_id(con, "gather-module-evidence")
-        persist_mod_script = _lookup_script_id(con, "persist-module-analysis")
-        gather_xmod_script = _lookup_script_id(con, "gather-cross-module-evidence")
-        persist_xmod_script = _lookup_script_id(con, "persist-cross-module-analysis")
-
-        module_kinds = ["summary", "architecture", "mathematics", "novelty", "gaps"]
-        cross_kinds = ["architecture", "dependencies", "interactions", "patterns",
-                        "gaps", "mathematics", "novelty"]
-
-        order = 1
-        # Step 1: discover-modules
-        _insert_step(con, uc_id, order, "deterministic",
-                     "Discover module boundaries", script_id=discover_script)
-        order += 1
-
-        # Per-module x per-kind triads
-        for mod_name in module_names:
-            for kind in module_kinds:
-                prompt_name = f"module-analysis-{kind}"
-                sem_prompt = _lookup_prompt_id(con, prompt_name)
-                _insert_step(con, uc_id, order, "deterministic",
-                             f"Pre: gather evidence for {mod_name}",
-                             script_id=gather_mod_script)
-                _insert_step(con, uc_id, order + 1, "semantic",
-                             f"Write {kind} analysis for {mod_name}",
-                             prompt_id=sem_prompt)
-                _insert_step(con, uc_id, order + 2, "deterministic",
-                             f"Post: persist {kind} for {mod_name}",
-                             script_id=persist_mod_script)
-                count += 3
-                order += 3
-
-        # Cross-module x per-kind triads
-        for kind in cross_kinds:
-            prompt_name = f"cross-module-analysis-{kind}"
-            sem_prompt = _lookup_prompt_id(con, prompt_name)
-            _insert_step(con, uc_id, order, "deterministic",
-                         f"Pre: gather cross-module evidence for {kind}",
-                         script_id=gather_xmod_script)
-            _insert_step(con, uc_id, order + 1, "semantic",
-                         f"Write cross-module {kind}",
-                         prompt_id=sem_prompt)
-            _insert_step(con, uc_id, order + 2, "deterministic",
-                         f"Post: persist cross-module {kind}",
-                         script_id=persist_xmod_script)
+                         f"Persist humanized {domain}",
+                         script_id=persist_hum_script)
             count += 3
             order += 3
 
@@ -424,20 +485,48 @@ def stage_semantic_triad(session, repo_root, pre, sem, post, pre_input, report, 
 
 
 def run_triads_for_usecase(session, repo_root, steps, usecase, domains,
-                           input_fn, report, label_prefix):
+                           input_fn, report, label_prefix, steps_per_domain=3):
     """Run pre/semantic/post triads for a usecase, one per domain."""
     uc_steps = steps_of(steps, usecase)
     if not uc_steps:
         print(f"  WARNING: no steps for {usecase} — skipping")
         return
-    triads = len(uc_steps) // 3
+    triads = len(uc_steps) // steps_per_domain
     for i, domain in enumerate(domains):
         if i >= triads:
             break
-        pre, sem, post = uc_steps[3 * i], uc_steps[3 * i + 1], uc_steps[3 * i + 2]
+        base = steps_per_domain * i
+        pre, sem, post = uc_steps[base], uc_steps[base + 1], uc_steps[base + 2]
         pre_input = input_fn(domain)
         stage_semantic_triad(session, repo_root, pre, sem, post, pre_input, report,
                              label=f"{label_prefix}/{domain}")
+
+
+def run_deterministic_triads_for_usecase(session, repo_root, steps, usecase,
+                                         domains, input_fn, report, label_prefix):
+    """Run single-step deterministic triads for a usecase (e.g. deterministic-audit)."""
+    uc_steps = steps_of(steps, usecase)
+    if not uc_steps:
+        print(f"  WARNING: no steps for {usecase} — skipping")
+        return
+    for i, domain in enumerate(domains):
+        if i >= len(uc_steps):
+            break
+        step = uc_steps[i]
+        step_input = input_fn(domain)
+        try:
+            r = session.call("run_script_step", {
+                "step_id": step["id"], "repo_path": repo_root, "input": step_input,
+            })
+            status = r.get("status", "error")
+            report["ran"].append({"step": f"{label_prefix}/{domain}", "status": status,
+                                  "message": r.get("message", "")[:500]})
+            if status != "ok":
+                report["failed"].append({"label": f"{label_prefix}/{domain}",
+                                         "stage": "run", "message": r.get("message", "")})
+        except Exception as e:
+            report["failed"].append({"label": f"{label_prefix}/{domain}",
+                                     "stage": "run", "message": str(e)})
 
 
 def main():
@@ -468,7 +557,7 @@ def main():
         r = session.call("run_script_step", {"step_id": schema_init["id"], "repo_path": repo_root})
         report["ran"].append({"step": "schema-init", "status": r.get("status")})
 
-        # --- Phase 2: Classify ---
+        # --- Phase 2: Classify (2-state gate) ---
         print("\n== classify-repo ==")
         classify_step = steps_of(steps, "classify-repo")[0]
         r = session.call("run_script_step", {"step_id": classify_step["id"], "repo_path": repo_root})
@@ -478,10 +567,10 @@ def main():
         paper_id = get_paper_id(db_path, args.standard, repo_root)
         domains = args.domains or domain_keys(db_path)
         modules = modules_for_paper(db_path, paper_id) if paper_id else []
-        print(f"  classification={classification}, domains={domains}, modules={modules}")
+        print(f"  classification={classification}, domains={len(domains)}, modules={len(modules)}")
 
-        # --- Phase 2.5: Expand triads into DB ---
-        print(f"\n== expand_triads ({len(domains)} domains) ==")
+        # --- Phase 3: Expand triads into DB ---
+        print(f"\n== expand_triads ({len(domains)} domains, {len(modules)} modules) ==")
         insert_count = expand_triads(db_path, args.standard, domains,
                                      module_names=modules)
         print(f"  inserted {insert_count} steps")
@@ -489,85 +578,117 @@ def main():
         # Reload steps after expansion
         steps = load_steps(db_path, args.standard)
 
-        # --- Phase 3: Analysis docs (if needed) ---
-        if classification == "IMPL_NO_ANALYSIS" and modules:
-            print(f"\n== generate-analysis-docs ({len(modules)} modules) ==")
-            analysis_steps = steps_of(steps, "generate-analysis-docs")
-            if analysis_steps:
-                r = session.call("run_script_step", {"step_id": analysis_steps[0]["id"], "repo_path": repo_root})
-                report["ran"].append({"step": "discover-modules", "status": r.get("status")})
-
-        # --- Phase 4: Generate draft ---
-        if classification == "NO_DOCS_NO_IMPL":
-            print("\n== REFUSED: no docs, no implementation — nothing to draft from ==")
+        # --- Gate: refuse if NO_DOCS ---
+        if classification == "NO_DOCS":
+            print("\n== REFUSED: no documentation — pipeline requires author-supplied docs ==")
             report["failed"].append({"label": "entry", "stage": "refuse",
-                                     "message": "NO_DOCS_NO_IMPL: no documentation and no implementation to analyze"})
+                                     "message": "NO_DOCS: no author-supplied documentation found"})
         else:
-            if classification == "DOCS_ONLY":
-                entry_usecase = "draft-from-docs-only"
-                mode = "draft"
-            else:
-                entry_usecase = "generate-paper-draft"
-                mode = "generate"
-            print(f"\n== {entry_usecase} ({len(domains)} domains) ==")
+            # --- Phase 4: Analysis usecases (novelty, gap, math+diagrams) ---
+            if modules:
+                for analysis_usecase in ("novelty-analysis", "gap-analysis",
+                                         "mathematics-and-diagrams"):
+                    print(f"\n== {analysis_usecase} ({len(modules)} modules) ==")
+                    uc_steps = steps_of(steps, analysis_usecase)
+                    if not uc_steps:
+                        print(f"  WARNING: no steps for {analysis_usecase} — skipping")
+                        continue
+                    # Step 1 is always discover-modules (single step)
+                    first_step = uc_steps[0]
+                    try:
+                        r = session.call("run_script_step",
+                                         {"step_id": first_step["id"], "repo_path": repo_root})
+                        report["ran"].append({"step": f"{analysis_usecase}/discover-modules",
+                                              "status": r.get("status")})
+                    except Exception as e:
+                        report["failed"].append({"label": f"{analysis_usecase}/discover-modules",
+                                                 "stage": "run", "message": str(e)})
 
-            def draft_input(domain):
-                return {"paper_id": paper_id, "domain": domain, "mode": mode}
+            # --- Phase 5: Assemble paper structure ---
+            print(f"\n== assemble-paper-structure ({len(domains)} domains) ==")
 
-            run_triads_for_usecase(session, repo_root, steps, entry_usecase, domains,
-                                   draft_input, report, label_prefix=entry_usecase)
+            def assemble_input(domain):
+                return {"paper_id": paper_id, "domain": domain, "mode": "generate"}
 
-            # --- Phase 5: Deepen ---
-            enrichment_kinds = ["literature-review", "mathematics", "figures"]
-            print(f"\n== deepen-sections ({len(domains)} domains x {len(enrichment_kinds)} kinds) ==")
+            run_triads_for_usecase(session, repo_root, steps, "assemble-paper-structure",
+                                   domains, assemble_input, report,
+                                   label_prefix="assemble-paper-structure")
 
-            deepen_steps = steps_of(steps, "deepen-sections")
-            if deepen_steps:
-                idx = 0
-                for domain in domains:
-                    for kind in enrichment_kinds:
-                        if idx + 2 >= len(deepen_steps):
-                            break
-                        pre, sem, post = deepen_steps[idx], deepen_steps[idx + 1], deepen_steps[idx + 2]
-                        stage_semantic_triad(session, repo_root, pre, sem, post,
-                                             {"paper_id": paper_id, "domain": domain, "enrichment_kind": kind},
-                                             report, label=f"deepen-sections/{domain}/{kind}")
-                        idx += 3
+            # --- Phase 6: Deterministic audit (cheap fail-fast) ---
+            print(f"\n== deterministic-audit ({len(domains)} domains) ==")
 
-            # --- Phase 6: Semantic audit ---
-            print(f"\n== semantic-audit ({len(domains)} domains) ==")
+            det_failed_domains = set()
 
-            def audit_input(domain):
-                return {"paper_id": paper_id, "domain": domain, "mode": "audit"}
+            def det_audit_input(domain):
+                return {"paper_id": paper_id, "domain": domain}
 
-            run_triads_for_usecase(session, repo_root, steps, "semantic-audit", domains,
-                                   audit_input, report, label_prefix="semantic-audit")
+            run_deterministic_triads_for_usecase(session, repo_root, steps,
+                                                 "deterministic-audit", domains,
+                                                 det_audit_input, report,
+                                                 "deterministic-audit")
 
-            # --- Phase 7: Plagiarism forensic + targeted rewrite loop ---
+            # Check which domains failed deterministic audit
+            for step_entry in report["ran"]:
+                if (step_entry["step"].startswith("deterministic-audit/")
+                        and step_entry.get("status") != "ok"):
+                    domain_key = step_entry["step"].split("/", 1)[1]
+                    det_failed_domains.add(domain_key)
+
+            # --- Phase 7: Semantic audit (only for deterministic-PASS domains) ---
+            sem_domains = [d for d in domains if d not in det_failed_domains]
+            skipped_domains = [d for d in domains if d in det_failed_domains]
+
+            if skipped_domains:
+                print(f"\n== skipping semantic-audit for {len(skipped_domains)} domains "
+                      f"(deterministic FAIL): {skipped_domains} ==")
+                for d in skipped_domains:
+                    report["ran"].append({
+                        "step": f"semantic-audit/{d}",
+                        "status": "skipped",
+                        "message": "skipped: deterministic audit FAIL — fix mechanical gaps first",
+                    })
+
+            if sem_domains:
+                print(f"\n== semantic-audit ({len(sem_domains)} domains) ==")
+
+                def audit_input(domain):
+                    return {"paper_id": paper_id, "domain": domain, "mode": "audit"}
+
+                run_triads_for_usecase(session, repo_root, steps, "semantic-audit",
+                                       sem_domains, audit_input, report,
+                                       label_prefix="semantic-audit")
+
+            # --- Phase 8: Plagiarism forensic + targeted rewrite loop ---
             max_humanize_iterations = 5
             print(f"\n== plagiarism-forensic-audit ({len(domains)} domains) ==")
 
             def plagiarism_input(domain):
                 return {"paper_id": paper_id, "domain": domain}
 
-            run_triads_for_usecase(session, repo_root, steps, "plagiarism-forensic-audit",
+            run_triads_for_usecase(session, repo_root, steps,
+                                   "plagiarism-forensic-audit",
                                    domains, plagiarism_input, report,
-                                   label_prefix="plagiarism-forensic-audit")
+                                   label_prefix="plagiarism-forensic-audit",
+                                   steps_per_domain=5)
 
             print(f"\n== humanize (loop up to {max_humanize_iterations} iterations) ==")
             # Humanize loop is driven by an agent reading the workflow report
             # and calling prepare/complete_semantic_step for FAIL domains.
 
-        # --- Phase 8: Calculate + Render (if available) ---
-        for usecase in ("calculate", "render"):
+        # --- Phase 9: Calculate + Render ---
+        for usecase in ("calculate", "render-audit-report", "render-paper"):
             uc_steps = steps_of(steps, usecase)
             if uc_steps:
                 step = uc_steps[0]
                 try:
-                    r = session.call("run_script_step", {"step_id": step["id"], "repo_path": repo_root, "input": {}}, timeout_secs=300)
-                    report["ran"].append({"step": usecase, "status": r.get("status"), "message": r.get("message", "")[:500]})
+                    r = session.call("run_script_step",
+                                     {"step_id": step["id"], "repo_path": repo_root, "input": {}},
+                                     timeout_secs=300)
+                    report["ran"].append({"step": usecase, "status": r.get("status"),
+                                          "message": r.get("message", "")[:500]})
                 except Exception as e:
-                    report["failed"].append({"label": usecase, "stage": "run", "message": str(e)})
+                    report["failed"].append({"label": usecase, "stage": "run",
+                                             "message": str(e)})
 
     finally:
         session.close()
@@ -576,10 +697,12 @@ def main():
     Path(report_path).write_text(json.dumps(report, indent=2))
 
     print(f"\n== summary ==")
-    print(f"ran: {len(report['ran'])}, failed: {len(report['failed'])}, pending semantic: {len(report['pending_semantic'])}")
+    print(f"ran: {len(report['ran'])}, failed: {len(report['failed'])}, "
+          f"pending semantic: {len(report['pending_semantic'])}")
     print(f"full report: {report_path}")
     if report["pending_semantic"]:
-        print(f"\n{len(report['pending_semantic'])} semantic steps staged but NOT completed — need an agent to:")
+        print(f"\n{len(report['pending_semantic'])} semantic steps staged but NOT completed "
+              f"— need an agent to:")
         print("  1. prepare_semantic_step(semantic_step_id) to re-fetch the prompt")
         print("  2. reason over it, then complete_semantic_step(semantic_step_id)")
         print("  3. run_script_step(persist_step_id, input={..., result/sections: <the model's answer>})")
