@@ -1,0 +1,27 @@
+name: document-review
+description: >
+  Rubric for whole-document semantic audit — scores the assembled paper
+  as a single document, the way a reviewer reads it. Applied to
+  scope='document' runs only.
+
+dimensions:
+  - key: gap_closure
+    weight: 25
+    description: "Conclusion closes the gap stated in introduction"
+  - key: methodology_results_alignment
+    weight: 25
+    description: "Methodology describes approach that produces shown results"
+  - key: readability_flow
+    weight: 20
+    description: "Paper reads well as continuous document, smooth transitions"
+  - key: completeness
+    weight: 15
+    description: "No obvious holes, missing sections, or incomplete promises"
+  - key: abstract_accuracy
+    weight: 15
+    description: "Abstract accurately represents the full paper"
+
+scoring:
+  method: weighted_average
+  pass_threshold: 70
+  mandatory_fail_conditions: []

@@ -1,12 +1,20 @@
-id: final_score_v1
+id: final_score_v2
 calculation: weighted_sum
 inputs:
   - { name: semantic_document, weight: 50 }
   - { name: deterministic_document, weight: 50 }
 formula: |
-  final_score = 0.5 * semantic_document_score + 0.5 * deterministic_document_score
+  Per-domain:
+    final_score = 0.5 * semantic_score + 0.5 * deterministic_score
+
+  Whole-paper (when cross-section + document runs exist):
+    doc_coherence = mean(cross_section_score, document_score)
+    final_score = 0.4 * domain_mean + 0.6 * doc_coherence
+
+  Whole-paper (fallback — no cross/doc runs):
+    final_score = domain_mean
 note: >
-  Two-bucket standard — semantic_document and deterministic_document are
-  both required. 50/50 is the honest no-evidence-yet default; revisit
-  once real papers have run through both audit kinds and an actual score
-  distribution exists to calibrate against.
+  Two-bucket per-domain (50/50 semantic/deterministic).  Whole-paper adds
+  a document_coherence bucket: 40% domain mean + 30% cross-section +
+  30% document.  Falls back to domain mean alone when cross-section/document
+  runs don't exist yet.

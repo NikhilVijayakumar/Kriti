@@ -1,0 +1,24 @@
+name: cross-section
+description: >
+  Rubric for cross-section semantic audit — scores consistency across
+  all structural sections when read together. Applied to scope='cross-section'
+  runs only.
+
+dimensions:
+  - key: terminology_consistency
+    weight: 25
+    description: "Same concept uses same term across all sections"
+  - key: claim_vs_evidence
+    weight: 30
+    description: "Abstract/intro claims match results section data"
+  - key: narrative_coherence
+    weight: 25
+    description: "Paper reads as one continuous argument"
+  - key: number_consistency
+    weight: 20
+    description: "Quantitative claims consistent across sections"
+
+scoring:
+  method: weighted_average
+  pass_threshold: 70
+  mandatory_fail_conditions: []

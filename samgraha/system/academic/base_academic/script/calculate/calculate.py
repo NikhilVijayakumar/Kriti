@@ -143,10 +143,40 @@ def main():
                 "trend": trend,
             })
 
-        # Whole-paper score (mean of domain finals)
+        # Whole-paper score: 3-bucket for domain_id=NULL row
+        # Buckets: semantic (50), deterministic (50) for per-domain
+        # Plus: document_coherence (from cross-section + document runs)
+        # The document_coherence bucket applies ONLY to the whole-paper row.
         if results:
             all_finals = [r["final_score"] for r in results if r["final_score"] is not None]
-            whole_paper = sum(all_finals) / len(all_finals) if all_finals else 0.0
+            domain_mean = sum(all_finals) / len(all_finals) if all_finals else 0.0
+
+            # Get cross-section + document scope scores for document_coherence
+            cross_row = conn.execute(
+                "SELECT overall_score FROM academic_semantic_runs "
+                "WHERE paper_id=? AND scope='cross-section' "
+                "ORDER BY run_number DESC LIMIT 1",
+                (paper_id,),
+            ).fetchone()
+            doc_row = conn.execute(
+                "SELECT overall_score FROM academic_semantic_runs "
+                "WHERE paper_id=? AND scope='document' "
+                "ORDER BY run_number DESC LIMIT 1",
+                (paper_id,),
+            ).fetchone()
+            coherence_scores = [s for s in [
+                cross_row["overall_score"] if cross_row else None,
+                doc_row["overall_score"] if doc_row else None,
+            ] if s is not None]
+            doc_coherence = (sum(coherence_scores) / len(coherence_scores)
+                             if coherence_scores else domain_mean)
+
+            # 3-bucket: 40% domain_mean, 30% cross-section, 30% document
+            # Falls back to 2-bucket if no cross/doc runs exist
+            if coherence_scores:
+                whole_paper = (0.4 * domain_mean + 0.6 * doc_coherence)
+            else:
+                whole_paper = domain_mean
             whole_band = _lookup_band(whole_paper, bands)
 
             prev_whole = academic_schema.get_score_history(conn, paper_id)
