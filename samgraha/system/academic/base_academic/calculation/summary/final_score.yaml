@@ -1,12 +1,12 @@
 id: final_score_v1
 calculation: weighted_sum
 inputs:
-  - { name: semantic_document, weight: 100 }
+  - { name: semantic_document, weight: 50 }
+  - { name: deterministic_document, weight: 50 }
 formula: |
-  final_score = semantic_document_score
+  final_score = 0.5 * semantic_document_score + 0.5 * deterministic_document_score
 note: >
-  Single-bucket standard — semantic_document is the only calculation
-  bucket academic-class systems define, so final_score passes it through
-  unchanged rather than splitting weight across buckets that don't exist.
-  Shared by pcems_2026 and eswa_journal (byte-identical except the
-  system name in this note field).
+  Two-bucket standard — semantic_document and deterministic_document are
+  both required. 50/50 is the honest no-evidence-yet default; revisit
+  once real papers have run through both audit kinds and an actual score
+  distribution exists to calibrate against.
