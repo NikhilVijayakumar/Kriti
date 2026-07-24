@@ -20,7 +20,7 @@ overrides).
 
 1. **Pseudocode or algorithm block present** for the core procedure.
 2. **A diagram exists** (architecture, flowchart, or pipeline — see
-   `docs/mermaid-diagram-standards.md`) illustrating the approach's
+   `prompt/common/mermaid-diagram-standards.md`) illustrating the approach's
    structure, not just prose describing it.
 3. **Complexity analysis present:** at minimum, a stated time complexity
    (Big-O or equivalent); space complexity and scalability discussion are
