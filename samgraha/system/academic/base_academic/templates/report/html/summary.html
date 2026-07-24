@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit Report — {{ title }}</title>
+    <title>Audit Summary — {{ title }}</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #333; }
         h1 { border-bottom: 2px solid #2c3e50; padding-bottom: 0.5rem; }
@@ -14,56 +14,29 @@
         tr:nth-child(even) { background: #fafafa; }
         .pass { color: #27ae60; font-weight: bold; }
         .fail { color: #e74c3c; font-weight: bold; }
-        .warn { color: #f39c12; font-weight: bold; }
-        .score-bar { height: 8px; border-radius: 4px; background: #ecf0f1; }
-        .score-fill { height: 100%; border-radius: 4px; }
+        .meta { color: #7f8c8d; font-size: 0.9rem; }
         .charts { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
         .charts img { max-width: 100%; border: 1px solid #ddd; border-radius: 4px; }
-        .meta { color: #7f8c8d; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <h1>Audit Report — {{ title }}</h1>
-    <p class="meta">Generated: {{ timestamp }} | Paper ID: {{ paper_id }} | Standard: {{ standard }}</p>
-
-    <h2>Score Summary</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Domain</th>
-                <th>Semantic</th>
-                <th>Deterministic</th>
-                <th>Final</th>
-                <th>Band</th>
-                <th>Det Audit</th>
-                <th>Plagiarism</th>
-                <th>Trend</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#domains}}
-            <tr>
-                <td><strong>{{ domain_key }}</strong></td>
-                <td>{{ sem_score }}</td>
-                <td>{{ det_score }}</td>
-                <td>{{ final_score }}</td>
-                <td>{{ score_band }}</td>
-                <td class="{{ det_class }}">{{ det_verdict }}</td>
-                <td class="{{ plag_class }}">{{ plag_verdict }}</td>
-                <td>{{ trend }}</td>
-            </tr>
-            {{/domains}}
-        </tbody>
-    </table>
+    <h1>Audit Summary — {{ title }}</h1>
+    <p class="meta">Generated: {{ timestamp }} | Paper ID: {{ paper_id }}</p>
 
     <h2>Whole-Paper Score</h2>
     <p><strong>{{ whole_paper_score }}</strong> ({{ whole_paper_band }}) — {{ whole_paper_trend }}</p>
 
-    <h2>Deterministic Audit</h2>
-    <p>{{ det_passed }} / {{ det_total }} checks passed across all domains.</p>
+    <h2>Sub-Reports</h2>
+    <ul>
+        <li><a href="./deterministic.html">Deterministic Audit</a></li>
+        <li><a href="./semantic.html">Semantic Audit</a></li>
+    </ul>
 
-    <h2>Semantic Audit</h2>
-    <p>Mean score: {{ sem_mean }} | Domains below threshold: {{ sem_below }}</p>
+    <h2>Deterministic Audit Rollup</h2>
+    <p>Passed: <strong>{{ det_passed }} / {{ det_total }}</strong> checks. Failed domains: {{ det_failed_domains }}</p>
+
+    <h2>Semantic Audit Rollup</h2>
+    <p>Mean score: <strong>{{ sem_mean }}</strong> | Domains below threshold: {{ sem_below }}</p>
 
     <h2>Plagiarism</h2>
     <p>{{ plag_summary }}</p>

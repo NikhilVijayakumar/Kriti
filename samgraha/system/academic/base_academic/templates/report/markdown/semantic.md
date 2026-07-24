@@ -13,9 +13,20 @@
 | {{ domain_key }} | {{ score }} | {{ band }} | {{ strengths }} | {{ weaknesses }} |
 {{/domains}}
 
+## Cross-Section & Document Scores
+
+| Scope | Score | Reasoning |
+|-------|-------|-----------|
+{{#cross_section}}
+| Cross-Section | {{ score }} | {{ reasoning }} |
+{{/cross_section}}
+{{#document_review}}
+| Document | {{ score }} | {{ reasoning }} |
+{{/document_review}}
+
 ## Summary
 
-- **Mean score:** {{ mean_score }}
+- **Mean domain score:** {{ mean_score }}
 - **Domains below threshold:** {{ below_threshold_count }}
 - **Threshold:** {{ threshold }}
 

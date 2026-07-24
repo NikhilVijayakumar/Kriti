@@ -26,6 +26,14 @@ def main():
     system_dir = str(SCRIPTS_DIR / "..")
     academic_schema.seed_templates(conn, system_dir)
 
+    # Seed visualization types
+    academic_schema.seed_visualization_types(conn, [
+        ("domain-score-bar", "per_domain", "Bar chart of latest domain scores"),
+        ("deterministic-findings-heatmap", "per_domain", "Heatmap of deterministic check pass/fail"),
+        ("cross-section-score", "per_paper", "Cross-section consistency score"),
+        ("document-review-score", "per_paper", "Document review score"),
+    ])
+
     conn.close()
 
     write_envelope(out_path, status="ok",

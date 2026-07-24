@@ -70,6 +70,54 @@ def _deterministic_findings_heatmap(plt, domains, check_results, output_path):
     plt.close(fig)
 
 
+def _cross_section_score_chart(plt, paper_id, conn, output_path):
+    """Bar chart of cross-section semantic score."""
+    row = conn.execute(
+        "SELECT overall_score, reasoning FROM academic_semantic_runs "
+        "WHERE paper_id=? AND scope='cross-section' "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id,),
+    ).fetchone()
+    if not row:
+        return None
+    score = row["overall_score"]
+    fig, ax = plt.subplots(figsize=(6, 3))
+    color = "#2ecc71" if score >= 80 else "#f39c12" if score >= 60 else "#e74c3c"
+    ax.barh(["Cross-Section"], [score], color=color, height=0.5)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Score")
+    ax.set_title("Cross-Section Consistency Score")
+    ax.text(score + 1, 0, f"{score:.1f}", va="center", fontsize=10)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return {"chart": "cross-section-score", "path": output_path}
+
+
+def _document_review_score_chart(plt, paper_id, conn, output_path):
+    """Bar chart of document-level semantic score."""
+    row = conn.execute(
+        "SELECT overall_score, reasoning FROM academic_semantic_runs "
+        "WHERE paper_id=? AND scope='document' "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id,),
+    ).fetchone()
+    if not row:
+        return None
+    score = row["overall_score"]
+    fig, ax = plt.subplots(figsize=(6, 3))
+    color = "#2ecc71" if score >= 80 else "#f39c12" if score >= 60 else "#e74c3c"
+    ax.barh(["Document"], [score], color=color, height=0.5)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Score")
+    ax.set_title("Document Review Score")
+    ax.text(score + 1, 0, f"{score:.1f}", va="center", fontsize=10)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return {"chart": "document-review-score", "path": output_path}
+
+
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload.get("paper_id")
@@ -141,6 +189,26 @@ def main():
                 )
                 generated.append({"chart": "deterministic-findings-heatmap",
                                   "path": fpath})
+
+        if "cross-section-score" in chart_specs:
+            fpath = os.path.join(output_dir, "cross-section-score.png")
+            result = _cross_section_score_chart(plt, paper_id, conn, fpath)
+            if result:
+                academic_schema.record_visualization(
+                    conn, "cross-section-score", paper_id,
+                    file_path=fpath
+                )
+                generated.append(result)
+
+        if "document-review-score" in chart_specs:
+            fpath = os.path.join(output_dir, "document-review-score.png")
+            result = _document_review_score_chart(plt, paper_id, conn, fpath)
+            if result:
+                academic_schema.record_visualization(
+                    conn, "document-review-score", paper_id,
+                    file_path=fpath
+                )
+                generated.append(result)
 
         write_envelope(out_path, status="ok",
                        message=f"generated {len(generated)} charts",
