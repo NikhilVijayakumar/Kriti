@@ -1,0 +1,17 @@
+id: semantic_ensemble_experimental_setup_budget_fit
+calculation: reliability_aware_ensemble
+scope: section-part
+inputs:
+  from: academic_semantic_runs WHERE domain_id=(SELECT id FROM academic_domains WHERE domain_key='experimental-setup') AND scope='section-part' AND part_kind='budget-fit'
+  fields: [model, overall_score, reasoning]
+formula: |
+  mean_score = mean(scores)
+  stdev_score = stdev(scores)
+  agreement = "High" if stdev_score <= 5 else "Medium" if stdev_score <= 15 else "Low"
+  final_score = mean_score
+outputs:
+  - score
+  - agreement
+  - stdev
+note: >
+  Part-level ensemble: single-model rounds report agreement=N/A.

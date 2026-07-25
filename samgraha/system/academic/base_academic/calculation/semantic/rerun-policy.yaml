@@ -1,0 +1,7 @@
+id: semantic_rerun_policy
+calculation: cache_key
+key_fields: [commit_sha, model]
+rule: >
+  A semantic run is reusable (skip re-scoring) iff an existing row
+  matches on both commit_sha and model for the same
+  (paper, domain, scope, part_kind). Any mismatch requires a new run.

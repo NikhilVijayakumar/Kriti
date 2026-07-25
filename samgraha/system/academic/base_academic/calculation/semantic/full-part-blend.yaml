@@ -1,0 +1,19 @@
+id: semantic_full_part_blend
+calculation: weighted_merge
+inputs:
+  full: academic_semantic_runs WHERE scope='section-full'
+  citations: academic_semantic_runs WHERE scope='section-part' AND part_kind='citations'
+  enrichment: academic_semantic_runs WHERE scope='section-part' AND part_kind='enrichment'
+  budget_fit: academic_semantic_runs WHERE scope='section-part' AND part_kind='budget-fit'
+weights:
+  full: 0.70
+  citations: 0.10
+  enrichment: 0.10
+  budget_fit: 0.10
+formula: |
+  score = full.score * 0.70 + citations.score * 0.10 + enrichment.score * 0.10 + budget_fit.score * 0.10
+note: >
+  Part-level scores are missing until their usecases run (references
+  domain has no part scores at all — collation only, no citations/
+  enrichment/budget-fit stages of its own). Missing parts redistribute
+  their weight to full rather than treating a missing part as 0.

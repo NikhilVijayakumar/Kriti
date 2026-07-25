@@ -1,0 +1,14 @@
+id: aggregation_introduction
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/deterministic/introduction.yaml
+  semantic: calculation/semantic/full-part-blend.yaml
+weights:
+  deterministic: 0.50
+  semantic: 0.50
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)
+note: >
+  Per-domain 50/50 deterministic/semantic blend, matching
+  calculation/summary/final_score.yaml's per-domain half.
