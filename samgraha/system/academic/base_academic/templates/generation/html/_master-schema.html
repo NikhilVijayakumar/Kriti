@@ -24,7 +24,12 @@
     <h1>{{ title }}</h1>
     <p class="meta">{{ authors }} — {{ date }}</p>
 
-    {{{ content }}}
+    <!-- assembled_sections = concatenation of each domain's rendered
+         .html fragment, computed by assemble-final-document.py (not yet built).
+         Each fragment is a <section class="domain domain-{key}"> element
+         from templates/generation/html/{domain}.html, rendered with the
+         same context object as its markdown twin. -->
+    {{{ assembled_sections }}}
 
 </body>
 </html>
