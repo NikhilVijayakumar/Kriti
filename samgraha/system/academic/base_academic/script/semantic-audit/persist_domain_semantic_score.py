@@ -22,6 +22,7 @@ def main():
     paper_id = payload["paper_id"]
     domain = payload["domain"]
     model = payload.get("model", "")
+    commit_sha = payload.get("commit_sha", "")
     result = payload["result"]
     score = result["overall_score"]
     scope = payload.get("scope", "section-full")
@@ -38,7 +39,7 @@ def main():
     try:
         academic_schema.upsert_semantic_score(
             conn, paper_id, domain, model, score, result,
-            scope=scope, part_kind=part_kind)
+            scope=scope, part_kind=part_kind, commit_sha=commit_sha)
     finally:
         conn.close()
 

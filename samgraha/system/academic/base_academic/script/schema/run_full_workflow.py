@@ -27,6 +27,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "common"))
+import academic_schema  # noqa: E402
+
 
 # Domains that receive literature-review enrichment (conditional extra
 # steps in section-citations / 4b, gated by _master-schema.yaml's
@@ -620,11 +623,31 @@ def main():
     p.add_argument("--standard", default="base_academic")
     p.add_argument("--report-out", default=None)
     p.add_argument("--domains", nargs="*", help="Override domain list (space-separated keys)")
+    p.add_argument("--force", action="store_true",
+                   help="Re-run audits even if commit matches (bypass skip-check)")
+    p.add_argument("--models", default=None,
+                   help="Comma-separated list of models for semantic audit (e.g. 'claude-sonnet-5,gpt-5')")
     args = p.parse_args()
 
     repo_root = args.repo_root
     db_path = str(Path(repo_root) / ".samgraha" / "knowledge.db")
     report = {"ran": [], "failed": [], "pending_semantic": []}
+
+    # --- Git gate: require clean working tree ---
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import git_gate
+
+    print("\n== git gate ==")
+    try:
+        git_gate.require_clean_tree(repo_root)
+        commit_sha = git_gate.current_commit(repo_root)
+        print(f"clean tree, HEAD={commit_sha[:8]}")
+    except SystemExit as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
 
     session = McpSession(args.mcp_bin)
     try:
@@ -775,18 +798,34 @@ def main():
                                    domains, budget_input, report,
                                    label_prefix="section-budget-fit")
 
-            # --- Phase 6: Deterministic audit (cheap fail-fast) ---
+            # --- Phase 6: Deterministic audit (skip-if-unchanged) ---
             print(f"\n== deterministic-audit ({len(domains)} domains) ==")
 
             det_failed_domains = set()
+            det_domains_to_run = []
 
-            def det_audit_input(domain):
-                return {"paper_id": paper_id, "domain": domain}
+            for domain_key in domains:
+                latest = academic_schema.get_latest_deterministic_findings(
+                    conn, paper_id, domain_key)
+                if latest and latest.get("commit_sha") == commit_sha and not args.force:
+                    print(f"  skip {domain_key}: unchanged since {commit_sha[:8]}")
+                    report["ran"].append({
+                        "step": f"deterministic-audit/{domain_key}",
+                        "status": "skipped",
+                        "message": f"skipped: commit unchanged ({commit_sha[:8]})",
+                    })
+                else:
+                    det_domains_to_run.append(domain_key)
 
-            run_deterministic_triads_for_usecase(session, repo_root, steps,
-                                                 "deterministic-audit", domains,
-                                                 det_audit_input, report,
-                                                 "deterministic-audit")
+            if det_domains_to_run:
+                def det_audit_input(domain):
+                    return {"paper_id": paper_id, "domain": domain, "commit_sha": commit_sha}
+
+                run_deterministic_triads_for_usecase(session, repo_root, steps,
+                                                     "deterministic-audit",
+                                                     det_domains_to_run,
+                                                     det_audit_input, report,
+                                                     "deterministic-audit")
 
             for step_entry in report["ran"]:
                 if (step_entry["step"].startswith("deterministic-audit/")
@@ -794,7 +833,7 @@ def main():
                     domain_key = step_entry["step"].split("/", 1)[1]
                     det_failed_domains.add(domain_key)
 
-            # --- Phase 7: Semantic audit (only for deterministic-PASS domains) ---
+            # --- Phase 7: Semantic audit (skip-if-unchanged + multi-model) ---
             sem_domains = [d for d in domains if d not in det_failed_domains]
             skipped_domains = [d for d in domains if d in det_failed_domains]
 
@@ -808,15 +847,38 @@ def main():
                         "message": "skipped: deterministic audit FAIL — fix mechanical gaps first",
                     })
 
-            if sem_domains:
-                print(f"\n== semantic-audit ({len(sem_domains)} domains) ==")
+            models_list = [m.strip() for m in args.models.split(",")] if args.models else [""]
 
-                def audit_input(domain):
-                    return {"paper_id": paper_id, "domain": domain, "mode": "audit"}
+            for model in models_list:
+                model_label = model or "default"
+                print(f"\n== semantic-audit model={model_label} ({len(sem_domains)} domains) ==")
 
-                run_triads_for_usecase(session, repo_root, steps, "semantic-audit",
-                                       sem_domains, audit_input, report,
-                                       label_prefix="semantic-audit")
+                domains_for_model = []
+
+                for domain_key in sem_domains:
+                    existing = academic_schema.get_semantic_runs_for_commit(
+                        conn, paper_id, domain_key, "section-full", None, commit_sha)
+                    if any(r["model"] == model for r in existing) and not args.force:
+                        print(f"  skip {domain_key}: {model_label} already scored {commit_sha[:8]}")
+                        report["ran"].append({
+                            "step": f"semantic-audit/{domain_key}",
+                            "status": "skipped",
+                            "message": f"skipped: {model_label} already scored {commit_sha[:8]}",
+                        })
+                    else:
+                        domains_for_model.append(domain_key)
+
+                if len(domains_for_model) < len(sem_domains):
+                    print(f"  skipped {len(sem_domains) - len(domains_for_model)} domains (cache hit)")
+
+                if domains_for_model:
+                    def audit_input(domain, _model=model):
+                        return {"paper_id": paper_id, "domain": domain, "mode": "audit",
+                                "model": _model, "commit_sha": commit_sha}
+
+                    run_triads_for_usecase(session, repo_root, steps, "semantic-audit",
+                                           domains_for_model, audit_input, report,
+                                           label_prefix=f"semantic-audit/{model_label}")
 
             # --- Phase 8: Plagiarism forensic + humanize split ---
             print(f"\n== plagiarism-forensic-audit ({len(domains)} domains) ==")
@@ -896,6 +958,7 @@ def main():
                                              "message": str(e)})
 
     finally:
+        conn.close()
         session.close()
 
     report_path = args.report_out or str(Path(repo_root) / ".samgraha" / "workflow-report.json")

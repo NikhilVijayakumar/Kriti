@@ -197,6 +197,7 @@ def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload.get("paper_id")
     domain_key = payload.get("domain")
+    commit_sha = payload.get("commit_sha", "")
 
     if not paper_id or not domain_key:
         write_envelope(out_path, status="error",
@@ -251,7 +252,8 @@ def main():
 
         # Record findings
         academic_schema.record_deterministic_findings(
-            conn, paper_id, domain_key, verdict, findings
+            conn, paper_id, domain_key, verdict, findings,
+            commit_sha=commit_sha
         )
 
         write_envelope(out_path, status="ok",
