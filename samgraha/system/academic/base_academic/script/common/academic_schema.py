@@ -27,12 +27,41 @@ Tables (DDL source of truth: schema/*.sql files, read by ensure_schema):
 """
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime, timezone
+
+import yaml
 
 _STANDARD = "base_academic"
 
 _SCHEMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "schema")
+_CALC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "calculation")
+
+
+def _paper_word_count(conn, paper_id, stage):
+    """Sum word count across every domain's latest section text at a given
+    stage — same \\b\\w+\\b counting check_word_budget.py uses per-domain,
+    applied here across the whole paper."""
+    rows = conn.execute(
+        "SELECT s.text FROM academic_narrative_sections s "
+        "JOIN academic_narratives n ON n.id = s.narrative_id "
+        "WHERE n.paper_id=? AND n.stage=?",
+        (paper_id, stage),
+    ).fetchall()
+    return sum(len(re.findall(r"\b\w+\b", r["text"] or "")) for r in rows)
+
+
+def _paper_budget_range():
+    """(min, max) from calculation/summary/paper-budget.yaml, or (None, None)
+    if the file is absent — callers skip the total-budget check in that case."""
+    path = os.path.normpath(os.path.join(_CALC_DIR, "summary", "paper-budget.yaml"))
+    if not os.path.exists(path):
+        return None, None
+    with open(path) as f:
+        data = yaml.safe_load(f) or {}
+    total = data.get("total_word_count", {})
+    return total.get("min"), total.get("max")
 
 
 def ensure_schema(conn):
@@ -340,19 +369,58 @@ def get_latest_narrative_info(conn, paper_id, domain):
 
 
 # ---------------------------------------------------------------------------
+# Section citation helpers — APPEND-ONLY
+# ---------------------------------------------------------------------------
+
+def insert_section_citation(conn, paper_id, domain, source_kind, citation):
+    """Insert a single citation for a (paper, domain).  source_kind is 'in-repo' or 'literature'."""
+    domain_id = get_domain_id(conn, domain)
+    ts = now_iso()
+    conn.execute(
+        "INSERT INTO academic_section_citations (paper_id, domain_id, source_kind, citation, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (paper_id, domain_id, source_kind, citation, ts),
+    )
+    conn.commit()
+
+
+def get_section_citations(conn, paper_id, domain=None, source_kind=None):
+    """Return all citations for a paper, optionally filtered by domain and/or source_kind."""
+    conditions = ["paper_id=?"]
+    params = [paper_id]
+    if domain:
+        conditions.append("domain_id=(SELECT id FROM academic_domains WHERE key=?)")
+        params.append(domain)
+    if source_kind:
+        conditions.append("source_kind=?")
+        params.append(source_kind)
+    where = " AND ".join(conditions)
+    rows = conn.execute(
+        f"SELECT c.*, d.key AS domain_key FROM academic_section_citations c "
+        f"JOIN academic_domains d ON d.id=c.domain_id "
+        f"WHERE {where} ORDER BY c.id",
+        params,
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
 # Semantic score helpers — APPEND-ONLY (no UPDATE, no DELETE)
 # ---------------------------------------------------------------------------
 
 def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
-                          scope="section", computed_against=None):
+                          scope="section-full", computed_against=None,
+                          part_kind=None):
     """Append a new semantic run.  Never updates or deletes existing rows.
-    run_number auto-increments per (paper, domain, scope, model).
+    run_number auto-increments per (paper, domain, scope, model, part_kind).
     scope='cross-section' or 'document' → domain must be None.
+    part_kind is only meaningful when scope='section-part' — one of
+    'citations', 'enrichment', 'budget-fit'.  NULL for all other scopes.
     computed_against is a dict of {domain_key: iteration} snapshots for
     cross-section/document runs, so staleness can be detected when humanize
     changes a domain draft."""
     domain_id = None
-    if scope == "section":
+    if scope in ("section-full", "section-part"):
         domain_id = get_domain_id(conn, domain)
         if domain_id is None:
             raise ValueError(f"unknown domain '{domain}' — not in academic_domains")
@@ -362,15 +430,16 @@ def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
 
     max_run = conn.execute(
         "SELECT COALESCE(MAX(run_number), 0) FROM academic_semantic_runs "
-        "WHERE paper_id=? AND domain_id IS ? AND scope=? AND model=?",
-        (paper_id, domain_id, scope, model or ""),
+        "WHERE paper_id=? AND domain_id IS ? AND scope=? AND model=? "
+        "AND part_kind IS ?",
+        (paper_id, domain_id, scope, model or "", part_kind),
     ).fetchone()[0]
     cur = conn.execute(
         "INSERT INTO academic_semantic_runs "
-        "(standard, paper_id, domain_id, scope, model, run_number, overall_score, reasoning, computed_against, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "(standard, paper_id, domain_id, scope, model, run_number, overall_score, reasoning, part_kind, computed_against, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (_STANDARD, paper_id, domain_id, scope, model or "", max_run + 1, score, reasoning,
-         json.dumps(computed_against or {}), ts),
+         part_kind, json.dumps(computed_against or {}), ts),
     )
     run_id = cur.lastrowid
 
@@ -391,7 +460,7 @@ def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
     conn.commit()
 
 
-def get_domain_scores(conn, paper_id, domain=None, scope="section"):
+def get_domain_scores(conn, paper_id, domain=None, scope="section-full"):
     domain_filter = "AND d.key=?" if domain else ""
     params = (paper_id, domain) if domain else (paper_id,)
     rows = conn.execute(
@@ -403,9 +472,9 @@ def get_domain_scores(conn, paper_id, domain=None, scope="section"):
     return [dict(r) for r in rows]
 
 
-def get_latest_semantic_score(conn, paper_id, domain, model="", scope="section"):
+def get_latest_semantic_score(conn, paper_id, domain, model="", scope="section-full"):
     """Get the most recent semantic run for a (paper, domain, model, scope)."""
-    if scope == "section":
+    if scope in ("section-full", "section-part"):
         domain_id = get_domain_id(conn, domain)
         where = "WHERE paper_id=? AND domain_id=? AND scope=?"
         params = (paper_id, domain_id, scope)
@@ -438,6 +507,35 @@ def _register_usecase(name, description):
         _USECASE_PREDICATES[name] = (description, fn)
         return fn
     return decorator
+
+
+def _register_usecase_fn(name, description, fn):
+    """Non-decorator form — used by the per-domain registration loops below,
+    where the predicate is built by a factory closure instead of a literal
+    def. Same registry, same usecase_status() lookup either way."""
+    _USECASE_PREDICATES[name] = (description, fn)
+
+
+# base_academic's own 12 structural domains, per _master-schema.yaml's
+# sections: list (order matches). Hardcoded here per
+# base_academic-usecase-atomicity-proposal.md's per-domain usecase split —
+# a concrete system with a different domain set gets its own copy of the
+# per-domain usecase files/predicates/registry entries when it's built
+# (same override surface it already has for templates/rubrics), since
+# these predicates are looked up by name at call time, not derived from
+# academic_domains at import time.
+STRUCTURAL_DOMAINS = [
+    "title-and-metadata", "abstract", "introduction", "related-work",
+    "problem-definition", "methodology", "experimental-setup", "results",
+    "discussion", "limitations", "conclusion", "references",
+]
+GENERATED_DOMAINS = [d for d in STRUCTURAL_DOMAINS if d != "references"]
+CITE_CONTEXT_DOMAINS = {"related-work", "introduction", "discussion"}
+
+
+def _domain_id(conn, key):
+    row = conn.execute("SELECT id FROM academic_domains WHERE key=?", (key,)).fetchone()
+    return row["id"] if row else None
 
 
 def usecase_status(conn, paper_id, usecase_name):
@@ -516,121 +614,306 @@ def _uc_gaps(conn, paper_id):
     return True, [f"gap analyses: {count}"]
 
 
-@_register_usecase("mathematics-and-diagrams", "at least 1 math/architecture analysis exists")
-def _uc_math(conn, paper_id):
+@_register_usecase("mathematics-analysis",
+                    "at least 1 cross-module mathematics analysis exists")
+def _uc_math_analysis(conn, paper_id):
     row = conn.execute(
         "SELECT COUNT(*) FROM academic_cross_module_analysis "
-        "WHERE paper_id=? AND analysis_kind IN ('mathematics','architecture')",
+        "WHERE paper_id=? AND analysis_kind='mathematics'",
         (paper_id,),
     ).fetchone()
     count = row[0]
     if count < 1:
-        return False, [f"math/arch analyses: {count}"]
-    return True, [f"math/arch analyses: {count}"]
+        return False, [f"math analyses: {count}"]
+    return True, [f"math analyses: {count}"]
 
 
-@_register_usecase("assemble-paper-structure",
-                    "every structural domain has an academic_narratives row")
-def _uc_assemble(conn, paper_id):
+@_register_usecase("diagram-architecture-analysis",
+                    "at least 1 cross-module architecture/dependencies/interactions analysis exists")
+def _uc_diagram_analysis(conn, paper_id):
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_cross_module_analysis "
+        "WHERE paper_id=? AND analysis_kind IN ('architecture','dependencies','interactions')",
+        (paper_id,),
+    ).fetchone()
+    count = row[0]
+    if count < 1:
+        return False, [f"architecture analyses: {count}"]
+    return True, [f"architecture analyses: {count}"]
+
+
+# ---------------------------------------------------------------------------
+# Per-domain usecase registration — generate-section-draft, section-citations,
+# section-supplementary-content, section-budget-fit each get one usecase
+# PER STRUCTURAL DOMAIN (base_academic-usecase-atomicity-proposal.md's
+# per-domain split) instead of one usecase looping every domain. Each
+# predicate below checks exactly one domain — a factory closure per domain,
+# registered in a loop, not 40+ hand-duplicated functions.
+# ---------------------------------------------------------------------------
+
+def _make_stage_predicate(domain, stage):
+    def predicate(conn, paper_id):
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_narratives "
+            "WHERE paper_id=? AND domain_id=? AND stage=?",
+            (paper_id, _domain_id(conn, domain), stage),
+        ).fetchone()
+        if row[0] < 1:
+            return False, [f"{domain}: no stage='{stage}' narrative"]
+        return True, [f"{domain}: stage='{stage}' narrative present"]
+    return predicate
+
+
+for _domain in GENERATED_DOMAINS:
+    _register_usecase_fn(
+        f"generate-section-draft-{_domain}",
+        f"{_domain} has a stage='generate' narrative",
+        _make_stage_predicate(_domain, "generate"),
+    )
+
+
+def _make_citation_predicate(domain):
+    def predicate(conn, paper_id):
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_section_citations "
+            "WHERE paper_id=? AND domain_id=?",
+            (paper_id, _domain_id(conn, domain)),
+        ).fetchone()
+        if row[0] < 1:
+            return False, [f"{domain}: no citations"]
+        return True, [f"{domain}: {row[0]} citations"]
+    return predicate
+
+
+for _domain in GENERATED_DOMAINS:
+    _register_usecase_fn(
+        f"section-citations-{_domain}",
+        f"{_domain} has >= 1 citation in academic_section_citations",
+        _make_citation_predicate(_domain),
+    )
+
+
+def _uc_section_citations_references(conn, paper_id):
+    """Fan-in usecase — depends on every other domain's section-citations-*
+    usecase completing first (enforced by collate_references.py calling
+    usecase_status() per domain before it collates, not by this predicate,
+    which only checks its own output exists)."""
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_narratives "
+        "WHERE paper_id=? AND domain_id=? AND stage='cite'",
+        (paper_id, _domain_id(conn, "references")),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["references: no stage='cite' narrative (collation not run)"]
+    return True, ["references: collated"]
+
+
+_register_usecase_fn(
+    "section-citations-references",
+    "references domain has a stage='cite' narrative collated from all other domains",
+    _uc_section_citations_references,
+)
+
+
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"section-supplementary-content-{_domain}",
+        f"{_domain} has a stage='enrich' narrative",
+        _make_stage_predicate(_domain, "enrich"),
+    )
+
+
+def _make_budget_predicate(domain):
+    def predicate(conn, paper_id):
+        row = conn.execute(
+            "SELECT COUNT(*) FROM academic_narratives "
+            "WHERE paper_id=? AND domain_id=? AND stage='budget-fit'",
+            (paper_id, _domain_id(conn, domain)),
+        ).fetchone()
+        if row[0] < 1:
+            return False, [f"{domain}: no stage='budget-fit' narrative"]
+        return True, [f"{domain}: stage='budget-fit' narrative present"]
+    return predicate
+
+
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"section-budget-fit-{_domain}",
+        f"{_domain} has a stage='budget-fit' narrative",
+        _make_budget_predicate(_domain),
+    )
+
+
+def _uc_section_budget_fit_total(conn, paper_id):
+    """Fan-in usecase — whole-paper total is not a per-domain concern,
+    same pattern as section-citations-references."""
+    total_wc = _paper_word_count(conn, paper_id, "budget-fit")
+    paper_min, paper_max = _paper_budget_range()
+    if paper_min is not None and not (paper_min <= total_wc <= paper_max):
+        return False, [f"whole-paper word count {total_wc} outside budget "
+                        f"[{paper_min},{paper_max}] (calculation/summary/paper-budget.yaml)"]
+    return True, [f"total_wc={total_wc}"]
+
+
+_register_usecase_fn(
+    "section-budget-fit-total",
+    "whole-paper word count is within calculation/summary/paper-budget.yaml's range",
+    _uc_section_budget_fit_total,
+)
+
+
+@_register_usecase("document-narrative-polish",
+                    "every structural domain has a stage='polish' narrative + total in range")
+def _uc_document_polish(conn, paper_id):
     domains = conn.execute(
-        "SELECT key FROM academic_domains "
-        "ORDER BY sort_order"
+        "SELECT key FROM academic_domains ORDER BY sort_order"
     ).fetchall()
     missing = []
     for (dk,) in domains:
         row = conn.execute(
             "SELECT COUNT(*) FROM academic_narratives "
-            "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains WHERE key=?)",
+            "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains WHERE key=?) "
+            "AND stage='polish'",
             (paper_id, dk),
         ).fetchone()
         if row[0] < 1:
             missing.append(dk)
     if missing:
-        return False, [f"missing narratives: {', '.join(missing)}"]
-    return True, [f"all {len(domains)} domains have narratives"]
+        return False, [f"missing polish narratives: {', '.join(missing)}"]
+    total_wc = _paper_word_count(conn, paper_id, "polish")
+    paper_min, paper_max = _paper_budget_range()
+    if paper_min is not None and not (paper_min <= total_wc <= paper_max):
+        return False, [f"whole-paper word count {total_wc} outside budget "
+                        f"[{paper_min},{paper_max}] (calculation/summary/paper-budget.yaml)"]
+    return True, [f"all {len(domains)} domains have polish narratives, "
+                  f"total_wc={total_wc}"]
 
 
-@_register_usecase("deterministic-audit",
-                    "every domain has a PASS deterministic verdict")
-def _uc_det_audit(conn, paper_id):
-    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
-    failed = []
-    for (dk,) in domains:
+def _make_det_audit_predicate(domain):
+    def predicate(conn, paper_id):
         row = conn.execute(
             "SELECT verdict FROM academic_deterministic_findings "
-            "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains WHERE key=?) "
+            "WHERE paper_id=? AND domain_id=? "
             "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, dk),
+            (paper_id, _domain_id(conn, domain)),
         ).fetchone()
         if not row or row["verdict"] != "PASS":
-            failed.append(dk)
-    if failed:
-        return False, [f"non-PASS domains: {', '.join(failed)}"]
-    return True, [f"all {len(domains)} domains PASS"]
+            return False, [f"{domain}: verdict={row['verdict'] if row else 'none'}"]
+        return True, [f"{domain}: PASS"]
+    return predicate
 
 
-@_register_usecase("semantic-audit",
-                    "every domain has >= 1 semantic run with scope='section'")
-def _uc_sem_audit(conn, paper_id):
-    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
-    missing = []
-    for (dk,) in domains:
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"deterministic-audit-{_domain}",
+        f"{_domain} has a PASS deterministic verdict",
+        _make_det_audit_predicate(_domain),
+    )
+
+
+def _make_sem_audit_predicate(domain):
+    def predicate(conn, paper_id):
         row = conn.execute(
             "SELECT COUNT(*) FROM academic_semantic_runs "
-            "WHERE paper_id=? AND scope='section' "
-            "AND domain_id=(SELECT id FROM academic_domains WHERE key=?)",
-            (paper_id, dk),
+            "WHERE paper_id=? AND scope='section-full' AND domain_id=?",
+            (paper_id, _domain_id(conn, domain)),
         ).fetchone()
         if row[0] < 1:
-            missing.append(dk)
-    if missing:
-        return False, [f"unscored domains: {', '.join(missing)}"]
-    return True, [f"all {len(domains)} domains scored"]
+            return False, [f"{domain}: no section-full semantic run"]
+        return True, [f"{domain}: {row[0]} semantic run(s)"]
+    return predicate
 
 
-@_register_usecase("plagiarism-forensic-audit",
-                    "every domain has a forensic plagiarism verdict")
-def _uc_plagiarism(conn, paper_id):
-    domains = conn.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
-    missing = []
-    for (dk,) in domains:
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"semantic-audit-{_domain}",
+        f"{_domain} has >= 1 semantic run with scope='section-full'",
+        _make_sem_audit_predicate(_domain),
+    )
+
+
+def _make_plagiarism_predicate(domain):
+    def predicate(conn, paper_id):
         row = conn.execute(
             "SELECT verdict FROM academic_plagiarism_findings "
-            "WHERE paper_id=? AND pass_type='forensic' "
-            "AND domain_id=(SELECT id FROM academic_domains WHERE key=?) "
+            "WHERE paper_id=? AND pass_type='forensic' AND domain_id=? "
             "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, dk),
+            (paper_id, _domain_id(conn, domain)),
         ).fetchone()
         if not row:
-            missing.append(dk)
-    if missing:
-        return False, [f"unaudited domains: {', '.join(missing)}"]
-    return True, [f"all {len(domains)} domains audited"]
+            return False, [f"{domain}: no forensic verdict"]
+        return True, [f"{domain}: verdict={row['verdict']}"]
+    return predicate
 
 
-@_register_usecase("humanize",
-                    "all humanize-flagged domains have >= 1 humanize pass")
-def _uc_humanize(conn, paper_id):
-    flagged = conn.execute(
-        "SELECT DISTINCT domain_id FROM academic_plagiarism_findings "
-        "WHERE paper_id=? AND verdict='FAIL' AND pass_type='forensic'",
-        (paper_id,),
-    ).fetchall()
-    unhumanized = []
-    for (did,) in flagged:
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"plagiarism-forensic-audit-{_domain}",
+        f"{_domain} has a forensic plagiarism verdict",
+        _make_plagiarism_predicate(_domain),
+    )
+
+
+def _domain_flagged(conn, paper_id, domain):
+    row = conn.execute(
+        "SELECT 1 FROM academic_plagiarism_findings "
+        "WHERE paper_id=? AND domain_id=? AND verdict='FAIL' AND pass_type='forensic' LIMIT 1",
+        (paper_id, _domain_id(conn, domain)),
+    ).fetchone()
+    return row is not None
+
+
+def _make_humanize_det_predicate(domain):
+    def predicate(conn, paper_id):
+        if not _domain_flagged(conn, paper_id, domain):
+            return True, [f"{domain}: not flagged, no-op"]
         row = conn.execute(
             "SELECT COUNT(*) FROM academic_humanize_passes "
-            "WHERE paper_id=? AND domain_id=?",
-            (paper_id, did),
+            "WHERE paper_id=? AND domain_id=? AND pass_kind='deterministic'",
+            (paper_id, _domain_id(conn, domain)),
         ).fetchone()
         if row[0] < 1:
-            dk = conn.execute(
-                "SELECT key FROM academic_domains WHERE id=?", (did,)
-            ).fetchone()
-            unhumanized.append(dk["key"] if dk else f"id={did}")
-    if unhumanized:
-        return False, [f"unhumanized: {', '.join(unhumanized)}"]
-    return True, [f"all flagged domains humanized"]
+            return False, [f"{domain}: flagged, no deterministic pass"]
+        return True, [f"{domain}: deterministic pass present"]
+    return predicate
+
+
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"humanize-deterministic-{_domain}",
+        f"{_domain}: if flagged by plagiarism-forensic-audit, has >= 1 deterministic humanize pass",
+        _make_humanize_det_predicate(_domain),
+    )
+
+
+def _make_humanize_sem_predicate(domain):
+    def predicate(conn, paper_id):
+        if not _domain_flagged(conn, paper_id, domain):
+            return True, [f"{domain}: not flagged, no-op"]
+        det_row = conn.execute(
+            "SELECT COUNT(*) FROM academic_humanize_passes "
+            "WHERE paper_id=? AND domain_id=? AND pass_kind='deterministic'",
+            (paper_id, _domain_id(conn, domain)),
+        ).fetchone()
+        if det_row[0] < 1:
+            return True, [f"{domain}: flagged but deterministic pass not run yet, no-op"]
+        sem_row = conn.execute(
+            "SELECT COUNT(*) FROM academic_humanize_passes "
+            "WHERE paper_id=? AND domain_id=? AND pass_kind='semantic'",
+            (paper_id, _domain_id(conn, domain)),
+        ).fetchone()
+        if sem_row[0] < 1:
+            return False, [f"{domain}: flagged, deterministic pass done, no semantic pass"]
+        return True, [f"{domain}: semantic pass present"]
+    return predicate
+
+
+for _domain in STRUCTURAL_DOMAINS:
+    _register_usecase_fn(
+        f"humanize-semantic-{_domain}",
+        f"{_domain}: if still flagged after deterministic pass, has >= 1 semantic humanize pass",
+        _make_humanize_sem_predicate(_domain),
+    )
 
 
 @_register_usecase("cross-section-semantic-audit",
@@ -869,12 +1152,13 @@ def get_deterministic_findings_history(conn, paper_id, domain=None):
 # Humanize helpers
 # ---------------------------------------------------------------------------
 
-def upsert_humanize_pass(conn, paper_id, domain, iteration, change_summary, risk_flags=None, model=""):
+def upsert_humanize_pass(conn, paper_id, domain, iteration, change_summary,
+                         risk_flags=None, model="", pass_kind="semantic"):
     domain_id = get_domain_id(conn, domain)
     ts = now_iso()
     existing = conn.execute(
-        "SELECT id FROM academic_humanize_passes WHERE paper_id=? AND domain_id=? AND iteration=?",
-        (paper_id, domain_id, iteration),
+        "SELECT id FROM academic_humanize_passes WHERE paper_id=? AND domain_id=? AND iteration=? AND pass_kind=?",
+        (paper_id, domain_id, iteration, pass_kind),
     ).fetchone()
     if existing:
         conn.execute(
@@ -883,9 +1167,9 @@ def upsert_humanize_pass(conn, paper_id, domain, iteration, change_summary, risk
         )
     else:
         conn.execute(
-            "INSERT INTO academic_humanize_passes (paper_id, domain_id, iteration, change_summary, risk_flags, model, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (paper_id, domain_id, iteration, change_summary, json.dumps(risk_flags or []), model, ts),
+            "INSERT INTO academic_humanize_passes (paper_id, domain_id, iteration, pass_kind, change_summary, risk_flags, model, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (paper_id, domain_id, iteration, pass_kind, change_summary, json.dumps(risk_flags or []), model, ts),
         )
     conn.commit()
 

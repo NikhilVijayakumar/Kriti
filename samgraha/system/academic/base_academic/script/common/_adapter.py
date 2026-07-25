@@ -69,3 +69,14 @@ def write_envelope(out_path, status="ok", message="", **extra):
     envelope = {"status": status, "message": message, "written": [], **extra}
     out_path.write_text(json.dumps(envelope))
     return envelope
+
+
+def parse_args(description="Verify usecase completion"):
+    """Parse arguments for verify scripts: --repo-root and --paper-id."""
+    p = argparse.ArgumentParser(description=description)
+    p.add_argument("--repo-root", required=True)
+    p.add_argument("--paper-id", required=True, type=int)
+    args = p.parse_args()
+    repo_root = Path(args.repo_root)
+    args.db_path = str(repo_root / ".samgraha" / "knowledge.db")
+    return args

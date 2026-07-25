@@ -2,7 +2,8 @@
 Persists rewrite result + change summary + risk flags.
 
 Expected --in payload: {paper_id: int, domain: str, iteration: int,
-  change_summary: str, risk_flags: list, sections: [{heading, text}], model: str}
+  pass_kind: str, change_summary: str, risk_flags: list,
+  sections: [{heading, text}], model: str}
 """
 import sys as _sys
 from pathlib import Path as _Path
@@ -19,6 +20,7 @@ def main():
     paper_id = payload["paper_id"]
     domain = payload["domain"]
     iteration = payload.get("iteration", 0)
+    pass_kind = payload.get("pass_kind", "semantic")
     change_summary = payload.get("change_summary", "")
     risk_flags = payload.get("risk_flags", [])
     sections = payload.get("sections", [])
@@ -26,12 +28,10 @@ def main():
 
     conn = academic_schema.get_conn(db_path)
     try:
-        # Persist the humanize pass record
         academic_schema.upsert_humanize_pass(
             conn, paper_id, domain, iteration, change_summary,
-            risk_flags=risk_flags, model=model,
+            risk_flags=risk_flags, model=model, pass_kind=pass_kind,
         )
-        # Also persist the rewritten section as a new narrative iteration
         academic_schema.upsert_narrative(
             conn, paper_id, domain, sections,
             stage="humanize", iteration=iteration, model=model,
@@ -40,9 +40,9 @@ def main():
         conn.close()
 
     write_envelope(out_path, status="ok",
-                   message=f"humanized {domain} iter={iteration} ({len(sections)} sections, {len(risk_flags)} risk flags)",
+                   message=f"humanized {domain} iter={iteration} pass_kind={pass_kind} ({len(sections)} sections, {len(risk_flags)} risk flags)",
                    paper_id=paper_id, domain=domain, iteration=iteration,
-                   risk_flags=risk_flags)
+                   pass_kind=pass_kind, risk_flags=risk_flags)
 
 
 if __name__ == "__main__":

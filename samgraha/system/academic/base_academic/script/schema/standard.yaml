@@ -19,12 +19,12 @@ scripts:
   # --- schema-init usecase ---
   - name: init-schema
     location: ../schema-init/init_schema.py
-    purpose: "create base_academic's own tables (20 academic_* tables) if missing, seed domains and templates"
+    purpose: "create base_academic's own tables (21 academic_* tables) if missing, seed domains and templates"
   # --- classify-repo usecase ---
   - name: classify-repo
     location: ../classify-repo/classify_repo.py
     purpose: "entry router — scan repo for documentation, classify into NO_DOCS / HAS_DOCS"
-  # --- shared: novelty-analysis + gap-analysis + mathematics-and-diagrams ---
+  # --- shared: novelty-analysis + gap-analysis + mathematics-analysis + diagram-architecture-analysis ---
   - name: discover-modules
     location: ../_shared/analysis/discover_modules.py
     purpose: "discover module boundaries (top-level packages) in the target repo; persist to academic_modules"
@@ -48,6 +48,15 @@ scripts:
   - name: persist-section-draft
     location: ../assemble-paper-structure/persist_section_draft.py
     purpose: "persist generated/humanized section draft"
+  - name: persist-section-citations
+    location: ../assemble-paper-structure/persist_section_citations.py
+    purpose: "persist citations to academic_section_citations"
+  - name: collate-references
+    location: ../assemble-paper-structure/collate_references.py
+    purpose: "collate all citations into the references domain draft"
+  - name: check-word-budget
+    location: ../assemble-paper-structure/check_word_budget.py
+    purpose: "deterministic word-count check against per-domain and whole-paper budgets"
   # --- deterministic-audit usecase ---
   - name: deterministic-audit
     location: ../deterministic-audit/deterministic_audit.py
@@ -73,6 +82,9 @@ scripts:
   - name: persist-humanize-pass
     location: ../humanize/persist_humanize_pass.py
     purpose: "persist humanize rewrite result + change summary + risk flags"
+  - name: nlp-fingerprint-fix
+    location: ../humanize/nlp_fingerprint_fix.py
+    purpose: "deterministic Layer 1 humanize: sentence-length variance, parallel-structure breaking"
   # --- cross-section-semantic-audit usecase ---
   - name: gather-cross-section-evidence
     location: ../cross-section-audit/gather_cross_section_evidence.py
@@ -104,9 +116,12 @@ prompts:
     location: ../../prompt/gap-analysis/module-analysis-gaps.md
   - name: cross-module-analysis-gaps
     location: ../../prompt/gap-analysis/cross-module-analysis-gaps.md
-  # --- mathematics-and-diagrams usecase ---
+  # --- mathematics-analysis usecase (3a) ---
   - name: module-analysis-mathematics
     location: ../../prompt/mathematics-and-diagrams/module-analysis-mathematics.md
+  - name: cross-module-analysis-mathematics
+    location: ../../prompt/mathematics-and-diagrams/cross-module-analysis-mathematics.md
+  # --- diagram-architecture-analysis usecase (3b) ---
   - name: module-analysis-architecture
     location: ../../prompt/mathematics-and-diagrams/module-analysis-architecture.md
   - name: cross-module-analysis-architecture
@@ -115,28 +130,39 @@ prompts:
     location: ../../prompt/mathematics-and-diagrams/cross-module-analysis-dependencies.md
   - name: cross-module-analysis-interactions
     location: ../../prompt/mathematics-and-diagrams/cross-module-analysis-interactions.md
-  - name: cross-module-analysis-mathematics   # registered, not yet dispatched — see run_full_workflow.py note
-    location: ../../prompt/mathematics-and-diagrams/cross-module-analysis-mathematics.md
-  # --- assemble-paper-structure usecase ---
+  # --- assemble-paper-structure usecase (4a-4d) ---
   - name: generate-section
     location: ../../prompt/assemble-paper-structure/generate-section.md
   - name: literature-review-pass
     location: ../../prompt/assemble-paper-structure/literature-review-pass.md
+  - name: section-enrichment
+    location: ../../prompt/assemble-paper-structure/section-enrichment.md
+  - name: fit-to-budget
+    location: ../../prompt/assemble-paper-structure/fit-to-budget.md
   # --- semantic-audit usecase ---
   - name: semantic-audit
     location: ../../prompt/semantic-audit/semantic-audit.md
+  - name: semantic-audit-part
+    location: ../../prompt/semantic-audit/semantic-audit-part.md
   # --- plagiarism-forensic-audit usecase ---
   - name: plagiarism-fingerprint-audit
     location: ../../prompt/plagiarism-forensic-audit/plagiarism-fingerprint-audit.md
   - name: targeted-rewrite
     location: ../../prompt/plagiarism-forensic-audit/targeted-rewrite.md
-  # --- humanize usecase ---
+  # --- humanize usecase (5c/5d) ---
   - name: humanize-section
     location: ../../prompt/humanize/humanifier.md
-  # --- cross-section-semantic-audit usecase ---
+  # --- document-narrative-polish usecase (4e) ---
+  - name: structure-polish
+    location: ../../prompt/document-polish/structure-polish.md
+  - name: narrative-style-polish
+    location: ../../prompt/document-polish/narrative-style-polish.md
+  - name: content-detail-polish
+    location: ../../prompt/document-polish/content-detail-polish.md
+  # --- cross-section-semantic-audit usecase (5e) ---
   - name: cross-section-semantic-audit
     location: ../../prompt/cross-section-audit/cross-section-semantic-audit.md
-  # --- document-semantic-audit usecase ---
+  # --- document-semantic-audit usecase (5f) ---
   - name: document-semantic-audit
     location: ../../prompt/document-audit/document-semantic-audit.md
   # --- shared / not yet wired into any usecase's dispatch ---
@@ -165,13 +191,16 @@ custom_tables:
     purpose: "per (repo, analysis_kind) section content"
     owner_script: persist-cross-module-analysis
   - table_name: academic_narratives
-    purpose: "one row per (paper, domain) — stores section drafts with stage (generate/humanize) and iteration"
+    purpose: "one row per (paper, domain, stage) — stores section drafts with stage tracking (generate/cite/enrich/budget-fit/polish/humanize)"
     owner_script: persist-section-draft
   - table_name: academic_narrative_sections
     purpose: "per-narrative heading+text sections"
     owner_script: persist-section-draft
+  - table_name: academic_section_citations
+    purpose: "per (paper, domain): citations attached to a structural domain's draft"
+    owner_script: persist-section-citations
   - table_name: academic_semantic_runs
-    purpose: "one row per (paper, domain, model) semantic evaluation"
+    purpose: "one row per (paper, domain, scope, model) semantic evaluation"
     owner_script: persist-domain-semantic-score
   - table_name: academic_semantic_dimension_scores
     purpose: "per-dimension score+evidence for a semantic run"
@@ -183,7 +212,7 @@ custom_tables:
     purpose: "per (paper, domain, run, pass_type, check_kind): PASS/FAIL + flagged spans"
     owner_script: persist-plagiarism-findings
   - table_name: academic_humanize_passes
-    purpose: "per (paper, domain, iteration): change summary + risk flags"
+    purpose: "per (paper, domain, iteration, pass_kind): change summary + risk flags"
     owner_script: persist-humanize-pass
   - table_name: academic_templates
     purpose: "catalog of report/generation templates on disk"
@@ -192,7 +221,7 @@ custom_tables:
     purpose: "one row per calculate.py run (trend tracking)"
     owner_script: calculate
   - table_name: academic_deterministic_findings
-    purpose: "per (paper, domain, run): deterministic audit verdict + findings"
+    purpose: "per (paper, domain, scope, run): deterministic audit verdict + findings"
     owner_script: deterministic-audit
   - table_name: academic_visualization_types
     purpose: "chart type catalog"
@@ -210,7 +239,7 @@ usecases:
     steps:
       - order: 1
         kind: deterministic
-        description: "Create 20 academic_* tables, seed domains and templates"
+        description: "Create 21 academic_* tables, seed domains and templates"
         script: init-schema
 
   - name: classify-repo
@@ -231,33 +260,453 @@ usecases:
     steps: []
     # Per-module + cross-module triads expanded at runtime by expand_triads()
 
-  - name: mathematics-and-diagrams
-    description: "derive mathematical formalization and mermaid diagrams from documentation"
+  - name: mathematics-analysis
+    description: "derive mathematical formalization from documentation"
     steps: []
-    # Per-module (math + architecture) + cross-module triads expanded at runtime
+    # Per-module + cross-module triads expanded at runtime
 
-  - name: assemble-paper-structure
-    description: "generate every structural domain from documentation, weaving in novelty/gap/math findings"
+  - name: diagram-architecture-analysis
+    description: "derive mermaid diagrams and architecture analysis from documentation"
     steps: []
-    # Per-domain triads + conditional literature-review step expanded at runtime
+    # Per-module + cross-module triads expanded at runtime
 
-  - name: deterministic-audit
-    description: "run deterministic mechanical checks before semantic scoring (cheap fail-fast)"
+  - name: generate-section-draft-title-and-metadata
+    description: "generate title-and-metadata's initial deep content from its template"
     steps: []
-    # Per-domain single-step expanded at runtime
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-abstract
+    description: "generate abstract's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-introduction
+    description: "generate introduction's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-related-work
+    description: "generate related-work's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-problem-definition
+    description: "generate problem-definition's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-methodology
+    description: "generate methodology's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-experimental-setup
+    description: "generate experimental-setup's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-results
+    description: "generate results's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-discussion
+    description: "generate discussion's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-limitations
+    description: "generate limitations's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: generate-section-draft-conclusion
+    description: "generate conclusion's initial deep content from its template"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-title-and-metadata
+    description: "attach real citations to title-and-metadata's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-abstract
+    description: "attach real citations to abstract's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-introduction
+    description: "attach real citations to introduction's draft (+ external literature)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-related-work
+    description: "attach real citations to related-work's draft (+ external literature)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-problem-definition
+    description: "attach real citations to problem-definition's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-methodology
+    description: "attach real citations to methodology's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-experimental-setup
+    description: "attach real citations to experimental-setup's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-results
+    description: "attach real citations to results's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-discussion
+    description: "attach real citations to discussion's draft (+ external literature)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-limitations
+    description: "attach real citations to limitations's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-conclusion
+    description: "attach real citations to conclusion's draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-citations-references
+    description: "collate all domains' citations into the references domain's first draft"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-title-and-metadata
+    description: "weave math/tables/diagrams into title-and-metadata where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-abstract
+    description: "weave math/tables/diagrams into abstract where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-introduction
+    description: "weave math/tables/diagrams into introduction where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-related-work
+    description: "weave math/tables/diagrams into related-work where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-problem-definition
+    description: "weave math/tables/diagrams into problem-definition where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-methodology
+    description: "weave math/tables/diagrams into methodology where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-experimental-setup
+    description: "weave math/tables/diagrams into experimental-setup where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-results
+    description: "weave math/tables/diagrams into results where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-discussion
+    description: "weave math/tables/diagrams into discussion where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-limitations
+    description: "weave math/tables/diagrams into limitations where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-conclusion
+    description: "weave math/tables/diagrams into conclusion where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-supplementary-content-references
+    description: "weave math/tables/diagrams into references where relevant"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-title-and-metadata
+    description: "fit title-and-metadata into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-abstract
+    description: "fit abstract into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-introduction
+    description: "fit introduction into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-related-work
+    description: "fit related-work into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-problem-definition
+    description: "fit problem-definition into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-methodology
+    description: "fit methodology into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-experimental-setup
+    description: "fit experimental-setup into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-results
+    description: "fit results into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-discussion
+    description: "fit discussion into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-limitations
+    description: "fit limitations into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-conclusion
+    description: "fit conclusion into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-references
+    description: "fit references into its own configured word budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: section-budget-fit-total
+    description: "check whole-paper word count against the venue's total budget"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-title-and-metadata
+    description: "run title-and-metadata's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-abstract
+    description: "run abstract's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-introduction
+    description: "run introduction's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-related-work
+    description: "run related-work's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-problem-definition
+    description: "run problem-definition's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-methodology
+    description: "run methodology's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-experimental-setup
+    description: "run experimental-setup's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-results
+    description: "run results's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-discussion
+    description: "run discussion's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-limitations
+    description: "run limitations's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-conclusion
+    description: "run conclusion's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: deterministic-audit-references
+    description: "run references's deterministic mechanical checks"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-title-and-metadata
+    description: "score title-and-metadata against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-abstract
+    description: "score abstract against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-introduction
+    description: "score introduction against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-related-work
+    description: "score related-work against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-problem-definition
+    description: "score problem-definition against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-methodology
+    description: "score methodology against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-experimental-setup
+    description: "score experimental-setup against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-results
+    description: "score results against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-discussion
+    description: "score discussion against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-limitations
+    description: "score limitations against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-conclusion
+    description: "score conclusion against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: semantic-audit-references
+    description: "score references against its rubric"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-title-and-metadata
+    description: "plagiarism/fingerprint check title-and-metadata"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-abstract
+    description: "plagiarism/fingerprint check abstract"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-introduction
+    description: "plagiarism/fingerprint check introduction"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-related-work
+    description: "plagiarism/fingerprint check related-work"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-problem-definition
+    description: "plagiarism/fingerprint check problem-definition"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-methodology
+    description: "plagiarism/fingerprint check methodology"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-experimental-setup
+    description: "plagiarism/fingerprint check experimental-setup"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-results
+    description: "plagiarism/fingerprint check results"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-discussion
+    description: "plagiarism/fingerprint check discussion"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-limitations
+    description: "plagiarism/fingerprint check limitations"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-conclusion
+    description: "plagiarism/fingerprint check conclusion"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: plagiarism-forensic-audit-references
+    description: "plagiarism/fingerprint check references"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-title-and-metadata
+    description: "NLP mechanical fingerprint fix for title-and-metadata (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-abstract
+    description: "NLP mechanical fingerprint fix for abstract (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-introduction
+    description: "NLP mechanical fingerprint fix for introduction (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-related-work
+    description: "NLP mechanical fingerprint fix for related-work (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-problem-definition
+    description: "NLP mechanical fingerprint fix for problem-definition (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-methodology
+    description: "NLP mechanical fingerprint fix for methodology (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-experimental-setup
+    description: "NLP mechanical fingerprint fix for experimental-setup (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-results
+    description: "NLP mechanical fingerprint fix for results (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-discussion
+    description: "NLP mechanical fingerprint fix for discussion (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-limitations
+    description: "NLP mechanical fingerprint fix for limitations (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-conclusion
+    description: "NLP mechanical fingerprint fix for conclusion (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-deterministic-references
+    description: "NLP mechanical fingerprint fix for references (no-op if not flagged)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-title-and-metadata
+    description: "LLM humanize rewrite for title-and-metadata (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-abstract
+    description: "LLM humanize rewrite for abstract (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-introduction
+    description: "LLM humanize rewrite for introduction (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-related-work
+    description: "LLM humanize rewrite for related-work (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-problem-definition
+    description: "LLM humanize rewrite for problem-definition (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-methodology
+    description: "LLM humanize rewrite for methodology (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-experimental-setup
+    description: "LLM humanize rewrite for experimental-setup (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-results
+    description: "LLM humanize rewrite for results (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-discussion
+    description: "LLM humanize rewrite for discussion (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-limitations
+    description: "LLM humanize rewrite for limitations (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-conclusion
+    description: "LLM humanize rewrite for conclusion (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
+  - name: humanize-semantic-references
+    description: "LLM humanize rewrite for references (no-op if resolved earlier)"
+    steps: []
+    # Per-domain usecase — base_academic-usecase-atomicity-proposal.md
 
-  - name: semantic-audit
-    description: "score a domain draft against the concrete system's rubric"
+  - name: document-narrative-polish
+    description: "whole-document 3-pass polish: structure, narrative style, content detail"
     steps: []
-
-  - name: plagiarism-forensic-audit
-    description: "deterministic pre-screen + semantic forensic audit + conditional targeted rewrite"
-    steps: []
-    # 5-step per-domain expanded at runtime
-
-  - name: humanize
-    description: "Pass 3: full 3-layer humanize rewrite — triggered only for domains still above risk threshold"
-    steps: []
+    # 3 sequential sub-steps expanded at runtime
 
   - name: cross-section-semantic-audit
     description: "consistency review across all sections for terminology, claims, and narrative coherence"

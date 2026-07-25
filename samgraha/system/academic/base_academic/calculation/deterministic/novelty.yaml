@@ -12,3 +12,14 @@ checks:
     rule: no_placeholders
     severity: critical
     description: "No unfilled template markers"
+  - id: novl-cit
+    name: citation_marker_present
+    rule: min_citation_count
+    severity: critical
+    config: { min: 1 }
+    description: "Domain contains at least one citation marker"
+  - id: novl-bfit
+    name: budget_fit_applied
+    rule: budget_fit_applied
+    severity: critical
+    description: "stage='budget-fit' narrative row exists for this domain"

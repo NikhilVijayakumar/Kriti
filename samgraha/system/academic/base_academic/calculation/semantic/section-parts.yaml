@@ -1,0 +1,41 @@
+# Mini-rubrics for scope='section-part' semantic audits.
+# Each part_kind maps to a focused rubric used by semantic-audit-part.md.
+
+citations:
+  dimensions:
+    - name: citation_grounding
+      weight: 0.4
+      description: "Are in-repo citations grounded in actual source files?"
+    - name: citation_completeness
+      weight: 0.3
+      description: "Are citation markers present where factual claims are made?"
+    - name: bibliography_format
+      weight: 0.3
+      description: "Is the bibliography complete and properly formatted?"
+  pass_threshold: 7.0
+
+enrichment:
+  dimensions:
+    - name: enrichment_support
+      weight: 0.4
+      description: "Are equations/tables/diagrams supported by analysis findings?"
+    - name: enrichment_placement
+      weight: 0.3
+      description: "Are enrichments placed at appropriate locations in the text?"
+    - name: enrichment_value
+      weight: 0.3
+      description: "Do enrichments add substantive value or are they filler?"
+  pass_threshold: 7.0
+
+budget-fit:
+  dimensions:
+    - name: word_count_range
+      weight: 0.4
+      description: "Is the word count within the configured min/max range?"
+    - name: content_preservation
+      weight: 0.3
+      description: "Was the fitting process non-destructive (all claims preserved)?"
+    - name: citation_preservation
+      weight: 0.3
+      description: "Are all citations preserved after fitting?"
+  pass_threshold: 7.0

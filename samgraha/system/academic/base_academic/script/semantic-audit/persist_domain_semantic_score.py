@@ -3,7 +3,9 @@ Persists the agent's per-domain semantic score.
 
 Expected --in payload: {paper_id: int, domain: str, model: str,
   result: {overall_score: number, dimension_scores: {...}, reasoning: str,
-           strengths: [...], weaknesses: [...], recommendations: [...]}}
+           strengths: [...], weaknesses: [...], recommendations: [...]},
+  scope: str (optional, default "section-full"),
+  part_kind: str (optional, default None — only for scope="section-part")}
 """
 import sys as _sys
 from pathlib import Path as _Path
@@ -22,10 +24,21 @@ def main():
     model = payload.get("model", "")
     result = payload["result"]
     score = result["overall_score"]
+    scope = payload.get("scope", "section-full")
+    part_kind = payload.get("part_kind")
+
+    if scope not in ("section-full", "section-part"):
+        scope = "section-full"
+    if scope != "section-part":
+        part_kind = None
+    elif part_kind not in ("citations", "enrichment", "budget-fit", None):
+        part_kind = None
 
     conn = academic_schema.get_conn(db_path)
     try:
-        academic_schema.upsert_semantic_score(conn, paper_id, domain, model, score, result)
+        academic_schema.upsert_semantic_score(
+            conn, paper_id, domain, model, score, result,
+            scope=scope, part_kind=part_kind)
     finally:
         conn.close()
 

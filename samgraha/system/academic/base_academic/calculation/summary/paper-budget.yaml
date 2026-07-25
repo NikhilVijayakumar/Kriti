@@ -1,0 +1,6 @@
+total_word_count:
+  min: 4000
+  max: 8000
+  # A concrete system (pcems_2026, eswa_journal) overrides this to match
+  # its actual venue's page/word limit — same override mechanism every
+  # other calculation/ file already uses.

@@ -32,6 +32,12 @@ def main():
         ("deterministic-findings-heatmap", "per_domain", "Heatmap of deterministic check pass/fail"),
         ("cross-section-score", "per_paper", "Cross-section consistency score"),
         ("document-review-score", "per_paper", "Document review score"),
+        ("pipeline-progress-matrix", "per_paper", "12x9 heatmap of domain x stage pipeline progress"),
+        ("section-part-score-comparison", "per_domain", "Grouped bar: citations/enrichment/budget-fit/full scores per domain"),
+        ("citation-count-bar", "per_domain", "Stacked bar of in-repo vs literature citation counts per domain"),
+        ("budget-fit-gauge", "per_domain", "Per-domain word count vs configured min/max range"),
+        ("whole-paper-budget-gauge", "per_paper", "Total word count vs paper-budget.yaml range"),
+        ("humanize-pass-chart", "per_domain", "Bar per domain: deterministic-only vs needed-semantic-pass counts"),
     ])
 
     conn.close()
