@@ -5,13 +5,21 @@
 
 ---
 
-## Per-Domain Scores
+## Per-Domain Full Scores
 
 | Domain | Score | Band | Strengths | Weaknesses |
 |--------|-------|------|-----------|------------|
-{{#domains}}
+{{#domains_full}}
 | {{ domain_key }} | {{ score }} | {{ band }} | {{ strengths }} | {{ weaknesses }} |
-{{/domains}}
+{{/domains_full}}
+
+## Per-Domain Part Scores
+
+| Domain | Citations | Enrichment | Budget-Fit |
+|--------|-----------|------------|------------|
+{{#domains_parts}}
+| {{ domain_key }} | {{ citations_score }} | {{ enrichment_score }} | {{ budget_fit_score }} |
+{{/domains_parts}}
 
 ## Cross-Section & Document Scores
 

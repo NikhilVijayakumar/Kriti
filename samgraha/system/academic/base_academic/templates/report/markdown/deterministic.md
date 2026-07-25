@@ -5,19 +5,33 @@
 
 ---
 
-## Per-Domain Results
+## Per-Domain Check Breakdown
 
-| Domain | Verdict | Checks Passed | Total | Failed Details |
-|--------|---------|---------------|-------|----------------|
+| Domain | word_count_in_range | citation_marker_present | budget_fit_applied | Other | Verdict |
+|--------|---------------------|--------------------------|---------------------|-------|---------|
 {{#domains}}
-| {{ domain_key }} | {{ verdict }} | {{ passed_count }} | {{ total_count }} | {{ failed_details }} |
+| {{ domain_key }} | {{ wc_status }} | {{ citation_status }} | {{ budget_status }} | {{ other_summary }} | {{ verdict }} |
 {{/domains}}
+
+## Whole-Paper Check
+
+| Check | Status |
+|-------|--------|
+| total_word_count_in_range | {{ document_budget_status }} |
 
 ## Summary
 
 - **Total domains:** {{ total_domains }}
 - **All pass:** {{ all_pass }}
 - **Failed domains:** {{ failed_count }}
+
+## Humanize Passes
+
+| Domain | Flagged | Deterministic Pass | Semantic Pass | Risk Flags |
+|--------|---------|---------------------|-----------------|------------|
+{{#humanize}}
+| {{ domain_key }} | {{ flagged }} | {{ det_pass }} | {{ sem_pass }} | {{ risk_flags }} |
+{{/humanize}}
 
 ---
 

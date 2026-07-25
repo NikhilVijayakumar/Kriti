@@ -2,12 +2,19 @@
 Gathers evidence depending on mode:
   - draft: docs only, no implementation
   - generate: analysis docs + implementation evidence
+  - enrich: same as generate — 3a/3b's math/architecture findings already
+    land in docs/paper/{system}/cross_module/, picked up by the same
+    analysis-doc scan (section-supplementary-content, usecase 4c)
   - audit: current draft text + rubric criteria
+  - citation: deterministic extraction of in-repo grounding markers left
+    in the domain's stage='generate' text by generate-section.md's Rule 1
+    (section-citations, usecase 4b's non-literature-review path)
 
 Expected --in payload: {paper_id: int, domain: str, mode: str}
 """
 import json
 import os
+import re
 import sys as _sys
 from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "common"))
@@ -73,6 +80,34 @@ def gather_draft(paper_id, domain, db_path):
     return draft or []
 
 
+def extract_citation_markers(text):
+    """Deterministic extraction of in-repo grounding markers — bracketed
+    source references like [source: foo.py] or [1] — left by
+    generate-section.md's Rule 1. Deduplicated, order preserved."""
+    markers = re.findall(r"\[([^\[\]]{1,120})\]", text or "")
+    seen = []
+    for m in markers:
+        if m not in seen and m != "NEEDS VERIFICATION":
+            seen.append(m)
+    return seen
+
+
+def gather_citation_sources(paper_id, domain, db_path):
+    conn = academic_schema.get_conn(db_path)
+    try:
+        narrative = academic_schema.get_narrative(conn, paper_id, domain, stage="generate")
+        if not narrative:
+            return []
+        sections = conn.execute(
+            "SELECT text FROM academic_narrative_sections WHERE narrative_id=?",
+            (narrative["id"],),
+        ).fetchall()
+        text = " ".join(r["text"] for r in sections)
+    finally:
+        conn.close()
+    return extract_citation_markers(text)
+
+
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload["paper_id"]
@@ -90,11 +125,13 @@ def main():
     evidence = {}
     if mode == "draft":
         evidence["documentation"] = gather_docs_only(repo_root_path)
-    elif mode == "generate":
+    elif mode in ("generate", "enrich"):
         evidence["analysis_docs"] = gather_analysis_docs(repo_root_path, domain)
         evidence["documentation"] = gather_docs_only(repo_root_path)
     elif mode == "audit":
         evidence["current_draft"] = gather_draft(paper_id, domain, db_path)
+    elif mode == "citation":
+        evidence["citations"] = gather_citation_sources(paper_id, domain, db_path)
 
     write_envelope(out_path, status="ok",
                    message=f"gathered evidence for domain={domain} mode={mode}",
