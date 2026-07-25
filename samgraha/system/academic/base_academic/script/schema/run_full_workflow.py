@@ -798,6 +798,24 @@ def main():
                                    domains, budget_input, report,
                                    label_prefix="section-budget-fit")
 
+            # --- Phase 5d gate: skip domains with generation-incomplete ---
+            gen_incomplete = set()
+            for step_entry in report["ran"]:
+                if (step_entry["step"].startswith("section-budget-fit/")
+                        and step_entry.get("status") == "error"):
+                    domain_key = step_entry["step"].split("/", 1)[1]
+                    gen_incomplete.add(domain_key)
+
+            if gen_incomplete:
+                print(f"\n== generation-incomplete ({len(gen_incomplete)} domains): "
+                      f"{sorted(gen_incomplete)} ==")
+                for d in gen_incomplete:
+                    report["ran"].append({
+                        "step": f"deterministic-audit/{d}",
+                        "status": "skipped",
+                        "message": "skipped: generation-incomplete — fix content gaps first",
+                    })
+
             # --- Phase 6: Deterministic audit (skip-if-unchanged) ---
             print(f"\n== deterministic-audit ({len(domains)} domains) ==")
 
@@ -805,6 +823,8 @@ def main():
             det_domains_to_run = []
 
             for domain_key in domains:
+                if domain_key in gen_incomplete:
+                    continue
                 latest = academic_schema.get_latest_deterministic_findings(
                     conn, paper_id, domain_key)
                 if latest and latest.get("commit_sha") == commit_sha and not args.force:

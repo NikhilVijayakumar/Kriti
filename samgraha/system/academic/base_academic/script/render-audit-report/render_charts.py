@@ -284,13 +284,13 @@ def _citation_count_bar(plt, paper_id, conn, domains, output_path):
 def _load_domain_word_count_range(calc_dir, domain_key):
     """Extract min/max from a domain's deterministic YAML word_count_in_range check."""
     import yaml
-    ypath = os.path.join(calc_dir, "deterministic", f"{domain_key}.yaml")
+    ypath = os.path.join(calc_dir, "generation", f"{domain_key}.yaml")
     if not os.path.isfile(ypath):
         return None, None
     with open(ypath) as f:
         data = yaml.safe_load(f)
     for check in data.get("checks", []):
-        if check.get("name") == "word_count_in_range":
+        if check.get("rule") == "word_count_in_range":
             cfg = check.get("config", {})
             return cfg.get("min"), cfg.get("max")
     return None, None
@@ -356,7 +356,7 @@ def _whole_paper_budget_gauge(plt, paper_id, conn, calc_dir, output_path):
     import numpy as np
 
     # Get configured range
-    budget_path = os.path.join(calc_dir, "summary", "paper-budget.yaml")
+    budget_path = os.path.join(calc_dir, "report", "summary", "paper-budget.yaml")
     if not os.path.isfile(budget_path):
         return None
     with open(budget_path) as f:

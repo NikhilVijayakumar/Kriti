@@ -53,9 +53,9 @@ def _paper_word_count(conn, paper_id, stage):
 
 
 def _paper_budget_range():
-    """(min, max) from calculation/summary/paper-budget.yaml, or (None, None)
+    """(min, max) from calculation/report/summary/paper-budget.yaml, or (None, None)
     if the file is absent — callers skip the total-budget check in that case."""
-    path = os.path.normpath(os.path.join(_CALC_DIR, "summary", "paper-budget.yaml"))
+    path = os.path.normpath(os.path.join(_CALC_DIR, "report", "summary", "paper-budget.yaml"))
     if not os.path.exists(path):
         return None, None
     with open(path) as f:
@@ -750,13 +750,13 @@ def _uc_section_budget_fit_total(conn, paper_id):
     paper_min, paper_max = _paper_budget_range()
     if paper_min is not None and not (paper_min <= total_wc <= paper_max):
         return False, [f"whole-paper word count {total_wc} outside budget "
-                        f"[{paper_min},{paper_max}] (calculation/summary/paper-budget.yaml)"]
+                        f"[{paper_min},{paper_max}] (calculation/report/summary/paper-budget.yaml)"]
     return True, [f"total_wc={total_wc}"]
 
 
 _register_usecase_fn(
     "section-budget-fit-total",
-    "whole-paper word count is within calculation/summary/paper-budget.yaml's range",
+    "whole-paper word count is within calculation/report/summary/paper-budget.yaml's range",
     _uc_section_budget_fit_total,
 )
 
@@ -783,7 +783,7 @@ def _uc_document_polish(conn, paper_id):
     paper_min, paper_max = _paper_budget_range()
     if paper_min is not None and not (paper_min <= total_wc <= paper_max):
         return False, [f"whole-paper word count {total_wc} outside budget "
-                        f"[{paper_min},{paper_max}] (calculation/summary/paper-budget.yaml)"]
+                        f"[{paper_min},{paper_max}] (calculation/report/summary/paper-budget.yaml)"]
     return True, [f"all {len(domains)} domains have polish narratives, "
                   f"total_wc={total_wc}"]
 

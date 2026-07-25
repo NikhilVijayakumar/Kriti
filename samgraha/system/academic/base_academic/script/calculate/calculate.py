@@ -59,9 +59,9 @@ def main():
         return
 
     # Load calculation configs
-    final_score_cfg = _load_yaml("summary/final_score.yaml")
-    score_bands_cfg = _load_yaml("summary/score_bands.yaml")
-    trend_cfg = _load_yaml("summary/trend.yaml")
+    final_score_cfg = _load_yaml("report/summary/final_score.yaml")
+    score_bands_cfg = _load_yaml("report/summary/score_bands.yaml")
+    trend_cfg = _load_yaml("report/summary/trend.yaml")
 
     if not final_score_cfg or not score_bands_cfg:
         write_envelope(out_path, status="error",
