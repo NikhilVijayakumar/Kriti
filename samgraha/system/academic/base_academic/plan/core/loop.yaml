@@ -82,12 +82,35 @@ validate:
 fix_loop:
   trigger: Path B AND final_score < threshold.score
   mechanism: >
-    Feed the finding into the domain's own generation template's
+    Feed the finding into propose-fix first. Only after that proposal is
+    approved: feed the finding into the domain's own generation template's
     ## Audit Fix slot and regenerate the whole domain document, then
     re-audit. Document-level only — academic systems have no section-scoped
     generation templates to target a narrower regenerate at.
   max_iterations: 5
   fallback: human_review
+
+# Proposal gate — docs/proposal/base_academic-proposal-gate-workflow-
+# proposal.md. Nothing in generation/audit/report/fix runs until a human
+# has approved a proposal describing it first.
+proposal_gate:
+  rule: >
+    generation/audit/report may not begin until an academic_proposals
+    row for (phase, commit_sha) has status=approved. fix regeneration
+    may not begin until an approved phase=fix proposal covers the
+    target domain. A commit change after a proposal is drafted but
+    before it's approved invalidates the draft — the gating usecase's
+    completion predicate checks commit_sha equality, so a stale draft
+    simply never satisfies it; propose-* re-drafts automatically on next
+    invocation (same "content changed -> must be re-earned" pattern as
+    the audit-governance commit-hash skip-check, applied to approval
+    instead of scoring).
+  phases: [generation, audit, report]
+  fix_scope: per-domain (phase=fix proposals are scoped to scope_domain_id,
+    not whole-paper, when source=user-request names a domain)
+  rejection_retry:
+    max_iterations: 5   # same ceiling as fix_loop.max_iterations, reused
+    fallback: human_review
 
 tier_gate:
   rule: every domain in the tier must reach threshold before the next tier starts

@@ -19,6 +19,16 @@ Execution order (base_academic-usecase-atomicity-proposal.md §2):
   9. document-narrative-polish (4e) -> cross-section-semantic-audit (5e) ->
      document-semantic-audit (5f)
   10. calculate -> render-charts -> render-audit-report -> render-paper
+
+Proposal gate (docs/proposal/base_academic-proposal-gate-workflow-
+proposal.md): three checkpoints pause the run before generation, before
+audit, and between calculate and render — each drafts (or finds an
+existing) proposal, then exits 2 if it isn't yet approved. Exit code 2
+means "paused for a decision," distinct from 0 (fully done) and 1 (real
+failure) — check workflow-report.json's paused_at field for which phase,
+review the rendered docs/paper/paper-{id}/proposal/{phase}.md, run
+approve_proposal.py, then re-invoke; the paused phase's own completion
+predicate is what makes the re-invocation resume past it.
 """
 import argparse
 import json
@@ -29,6 +39,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "common"))
 import academic_schema  # noqa: E402
+
+# load_steps and steps_of are imported from academic_schema (shared module)
+load_steps = academic_schema.load_steps
+steps_of = academic_schema.steps_of
 
 
 # Domains that receive literature-review enrichment (conditional extra
@@ -75,19 +89,6 @@ class McpSession:
 # DB helpers
 # ---------------------------------------------------------------------------
 
-def load_steps(db_path, standard):
-    con = sqlite3.connect(db_path)
-    con.row_factory = sqlite3.Row
-    rows = con.execute(
-        "SELECT step.id, usecase.name AS usecase, step.step_order, step.kind, step.description "
-        "FROM step JOIN usecase ON step.usecase_id = usecase.id "
-        "WHERE usecase.standard = ? ORDER BY usecase.id, step.step_order",
-        (standard,),
-    ).fetchall()
-    con.close()
-    return [dict(r) for r in rows]
-
-
 def domain_keys(db_path):
     con = sqlite3.connect(db_path)
     rows = con.execute("SELECT key FROM academic_domains ORDER BY sort_order").fetchall()
@@ -127,9 +128,6 @@ def get_paper_id(db_path, standard, repo_root):
     con.close()
     return row["id"] if row else None
 
-
-def steps_of(steps, usecase):
-    return [s for s in steps if s["usecase"] == usecase]
 
 
 # ---------------------------------------------------------------------------
@@ -615,6 +613,76 @@ def run_deterministic_triads_for_usecase(session, repo_root, steps, usecase,
                                          "stage": "run", "message": str(e)})
 
 
+# ---------------------------------------------------------------------------
+# Proposal gate (docs/proposal/base_academic-proposal-gate-workflow-
+# proposal.md §2/§9) — three checkpoints below pause the run until a
+# human approves what's about to happen.
+# ---------------------------------------------------------------------------
+
+def _proposal_needs_draft(conn, paper_id, phase, commit_sha, scope_domain_id=None):
+    """True if propose-{phase} needs a fresh draft: no proposal exists
+    yet, the latest one was rejected (redraft informed by the rejection,
+    proposal doc §6a), or the latest pending draft is stale (commit
+    changed since it was written). False if a pending draft already
+    exists for this exact commit — nothing to (re)draft, just wait for
+    the human decision."""
+    row = conn.execute(
+        "SELECT status, commit_sha FROM academic_proposals "
+        "WHERE paper_id=? AND phase=? AND scope_domain_id IS ? AND is_latest=1",
+        (paper_id, phase, scope_domain_id)).fetchone()
+    if row is None:
+        return True
+    if row["status"] == "rejected":
+        return True
+    if row["status"] == "pending" and row["commit_sha"] != commit_sha:
+        return True
+    return False
+
+
+def _checkpoint(session, conn, repo_root, paper_id, phase, commit_sha, steps, report, report_path):
+    """Pause the run until propose-{phase} has an approved proposal at
+    the current commit. Returns normally (proceeds) if already approved;
+    otherwise stages a draft (if one is needed) and exits 2 — "paused for
+    a decision," distinct from 0 (done) / 1 (failed). Every call site
+    below is meant to stop the run right there when the gate isn't open."""
+    complete, _ = academic_schema.usecase_status(conn, paper_id, f"propose-{phase}")
+    if complete:
+        return  # already approved at this commit — proceed
+
+    if _proposal_needs_draft(conn, paper_id, phase, commit_sha):
+        uc_steps = steps_of(steps, f"propose-{phase}")
+        if len(uc_steps) < 4:
+            print(f"  WARNING: no steps for propose-{phase} — skipping proposal gate")
+            return
+        gather, prompt_step, persist, render = uc_steps[0], uc_steps[1], uc_steps[2], uc_steps[3]
+        gather_input = {"paper_id": paper_id, "phase": phase, "commit_sha": commit_sha}
+        try:
+            session.call("run_script_step", {"step_id": gather["id"],
+                                             "repo_path": repo_root, "input": gather_input})
+            prompt = session.call("prepare_semantic_step",
+                                  {"step_id": prompt_step["id"], "repo_path": repo_root})
+            report["pending_semantic"].append({
+                "label": f"propose-{phase}",
+                "semantic_step_id": prompt_step["id"],
+                "persist_step_id": persist["id"],
+                "render_step_id": render["id"],
+                "prompt_name": prompt.get("prompt_name", ""),
+            })
+        except Exception as e:
+            report["failed"].append({"label": f"propose-{phase}", "stage": "prepare_semantic",
+                                     "message": str(e)})
+    else:
+        print(f"  propose-{phase}: draft already pending review, not redrafting")
+
+    print(f"\n== PAUSED: awaiting approval for propose-{phase} ==")
+    print(f"  review: docs/paper/paper-{paper_id}/proposal/{phase}.md "
+          f"(once the staged semantic step above is completed, persisted, and rendered)")
+    print(f"  then: approve_proposal.py --phase {phase}  (or --reject --reason ...)")
+    report["paused_at"] = phase
+    Path(report_path).write_text(json.dumps(report, indent=2))
+    sys.exit(2)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--mcp-bin", required=True)
@@ -632,6 +700,11 @@ def main():
     repo_root = args.repo_root
     db_path = str(Path(repo_root) / ".samgraha" / "knowledge.db")
     report = {"ran": [], "failed": [], "pending_semantic": []}
+    report_path = args.report_out or str(Path(repo_root) / ".samgraha" / "workflow-report.json")
+    # Computed here, not just at the bottom of main(), because the
+    # proposal-gate checkpoints (_checkpoint()) may sys.exit(2) mid-run
+    # and need to write workflow-report.json's paused_at field before
+    # exiting — same file the final write below produces on a normal run.
 
     # --- Git gate: require clean working tree ---
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -712,6 +785,11 @@ def main():
                     except Exception as e:
                         report["failed"].append({"label": f"{analysis_usecase}/discover-modules",
                                                  "stage": "run", "message": str(e)})
+
+            # --- Proposal gate: generation may not start until an
+            # approved generation proposal exists at this commit ---
+            _checkpoint(session, conn, repo_root, paper_id, "generation",
+                       commit_sha, steps, report, report_path)
 
             # --- Phase 5: Generate section drafts (4a) ---
             print(f"\n== generate-section-draft ({len(gen_domains)} domains) ==")
@@ -815,6 +893,11 @@ def main():
                         "status": "skipped",
                         "message": "skipped: generation-incomplete — fix content gaps first",
                     })
+
+            # --- Proposal gate: audit may not start until an approved
+            # audit proposal exists at this commit ---
+            _checkpoint(session, conn, repo_root, paper_id, "audit",
+                       commit_sha, steps, report, report_path)
 
             # --- Phase 6: Deterministic audit (skip-if-unchanged) ---
             print(f"\n== deterministic-audit ({len(domains)} domains) ==")
@@ -963,7 +1046,28 @@ def main():
                                      label="document-semantic-audit")
 
         # --- Phase 10: Calculate + Render ---
-        for usecase in ("calculate", "render-charts", "render-audit-report", "render-paper"):
+        # Proposal gate splices between calculate and render — the report
+        # proposal states the score calculate just produced (docs/
+        # proposal/base_academic-proposal-gate-workflow-proposal.md §9c),
+        # so calculate must run first, then the gate, then the renders.
+        for usecase in ("calculate",):
+            uc_steps = steps_of(steps, usecase)
+            if uc_steps:
+                step = uc_steps[0]
+                try:
+                    r = session.call("run_script_step",
+                                     {"step_id": step["id"], "repo_path": repo_root, "input": {}},
+                                     timeout_secs=300)
+                    report["ran"].append({"step": usecase, "status": r.get("status"),
+                                          "message": r.get("message", "")[:500]})
+                except Exception as e:
+                    report["failed"].append({"label": usecase, "stage": "run",
+                                             "message": str(e)})
+
+        _checkpoint(session, conn, repo_root, paper_id, "report",
+                   commit_sha, steps, report, report_path)
+
+        for usecase in ("render-charts", "render-audit-report", "render-paper"):
             uc_steps = steps_of(steps, usecase)
             if uc_steps:
                 step = uc_steps[0]
@@ -981,7 +1085,6 @@ def main():
         conn.close()
         session.close()
 
-    report_path = args.report_out or str(Path(repo_root) / ".samgraha" / "workflow-report.json")
     Path(report_path).write_text(json.dumps(report, indent=2))
 
     print(f"\n== summary ==")

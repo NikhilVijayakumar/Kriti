@@ -53,7 +53,8 @@ def main():
                             "academic_templates", "academic_score_history",
                             "academic_deterministic_findings",
                             "academic_visualization_types", "academic_visualizations",
-                            "academic_report_history"])
+                            "academic_report_history", "academic_section_citations",
+                            "academic_proposals"])
 
 
 if __name__ == "__main__":

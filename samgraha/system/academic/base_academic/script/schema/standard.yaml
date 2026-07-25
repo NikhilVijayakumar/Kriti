@@ -104,6 +104,19 @@ scripts:
   - name: render-charts
     location: ../render-audit-report/render_charts.py
     purpose: "generate chart images from score/audit data (matplotlib Agg backend)"
+  # --- propose-generation / propose-audit / propose-report / propose-fix / approve-proposal usecases ---
+  - name: gather-proposal-context
+    location: ../propose/gather_proposal_context.py
+    purpose: "gather upstream analysis, rubric info, failing findings, or redraft context for a proposal"
+  - name: persist-proposal
+    location: ../propose/persist_proposal.py
+    purpose: "append-only insert of a drafted proposal row (status=pending)"
+  - name: render-proposal
+    location: ../propose/render_proposal.py
+    purpose: "render a persisted proposal to markdown + html for human review"
+  - name: approve-proposal
+    location: ../propose/approve_proposal.py
+    purpose: "human-decision step — flip a pending proposal to approved/rejected"
 
 prompts:
   # --- novelty-analysis usecase ---
@@ -165,6 +178,15 @@ prompts:
   # --- document-semantic-audit usecase (5f) ---
   - name: document-semantic-audit
     location: ../../prompt/document-audit/document-semantic-audit.md
+  # --- propose-generation / propose-audit / propose-report / propose-fix usecases ---
+  - name: generation-proposal
+    location: ../../prompt/propose/generation-proposal.md
+  - name: audit-proposal
+    location: ../../prompt/propose/audit-proposal.md
+  - name: report-proposal
+    location: ../../prompt/propose/report-proposal.md
+  - name: fix-proposal
+    location: ../../prompt/propose/fix-proposal.md
   # --- shared / not yet wired into any usecase's dispatch ---
   - name: module-analysis-summary
     location: ../../prompt/_shared/module-analysis-summary.md
@@ -737,3 +759,94 @@ usecases:
     description: "assemble paper from domain drafts, render through HTML/PDF/DOCX"
     steps: []
     # Depends on document-semantic-audit; single-step expanded at runtime
+
+  # --- Proposal gate usecases (docs/proposal/base_academic-proposal-gate-
+  #     workflow-proposal.md). Fixed-shape, whole-run — literal steps:,
+  #     same pattern as schema-init/classify-repo, not expand_triads(). ---
+  - name: propose-generation
+    description: "draft a whole-run proposal of what generation is about to write"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather upstream analysis + domain list"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the generation proposal"
+        prompt: generation-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-audit
+    description: "draft a whole-run proposal of what audit is about to check"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather generation-complete domains + rubrics + models"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the audit proposal"
+        prompt: audit-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-report
+    description: "draft a whole-run proposal of what report artifacts this run will produce"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather latest score + report-kind list"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the report proposal"
+        prompt: report-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-fix
+    description: "draft what a fix will change and why, before regenerating a domain"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather failing findings or user comment + resolved domain"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the fix proposal"
+        prompt: fix-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: approve-proposal
+    description: "human decision step — flips a pending proposal to approved/rejected"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Flip latest pending proposal to approved or rejected"
+        script: approve-proposal

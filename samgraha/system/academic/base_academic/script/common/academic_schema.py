@@ -547,7 +547,7 @@ def usecase_status(conn, paper_id, usecase_name):
     return fn(conn, paper_id)
 
 
-@_register_usecase("schema-init", "20 academic_* tables exist")
+@_register_usecase("schema-init", "21 academic_* tables exist")
 def _uc_schema_init(conn, paper_id):
     tables = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' "
@@ -565,6 +565,8 @@ def _uc_schema_init(conn, paper_id):
         "academic_deterministic_findings",
         "academic_visualization_types", "academic_visualizations",
         "academic_report_history",
+        "academic_section_citations",   # fixes pre-existing gap
+        "academic_proposals",           # proposal gate (schema/22)
     }
     missing = required - names
     if missing:
@@ -994,6 +996,42 @@ def _uc_render_paper(conn, paper_id):
 
 
 # ---------------------------------------------------------------------------
+# Proposal-gate predicates — generation/audit/report may not start until an
+# approved whole-paper proposal exists at the current commit (docs/proposal/
+# base_academic-proposal-gate-workflow-proposal.md §2/§5). propose-fix has
+# no registry entry here: it's domain-scoped (scope_domain_id set for a
+# user-request fix), so its own verify script takes --domain and checks
+# academic_proposals directly rather than going through usecase_status()
+# with a single whole-paper name.
+# ---------------------------------------------------------------------------
+
+def _make_proposal_predicate(phase):
+    def predicate(conn, paper_id):
+        row = conn.execute(
+            "SELECT commit_sha FROM academic_proposals "
+            "WHERE paper_id=? AND phase=? AND scope_domain_id IS NULL "
+            "AND status='approved' AND is_latest=1", (paper_id, phase),
+        ).fetchone()
+        if not row:
+            return False, [f"no approved {phase} proposal"]
+        return True, [f"{phase} proposal approved at {row['commit_sha'][:8] or '(no commit)'}"]
+    return predicate
+
+
+for _phase in ("generation", "audit", "report"):
+    _register_usecase_fn(f"propose-{_phase}",
+                          f"an approved {_phase} proposal exists at the current commit",
+                          _make_proposal_predicate(_phase))
+
+
+_register_usecase_fn(
+    "approve-proposal", "human-decision step — no completion criteria of its own",
+    lambda conn, paper_id: (True, ["approve-proposal has no predicate; "
+                                    "downstream gates check the row it produces, not this usecase itself"]),
+)
+
+
+# ---------------------------------------------------------------------------
 # Score history helpers
 # ---------------------------------------------------------------------------
 
@@ -1346,3 +1384,47 @@ def seed_templates(conn, system_dir):
                         (kind, scope, name, file_path),
                     )
     conn.commit()
+
+
+# ---------------------------------------------------------------------------
+# Step loading helpers (extracted from run_full_workflow.py for reuse
+# by propose scripts and other callers)
+# ---------------------------------------------------------------------------
+
+def db_path(repo_root):
+    """Standard knowledge.db location under a repo's .samgraha/ dir —
+    same construction _adapter.parse_step_args() does inline for step
+    scripts; shared here for callers outside the fixed step contract
+    (request_fix.py, run_full_workflow.py)."""
+    return os.path.join(str(repo_root), ".samgraha", "knowledge.db")
+
+
+def resolve_paper_id(conn, repo_root):
+    """Resolve paper_id from repo_root. Unlike get_paper_id() in
+    run_full_workflow.py (which takes db_path+standard+repo_root),
+    this assumes the caller already has a conn."""
+    row = conn.execute(
+        "SELECT id FROM academic_papers WHERE repo_root=?",
+        (str(repo_root),)).fetchone()
+    return row["id"] if row else None
+
+
+def load_steps(db_path, standard):
+    """Load all steps for a standard from knowledge.db.
+    Extracted from run_full_workflow.py for shared use."""
+    con = sqlite3.connect(db_path)
+    con.row_factory = sqlite3.Row
+    rows = con.execute(
+        "SELECT step.id, usecase.name AS usecase, step.step_order, "
+        "step.kind, step.description "
+        "FROM step JOIN usecase ON step.usecase_id = usecase.id "
+        "WHERE usecase.standard = ? ORDER BY usecase.id, step.step_order",
+        (standard,),
+    ).fetchall()
+    con.close()
+    return [dict(r) for r in rows]
+
+
+def steps_of(steps, usecase):
+    """Filter a steps list to those belonging to a specific usecase."""
+    return [s for s in steps if s["usecase"] == usecase]
