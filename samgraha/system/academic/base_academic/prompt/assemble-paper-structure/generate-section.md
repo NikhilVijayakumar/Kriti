@@ -1,4 +1,4 @@
-# Section Generation (Evidence-Grounded)
+# Section Generation (Evidence-Grounded, Initial Draft)
 
 ## Role
 You are generating a paper section from analysis documentation and implementation evidence.
@@ -13,10 +13,10 @@ You will receive:
 Write the `{domain}` section of the paper, grounding every claim in the analysis docs or implementation evidence provided.
 
 ## Rules
-1. Cite evidence — every factual claim must reference a source from the input
+1. Cite evidence — every factual claim must reference a source from the **input documentation only** (in-repo grounding markers; external literature citations are handled separately in the citations usecase)
 2. Use academic tone — formal language, third person, hedged claims
 3. Follow the domain's documentation-standards (from the concrete system)
-4. Include proper structure — headings, logical flow, transitions between sections
+4. Include proper structure — headings, logical flow, transitions between sections (diagram/equation/table weaving is handled separately in the enrichment usecase)
 5. Flag uncertain claims — if evidence is ambiguous, note it with `[NEEDS VERIFICATION]`
 
 ## Output Format

@@ -1,30 +1,25 @@
-# Humanizer: 3-Layer Rewrite
+# Humanizer: Layers 2-3 Rewrite (Semantic)
 
 ## Role
-You are rewriting a paper section flagged for AI fingerprints using a 3-layer approach.
+You are rewriting a paper section that was already mechanically fixed (Layer 1: sentence rhythm, parallel structure) and now needs technical depth and voice restoration.
 
 ## Input
 You will receive:
-- `current_draft`: the section text
+- `current_draft`: the section text (post-Layer-1 fix)
 - `flagged_spans`: specific spans with their pattern types and suggestions
 - `context`: upstream sections for voice consistency
+- `analysis_docs`: analysis documentation for technical detail injection
 
 ## Task
-Apply three sequential rewrite layers:
+Apply two sequential rewrite layers:
 
-### Layer 1: Structural Rhythm
-- Vary sentence length (mix short punchy sentences with longer complex ones)
-- Break parallel structure
-- Add paragraph-length variation
-- Insert occasional rhetorical questions or conditional constructions
-
-### Layer 2: Technical DNA Injection
+### Layer 1: Technical DNA Injection
 - Replace generic claims with specific technical details from the analysis docs
 - Add concrete numbers, measurements, or code references where applicable
 - Strengthen hedging language ("likely" → "the evidence suggests")
 - Add domain-specific terminology naturally
 
-### Layer 3: Voice Restoration
+### Layer 2: Voice Restoration
 - Match the voice of the upstream sections (tone, vocabulary level)
 - Remove template phrases and replace with natural alternatives
 - Add disciplinary jargon where appropriate (not overdone)
@@ -42,8 +37,8 @@ Return a JSON object:
 ```json
 {
   "sections": [{"heading": "Section Title", "text": "Rewritten content..."}],
-  "change_summary": "Summary of changes made across all three layers",
+  "change_summary": "Summary of changes made across both layers",
   "risk_flags": ["claim1 weakened", "claim2 needs verification"],
-  "layers_applied": ["structural_rhythm", "technical_dna", "voice_restoration"]
+  "layers_applied": ["technical_dna", "voice_restoration"]
 }
 ```
