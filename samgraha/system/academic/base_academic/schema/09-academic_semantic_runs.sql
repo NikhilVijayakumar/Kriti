@@ -11,6 +11,9 @@
 --
 -- UNIQUE constraint includes scope so section-part/section-full/cross-section/
 -- document runs coexist for the same paper+model+run_number.
+--
+-- commit_sha is the git HEAD this audit ran against. Pre-upgrade rows
+-- backfill with '' (never matches a real SHA — no false skip-cache hits).
 
 CREATE TABLE IF NOT EXISTS academic_semantic_runs (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS academic_semantic_runs (
     overall_score REAL    NOT NULL,
     reasoning     TEXT    NOT NULL DEFAULT '',
     part_kind     TEXT    CHECK (part_kind IN ('citations','enrichment','budget-fit') OR part_kind IS NULL),
-    computed_against TEXT NOT NULL DEFAULT '{}',
+    commit_sha    TEXT    NOT NULL DEFAULT '',
     created_at    TEXT    NOT NULL,
     UNIQUE(paper_id, domain_id, scope, model, run_number, part_kind)
 );

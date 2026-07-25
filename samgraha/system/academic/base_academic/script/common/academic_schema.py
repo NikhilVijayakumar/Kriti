@@ -409,16 +409,15 @@ def get_section_citations(conn, paper_id, domain=None, source_kind=None):
 # ---------------------------------------------------------------------------
 
 def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
-                          scope="section-full", computed_against=None,
-                          part_kind=None):
+                          scope="section-full", part_kind=None,
+                          commit_sha=""):
     """Append a new semantic run.  Never updates or deletes existing rows.
     run_number auto-increments per (paper, domain, scope, model, part_kind).
     scope='cross-section' or 'document' → domain must be None.
     part_kind is only meaningful when scope='section-part' — one of
     'citations', 'enrichment', 'budget-fit'.  NULL for all other scopes.
-    computed_against is a dict of {domain_key: iteration} snapshots for
-    cross-section/document runs, so staleness can be detected when humanize
-    changes a domain draft."""
+    commit_sha is the git commit this audit ran against — used for
+    skip-if-unchanged cache checks in the orchestrator."""
     domain_id = None
     if scope in ("section-full", "section-part"):
         domain_id = get_domain_id(conn, domain)
@@ -436,10 +435,10 @@ def upsert_semantic_score(conn, paper_id, domain, model, score, result=None,
     ).fetchone()[0]
     cur = conn.execute(
         "INSERT INTO academic_semantic_runs "
-        "(standard, paper_id, domain_id, scope, model, run_number, overall_score, reasoning, part_kind, computed_against, created_at) "
+        "(standard, paper_id, domain_id, scope, model, run_number, overall_score, reasoning, part_kind, commit_sha, created_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (_STANDARD, paper_id, domain_id, scope, model or "", max_run + 1, score, reasoning,
-         part_kind, json.dumps(computed_against or {}), ts),
+         part_kind, commit_sha, ts),
     )
     run_id = cur.lastrowid
 
@@ -1094,8 +1093,11 @@ def get_plagiarism_finding(conn, paper_id, domain, run_number=None, pass_type="f
 # Deterministic findings helpers — append-only, one row per (paper, domain, run)
 # ---------------------------------------------------------------------------
 
-def record_deterministic_findings(conn, paper_id, domain, verdict, findings=None):
-    """Append a deterministic audit result. Never updates existing rows."""
+def record_deterministic_findings(conn, paper_id, domain, verdict, findings=None,
+                                  commit_sha=""):
+    """Append a deterministic audit result. Never updates existing rows.
+    commit_sha is the git commit this audit ran against — used for
+    skip-if-unchanged cache checks in the orchestrator."""
     domain_id = get_domain_id(conn, domain)
     if domain_id is None:
         raise ValueError(f"unknown domain '{domain}' — not in academic_domains")
@@ -1107,10 +1109,10 @@ def record_deterministic_findings(conn, paper_id, domain, verdict, findings=None
     ).fetchone()[0]
     cur = conn.execute(
         "INSERT INTO academic_deterministic_findings "
-        "(paper_id, domain_id, run_number, verdict, findings, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "(paper_id, domain_id, run_number, verdict, findings, commit_sha, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
         (paper_id, domain_id, max_run + 1, verdict,
-         json.dumps(findings or []), ts),
+         json.dumps(findings or []), commit_sha, ts),
     )
     conn.commit()
     return cur.lastrowid
@@ -1128,6 +1130,25 @@ def get_latest_deterministic_findings(conn, paper_id, domain):
         (paper_id, domain_id),
     ).fetchone()
     return dict(row) if row else None
+
+
+def get_semantic_runs_for_commit(conn, paper_id, domain, scope, part_kind,
+                                 commit_sha):
+    """Return all semantic run rows matching a specific commit.
+    Used by the orchestrator's skip-check: if the requested model already
+    has a row for this commit+scope+part_kind, skip re-scoring."""
+    domain_id = None
+    if scope in ("section-full", "section-part"):
+        domain_id = get_domain_id(conn, domain)
+        if domain_id is None:
+            return []
+    rows = conn.execute(
+        "SELECT * FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id IS ? AND scope=? "
+        "AND part_kind IS ? AND commit_sha=?",
+        (paper_id, domain_id, scope, part_kind, commit_sha),
+    ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_deterministic_findings_history(conn, paper_id, domain=None):
