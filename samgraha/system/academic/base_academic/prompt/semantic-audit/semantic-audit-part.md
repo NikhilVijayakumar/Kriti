@@ -1,5 +1,10 @@
 # Semantic Audit — Part Scope
 
+> **Rerun policy:** This part's semantic score is cached per
+> `(commit, model)`. If you're re-running with the same model against
+> the same commit, the cached score stands — you're here because either
+> the code changed or a new model is being added to the ensemble.
+
 ## Role
 You are auditing a specific part (citations, enrichment, or budget-fit) of a single domain's section draft.
 

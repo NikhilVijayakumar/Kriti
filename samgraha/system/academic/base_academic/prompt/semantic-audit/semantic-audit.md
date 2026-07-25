@@ -1,5 +1,10 @@
 # Semantic Audit — {{ domain }}
 
+> **Rerun policy:** This domain's semantic score is cached per
+> `(commit, model)`. If you're re-running with the same model against
+> the same commit, the cached score stands — you're here because either
+> the code changed or a new model is being added to the ensemble.
+
 Score the current draft for the **{{ domain }}** domain against the rubric.
 
 ## Input Files
