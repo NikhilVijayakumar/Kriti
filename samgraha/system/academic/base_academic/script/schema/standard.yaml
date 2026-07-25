@@ -254,6 +254,12 @@ custom_tables:
   - table_name: academic_report_history
     purpose: "one row per render run (paper or audit track)"
     owner_script: render-paper
+  - table_name: academic_proposals
+    purpose: "one row per proposal draft/decision — generation/audit/report/fix gate (docs/proposal/base_academic-proposal-gate-workflow-proposal.md)"
+    owner_script: persist-proposal
+  - table_name: academic_calculation_dependencies
+    purpose: "per calc file: declared dependency edges and whether each file is consumed at runtime (NULL = dead)"
+    owner_script: schema-init
 
 usecases:
   - name: schema-init

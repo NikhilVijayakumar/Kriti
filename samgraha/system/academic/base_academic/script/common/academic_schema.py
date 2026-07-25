@@ -80,6 +80,24 @@ def ensure_schema(conn):
         conn.execute("ALTER TABLE academic_proposals ADD COLUMN metadata TEXT")
     except sqlite3.OperationalError:
         pass
+    # Migration: academic_visualizations provenance columns (§6)
+    for stmt in [
+        "ALTER TABLE academic_visualizations ADD COLUMN commit_sha TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE academic_visualizations ADD COLUMN generation_params TEXT",
+        "ALTER TABLE academic_visualizations ADD COLUMN width INTEGER",
+        "ALTER TABLE academic_visualizations ADD COLUMN height INTEGER",
+    ]:
+        try:
+            conn.execute(stmt)
+        except sqlite3.OperationalError:
+            pass  # column already exists
+    # Migration: academic_narrative_sections lookup index (§9a)
+    try:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_narrative_sections_lookup "
+            "ON academic_narrative_sections(narrative_id)")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
 
 
@@ -1255,7 +1273,9 @@ def seed_visualization_types(conn, chart_specs):
 
 
 def record_visualization(conn, chart_key, paper_id=None, domain_key=None,
-                         content_hash=None, file_path=""):
+                         content_hash=None, file_path="",
+                         commit_sha=None, generation_params=None,
+                         width=None, height=None):
     """Record a rendered chart image.  Returns the row id."""
     chart_type = conn.execute(
         "SELECT id FROM academic_visualization_types WHERE chart_key=?", (chart_key,)
@@ -1265,9 +1285,12 @@ def record_visualization(conn, chart_key, paper_id=None, domain_key=None,
     domain_id = get_domain_id(conn, domain_key) if domain_key else None
     ts = now_iso()
     cur = conn.execute(
-        "INSERT INTO academic_visualizations (chart_type_id, paper_id, domain_id, content_hash, file_path, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (chart_type["id"], paper_id, domain_id, content_hash, file_path, ts),
+        "INSERT INTO academic_visualizations "
+        "(chart_type_id, paper_id, domain_id, content_hash, file_path, created_at, "
+        " commit_sha, generation_params, width, height) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (chart_type["id"], paper_id, domain_id, content_hash, file_path, ts,
+         commit_sha or "", generation_params, width, height),
     )
     conn.commit()
     return cur.lastrowid
@@ -1433,3 +1456,25 @@ def load_steps(db_path, standard):
 def steps_of(steps, usecase):
     """Filter a steps list to those belonging to a specific usecase."""
     return [s for s in steps if s["usecase"] == usecase]
+
+
+def seed_calculation_dependencies(conn, edges):
+    """Seed calculation dependency edges. Each edge is a dict with keys:
+    calc_path, depends_on_kind, depends_on, consumed_by (or None — a
+    comma-joined reader-script list if more than one script reads
+    calc_path, schema/23; the initial seed's best-known guess, later
+    kept accurate by audit_calculation_wiring.py, §4c). One row per
+    (calc_path, depends_on_kind, depends_on) — consumed_by is NOT part
+    of the identity key, it's this row's payload; re-seeding just
+    refreshes it, same idempotent shape seed_domains() already uses."""
+    for e in edges:
+        conn.execute(
+            "INSERT INTO academic_calculation_dependencies "
+            "(calc_path, depends_on_kind, depends_on, consumed_by) "
+            "VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(calc_path, depends_on_kind, depends_on) "
+            "DO UPDATE SET consumed_by=excluded.consumed_by",
+            (e["calc_path"], e["depends_on_kind"], e["depends_on"],
+             e.get("consumed_by")),
+        )
+    conn.commit()

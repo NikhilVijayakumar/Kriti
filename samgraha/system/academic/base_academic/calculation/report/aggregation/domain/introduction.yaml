@@ -2,8 +2,8 @@ id: aggregation_introduction
 calculation: weighted_merge
 scope: domain
 inputs:
-  deterministic: calculation/deterministic/introduction.yaml
-  semantic: calculation/semantic/full-part-blend.yaml
+  deterministic: calculation/generation/introduction.yaml
+  semantic: calculation/report/semantic/full-part-blend.yaml
 weights:
   deterministic: 0.50
   semantic: 0.50

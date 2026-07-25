@@ -2,8 +2,8 @@ id: aggregation_title_and_metadata
 calculation: weighted_merge
 scope: domain
 inputs:
-  deterministic: calculation/deterministic/title-and-metadata.yaml
-  semantic: calculation/semantic/full-part-blend.yaml
+  deterministic: calculation/generation/title-and-metadata.yaml
+  semantic: calculation/report/semantic/full-part-blend.yaml
 weights:
   deterministic: 0.50
   semantic: 0.50

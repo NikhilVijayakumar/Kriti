@@ -86,7 +86,7 @@ def main():
             # Get latest semantic score
             sem_row = conn.execute(
                 "SELECT overall_score FROM academic_semantic_runs "
-                "WHERE paper_id=? AND domain_id=? "
+                "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
                 "ORDER BY run_number DESC LIMIT 1",
                 (paper_id, domain_id),
             ).fetchone()

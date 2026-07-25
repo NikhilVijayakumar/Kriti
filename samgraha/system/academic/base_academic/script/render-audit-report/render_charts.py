@@ -4,6 +4,7 @@ matplotlib (Agg backend). Records each chart in academic_visualizations.
 import hashlib
 import json
 import os
+import struct
 import sys
 import sys as _sys
 from pathlib import Path as _Path
@@ -12,6 +13,33 @@ from _adapter import parse_step_args, write_envelope, SCRIPTS_DIR
 
 sys.path.insert(0, str(SCRIPTS_DIR / "common"))
 import academic_schema  # noqa: E402
+
+
+def _png_dimensions(path):
+    """Read actual width/height straight from the PNG's IHDR chunk — every
+    chart here saves with bbox_inches="tight", which crops to content, so
+    figsize*dpi is NOT the real saved size; only the file itself knows.
+    Stdlib struct read, no Pillow dependency for two integers."""
+    with open(path, "rb") as f:
+        header = f.read(24)
+    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+        return None, None
+    width, height = struct.unpack(">II", header[16:24])
+    return width, height
+
+
+def _record_chart(conn, chart_key, paper_id, fpath, commit_sha, params=None, content_hash=None):
+    """Shared academic_visualizations insert for every chart call site —
+    width/height come from the actual saved PNG (§0's bbox_inches="tight"
+    reasoning), generation_params is whatever inputs shaped this specific
+    render (each chart function's own return dict's "params" key)."""
+    width, height = _png_dimensions(fpath)
+    academic_schema.record_visualization(
+        conn, chart_key, paper_id, content_hash=content_hash, file_path=fpath,
+        commit_sha=commit_sha,
+        generation_params=json.dumps(params) if params is not None else None,
+        width=width, height=height,
+    )
 
 
 def _get_chart_backend():
@@ -91,7 +119,8 @@ def _cross_section_score_chart(plt, paper_id, conn, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "cross-section-score", "path": output_path}
+    return {"chart": "cross-section-score", "path": output_path,
+            "params": {"score": score}}
 
 
 def _document_review_score_chart(plt, paper_id, conn, output_path):
@@ -115,7 +144,8 @@ def _document_review_score_chart(plt, paper_id, conn, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "document-review-score", "path": output_path}
+    return {"chart": "document-review-score", "path": output_path,
+            "params": {"score": score}}
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +204,9 @@ def _pipeline_progress_matrix(plt, paper_id, conn, domains, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "pipeline-progress-matrix", "path": output_path}
+    return {"chart": "pipeline-progress-matrix", "path": output_path,
+            "params": {"domain_count": n_domains, "stage_count": n_stages,
+                       "stages": stage_labels}}
 
 
 def _section_part_score_comparison(plt, paper_id, conn, domains, output_path):
@@ -230,7 +262,9 @@ def _section_part_score_comparison(plt, paper_id, conn, domains, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "section-part-score-comparison", "path": output_path}
+    return {"chart": "section-part-score-comparison", "path": output_path,
+            "params": {"domain_keys": [d[1] for d in domains],
+                       "full_scores": full_scores, "part_scores": part_data}}
 
 
 def _citation_count_bar(plt, paper_id, conn, domains, output_path):
@@ -278,7 +312,9 @@ def _citation_count_bar(plt, paper_id, conn, domains, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "citation-count-bar", "path": output_path}
+    return {"chart": "citation-count-bar", "path": output_path,
+            "params": {"domain_keys": domain_keys, "in_repo_counts": in_repo_counts,
+                       "literature_counts": lit_counts}}
 
 
 def _load_domain_word_count_range(calc_dir, domain_key):
@@ -347,7 +383,9 @@ def _budget_fit_gauge(plt, paper_id, conn, domains, calc_dir, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "budget-fit-gauge", "path": output_path}
+    return {"chart": "budget-fit-gauge", "path": output_path,
+            "params": {"domain_keys": domain_keys, "word_counts": word_counts,
+                       "ranges": ranges}}
 
 
 def _whole_paper_budget_gauge(plt, paper_id, conn, calc_dir, output_path):
@@ -392,7 +430,8 @@ def _whole_paper_budget_gauge(plt, paper_id, conn, calc_dir, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "whole-paper-budget-gauge", "path": output_path}
+    return {"chart": "whole-paper-budget-gauge", "path": output_path,
+            "params": {"total_word_count": total_wc, "range": [wc_min, wc_max]}}
 
 
 def _humanize_pass_chart(plt, paper_id, conn, domains, output_path):
@@ -454,13 +493,16 @@ def _humanize_pass_chart(plt, paper_id, conn, domains, output_path):
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    return {"chart": "humanize-pass-chart", "path": output_path}
+    return {"chart": "humanize-pass-chart", "path": output_path,
+            "params": {"domain_keys": domain_keys, "deterministic_pass_counts": det_only,
+                       "semantic_pass_counts": needed_sem}}
 
 
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload.get("paper_id")
     chart_specs = payload.get("charts", ["domain-score-bar"])
+    commit_sha = payload.get("commit_sha", "")
 
     if not paper_id:
         write_envelope(out_path, status="error", message="missing paper_id")
@@ -499,10 +541,9 @@ def main():
                 fpath = os.path.join(output_dir, "domain-scores.png")
                 _domain_score_bar(plt, domain_keys, scores, fpath)
                 content_hash = hashlib.md5(json.dumps(scores).encode()).hexdigest()
-                academic_schema.record_visualization(
-                    conn, "domain-score-bar", paper_id,
-                    content_hash=content_hash, file_path=fpath
-                )
+                _record_chart(conn, "domain-score-bar", paper_id, fpath, commit_sha,
+                             params={"domain_keys": domain_keys, "scores": scores},
+                             content_hash=content_hash)
                 generated.append({"chart": "domain-score-bar", "path": fpath})
 
         if "deterministic-findings-heatmap" in chart_specs:
@@ -522,10 +563,8 @@ def main():
                 _deterministic_findings_heatmap(
                     plt, list(check_results.keys()), check_results, fpath
                 )
-                academic_schema.record_visualization(
-                    conn, "deterministic-findings-heatmap", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "deterministic-findings-heatmap", paper_id, fpath, commit_sha,
+                             params={"domain_keys": list(check_results.keys())})
                 generated.append({"chart": "deterministic-findings-heatmap",
                                   "path": fpath})
 
@@ -533,20 +572,16 @@ def main():
             fpath = os.path.join(output_dir, "cross-section-score.png")
             result = _cross_section_score_chart(plt, paper_id, conn, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "cross-section-score", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "cross-section-score", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "document-review-score" in chart_specs:
             fpath = os.path.join(output_dir, "document-review-score.png")
             result = _document_review_score_chart(plt, paper_id, conn, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "document-review-score", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "document-review-score", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         calc_dir = str(SCRIPTS_DIR / ".." / "calculation")
@@ -556,10 +591,8 @@ def main():
             result = _pipeline_progress_matrix(
                 plt, paper_id, conn, domains, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "pipeline-progress-matrix", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "pipeline-progress-matrix", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "section-part-score-comparison" in chart_specs:
@@ -567,10 +600,8 @@ def main():
             result = _section_part_score_comparison(
                 plt, paper_id, conn, domains, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "section-part-score-comparison", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "section-part-score-comparison", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "citation-count-bar" in chart_specs:
@@ -578,10 +609,8 @@ def main():
             result = _citation_count_bar(
                 plt, paper_id, conn, domains, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "citation-count-bar", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "citation-count-bar", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "budget-fit-gauge" in chart_specs:
@@ -589,10 +618,8 @@ def main():
             result = _budget_fit_gauge(
                 plt, paper_id, conn, domains, calc_dir, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "budget-fit-gauge", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "budget-fit-gauge", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "whole-paper-budget-gauge" in chart_specs:
@@ -600,10 +627,8 @@ def main():
             result = _whole_paper_budget_gauge(
                 plt, paper_id, conn, calc_dir, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "whole-paper-budget-gauge", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "whole-paper-budget-gauge", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         if "humanize-pass-chart" in chart_specs:
@@ -611,10 +636,8 @@ def main():
             result = _humanize_pass_chart(
                 plt, paper_id, conn, domains, fpath)
             if result:
-                academic_schema.record_visualization(
-                    conn, "humanize-pass-chart", paper_id,
-                    file_path=fpath
-                )
+                _record_chart(conn, "humanize-pass-chart", paper_id, fpath, commit_sha,
+                             params=result.get("params"))
                 generated.append(result)
 
         write_envelope(out_path, status="ok",

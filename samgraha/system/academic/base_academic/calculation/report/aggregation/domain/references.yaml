@@ -2,8 +2,8 @@ id: aggregation_references
 calculation: weighted_merge
 scope: domain
 inputs:
-  deterministic: calculation/deterministic/references.yaml
-  semantic: calculation/semantic/full-part-blend.yaml
+  deterministic: calculation/generation/references.yaml
+  semantic: calculation/report/semantic/full-part-blend.yaml
 weights:
   deterministic: 0.50
   semantic: 0.50
