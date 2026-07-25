@@ -1,10 +1,10 @@
-"""check_word_budget.py — deterministic word-count check for section-budget-fit.
-Checks a domain's word count against its configured min/max range and
-the whole-paper total against paper-budget.yaml.
+"""check_word_budget.py — generation-time completeness check for section-budget-fit.
+Runs every text-evaluable rule from calculation/generation/{domain}.yaml
+against the domain's enriched draft and reports itemized pass/fail results.
 
 Expected --in payload: {paper_id: int, domain: str}
-Also reads: calculation/deterministic/{domain}.yaml and
-             calculation/summary/paper-budget.yaml
+Also reads: calculation/generation/{domain}.yaml and
+             calculation/report/summary/paper-budget.yaml
 """
 import sys as _sys
 from pathlib import Path as _Path
@@ -16,26 +16,27 @@ import yaml
 
 sys.path.insert(0, str(SCRIPTS_DIR / "common"))
 import academic_schema  # noqa: E402
+import content_rules  # noqa: E402
+
+# Pipeline-state rules that cannot be evaluated against text
+_NON_TEXT_RULES = {"budget_fit_applied"}
 
 
 def _word_count(text):
     return len(re.findall(r'\b\w+\b', text))
 
 
-def _load_domain_config(repo_root, domain):
-    yaml_path = repo_root / "calculation" / "deterministic" / f"{domain}.yaml"
+def _load_domain_rules(repo_root, domain):
+    yaml_path = repo_root / "calculation" / "generation" / f"{domain}.yaml"
     if not yaml_path.exists():
         return None
     with open(yaml_path) as f:
         data = yaml.safe_load(f)
-    for check in data.get("checks", []):
-        if check.get("rule") == "word_count_in_range":
-            return check.get("config", {})
-    return None
+    return data.get("checks", [])
 
 
 def _load_paper_budget(repo_root):
-    yaml_path = repo_root / "calculation" / "summary" / "paper-budget.yaml"
+    yaml_path = repo_root / "calculation" / "report" / "summary" / "paper-budget.yaml"
     if not yaml_path.exists():
         return None
     with open(yaml_path) as f:
@@ -49,8 +50,25 @@ def main():
     paper_id = payload["paper_id"]
     domain = payload.get("domain", "")
 
+    # Load domain rules
+    checks = _load_domain_rules(repo_root, domain)
+    if checks is None:
+        write_envelope(out_path, status="error",
+                       message=f"no rules found for {domain}")
+        return
+
+    # Filter to text-evaluable rules
+    text_checks = [c for c in checks if c.get("rule", "") not in _NON_TEXT_RULES]
+
+    if not text_checks:
+        write_envelope(out_path, status="ok",
+                       message=f"no text-evaluable checks for {domain}",
+                       checks=[], missing=[])
+        return
+
     conn = academic_schema.get_conn(db_path)
     try:
+        # Get this domain's enriched draft
         narrative = academic_schema.get_narrative(conn, paper_id, domain, stage="enrich")
         if not narrative:
             write_envelope(out_path, status="error",
@@ -62,17 +80,39 @@ def main():
             "WHERE narrative_id=? ORDER BY sort_order",
             (narrative["id"],),
         ).fetchall()
-        total_text = " ".join(s["text"] for s in sections)
-        wc = _word_count(total_text)
+        draft_text = "\n\n".join(s["text"] for s in sections)
 
-        config = _load_domain_config(repo_root, domain)
-        in_range = True
-        detail = f"word_count={wc}"
-        if config:
-            min_w, max_w = config.get("min", 0), config.get("max", 999999)
-            in_range = min_w <= wc <= max_w
-            detail += f", range=[{min_w},{max_w}], in_range={in_range}"
+        # Load other domains' drafts for cross-reference checks
+        draft_texts = {}
+        for other_domain in ("abstract", "results", "introduction", "conclusion"):
+            other_narr = academic_schema.get_narrative(
+                conn, paper_id, other_domain, stage="enrich")
+            if other_narr:
+                other_secs = conn.execute(
+                    "SELECT text FROM academic_narrative_sections "
+                    "WHERE narrative_id=? ORDER BY sort_order",
+                    (other_narr["id"],),
+                ).fetchall()
+                draft_texts[other_domain] = "\n\n".join(
+                    s["text"] for s in other_secs)
 
+        # Run all text-evaluable rules
+        check_results = []
+        failed_checks = []
+        for check in text_checks:
+            passed, detail = content_rules.evaluate_rule(
+                check, draft_text, draft_texts)
+            entry = {
+                "id": check.get("id", "unknown"),
+                "name": check.get("name", check.get("rule", "unknown")),
+                "passed": passed,
+                "detail": detail,
+            }
+            check_results.append(entry)
+            if not passed:
+                failed_checks.append(entry)
+
+        # Whole-paper word count
         paper_min, paper_max = _load_paper_budget(repo_root)
         total_wc = 0
         if paper_min is not None:
@@ -89,12 +129,19 @@ def main():
                     (nid,),
                 ).fetchall()
                 total_wc += _word_count(" ".join(s["text"] for s in secs))
-            total_wc += wc
-            detail += f", total_wc={total_wc}, paper_range=[{paper_min},{paper_max}]"
+            total_wc += _word_count(draft_text)
 
-        write_envelope(out_path, status="ok" if in_range else "error",
-                       message=detail, paper_id=paper_id, domain=domain,
-                       word_count=wc, in_range=in_range,
+        all_passed = len(failed_checks) == 0
+        message = ("; ".join(f"{c['name']}: {c['detail']}"
+                             for c in failed_checks)
+                   or "all checks passed")
+
+        write_envelope(out_path,
+                       status="ok" if all_passed else "error",
+                       message=message,
+                       paper_id=paper_id, domain=domain,
+                       checks=check_results,
+                       missing=[c["name"] for c in failed_checks],
                        total_word_count=total_wc if paper_min else None)
     finally:
         conn.close()
