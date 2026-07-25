@@ -1,9 +1,10 @@
-"""generate_audit_report.py — populates audit report templates from
-score/audit/plagiarism results. Produces 4 markdown + 4 HTML reports
-(deterministic, semantic, pipeline-progress, summary) using chevron rendering.
+"""generate_audit_report.py — populates per-domain and shared audit report
+templates from score/audit/plagiarism results. Produces 12×6 per-domain reports
+plus shared pipeline-progress and whole-paper-summary using chevron rendering.
 """
 import json
 import os
+import statistics
 import sys
 from datetime import datetime, timezone
 import sys as _sys
@@ -77,124 +78,240 @@ def _status_class(status_str):
     return "pending"
 
 
-def _get_domain_data(conn, paper_id, domains):
-    """Gather per-domain data for deterministic and semantic reports."""
-    rows = []
-    det_pass_count = 0
-    det_total_count = 0
-    sem_scores = []
-    sem_below = 0
-    threshold = 70
+# ---------------------------------------------------------------------------
+# Single-domain context builders
+# ---------------------------------------------------------------------------
 
-    for domain_id, domain_key, display_name, sort_order in domains:
-        # --- Semantic: section-full score (scope-ambiguity fix) ---
-        sem = conn.execute(
-            "SELECT overall_score FROM academic_semantic_runs "
-            "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
-            "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, domain_id),
-        ).fetchone()
-        sem_score = round(sem["overall_score"], 1) if sem else None
-
-        # --- Deterministic: per-check breakdown ---
-        det = conn.execute(
-            "SELECT verdict, findings FROM academic_deterministic_findings "
-            "WHERE paper_id=? AND domain_id=? "
-            "ORDER BY run_number DESC LIMIT 1",
-            (paper_id, domain_id),
-        ).fetchone()
-        det_verdict = det["verdict"] if det else None
-        findings = json.loads(det["findings"]) if det and det["findings"] else []
-        passed = sum(1 for f in findings if f.get("passed", False))
-        total = len(findings)
-        det_pass_count += passed
-        det_total_count += total
-
-        if sem_score is not None:
-            sem_scores.append(sem_score)
-            if sem_score < threshold:
-                sem_below += 1
-
-        # --- Per-check status projection ---
-        check_map = {f.get("check_id", ""): f.get("passed", False) for f in findings}
-        wc_status = "PASS" if check_map.get("word_count_in_range") else (
-            "FAIL" if "word_count_in_range" in check_map else "—")
-        citation_status = "PASS" if check_map.get("citation_marker_present") else (
-            "FAIL" if "citation_marker_present" in check_map else "—")
-        budget_status = "PASS" if check_map.get("budget_fit_applied") else (
-            "FAIL" if "budget_fit_applied" in check_map else "—")
-        other_checks = {k: v for k, v in check_map.items()
-                        if k not in ("word_count_in_range",
-                                     "citation_marker_present",
-                                     "budget_fit_applied")}
-        if other_checks:
-            other_passed = sum(1 for v in other_checks.values() if v)
-            other_summary = f"{other_passed}/{len(other_checks)}"
-        else:
-            other_summary = "—"
-
-        failed_items = [f.get("check_id", "?") for f in findings
-                        if not f.get("passed", False)]
-
-        # --- Citation counts from academic_section_citations ---
-        cit_row = conn.execute(
-            "SELECT COUNT(*) AS total, "
-            "SUM(CASE WHEN source_kind='in-repo' THEN 1 ELSE 0 END) AS in_repo, "
-            "SUM(CASE WHEN source_kind='literature' THEN 1 ELSE 0 END) AS literature "
-            "FROM academic_section_citations "
-            "WHERE paper_id=? AND domain_id=?",
-            (paper_id, domain_id),
-        ).fetchone()
-        citation_total = cit_row["total"] if cit_row else 0
-        citation_in_repo = cit_row["in_repo"] if cit_row else 0
-        citation_literature = cit_row["literature"] if cit_row else 0
-
-        history = academic_schema.get_score_history(conn, paper_id, domain_key)
-        final_score = None
-        score_band = None
-        trend = "N/A"
-        if history:
-            latest = history[-1]
-            final_score = round(latest["final_score"], 1)
-            score_band = latest["score_band"]
-            if latest.get("trend_delta") is not None:
-                delta = latest["trend_delta"]
-                trend = ("Improved" if delta > 0.1
-                         else "Regressed" if delta < -0.1
-                         else "Unchanged")
-
-        rows.append({
-            "domain_key": domain_key,
-            "verdict": det_verdict or "N/A",
-            "verdict_class": "pass" if det_verdict == "PASS" else "fail",
-            "passed_count": str(passed),
-            "total_count": str(total),
-            "failed_details": ", ".join(failed_items) if failed_items else "—",
-            "wc_status": wc_status,
-            "wc_class": _status_class(wc_status),
-            "citation_status": citation_status,
-            "citation_class": _status_class(citation_status),
-            "budget_status": budget_status,
-            "budget_class": _status_class(budget_status),
-            "other_summary": other_summary,
-            "score": str(sem_score) if sem_score else "N/A",
-            "band": score_band or "N/A",
-            "band_class": (score_band or "").lower(),
-            "strengths": "",
-            "weaknesses": "",
-            "sem_score": sem_score,
-            "det_verdict": det_verdict,
-            "plag_verdict": None,
-            "final_score": final_score,
-            "score_band": score_band,
-            "trend": trend,
-            "citation_total": citation_total,
-            "citation_in_repo": citation_in_repo,
-            "citation_literature": citation_literature,
+def _get_single_deterministic_data(conn, paper_id, domain_id, domain_key):
+    """Return deterministic audit context for one domain."""
+    det = conn.execute(
+        "SELECT verdict, findings FROM academic_deterministic_findings "
+        "WHERE paper_id=? AND domain_id=? "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    verdict = det["verdict"] if det else "N/A"
+    findings = json.loads(det["findings"]) if det and det["findings"] else []
+    checks = []
+    for f in findings:
+        checks.append({
+            "check_id": f.get("check_id", ""),
+            "status": "PASS" if f.get("passed") else "FAIL",
+            "status_class": "pass" if f.get("passed") else "fail",
+            "detail": f.get("detail", ""),
         })
+    return {"verdict": verdict, "checks": checks}
 
-    return rows, det_pass_count, det_total_count, sem_scores, sem_below
 
+def _get_single_semantic_full_data(conn, paper_id, domain_id):
+    """Return semantic full-score context for one domain, with model breakdown."""
+    rows = conn.execute(
+        "SELECT model, overall_score, reasoning FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
+        "ORDER BY run_number DESC",
+        (paper_id, domain_id),
+    ).fetchall()
+    # Deduplicate by model (keep latest run per model)
+    seen_models = set()
+    models = []
+    scores = []
+    for r in rows:
+        m = r["model"]
+        if m not in seen_models:
+            seen_models.add(m)
+            models.append({"model": m, "score": round(r["overall_score"], 1), "agreement": ""})
+            scores.append(r["overall_score"])
+    # Also get dimension scores from the latest run
+    latest_run = conn.execute(
+        "SELECT id FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    dimensions = []
+    if latest_run:
+        dim_rows = conn.execute(
+            "SELECT dimension_key, score, evidence FROM academic_semantic_dimension_scores "
+            "WHERE run_id=?",
+            (latest_run["id"],),
+        ).fetchall()
+        for d in dim_rows:
+            dimensions.append({
+                "dimension_key": d["dimension_key"],
+                "score": round(d["score"], 1) if d["score"] is not None else "N/A",
+                "evidence": d["evidence"] or "",
+            })
+    # Strengths/weaknesses/recommendations
+    strengths, weaknesses, recommendations = [], [], []
+    if latest_run:
+        for ft, lst in [("strength", strengths), ("weakness", weaknesses), ("recommendation", recommendations)]:
+            fr = conn.execute(
+                "SELECT text FROM academic_semantic_findings "
+                "WHERE run_id=? AND finding_type=?",
+                (latest_run["id"], ft),
+            ).fetchall()
+            for r in fr:
+                lst.append(r["text"])
+    # Ensemble stats
+    mean_score = round(statistics.mean(scores), 1) if scores else "N/A"
+    stdev_score = round(statistics.stdev(scores), 1) if len(scores) > 1 else "N/A"
+    if stdev_score == "N/A":
+        agreement_level = "N/A"
+    elif stdev_score <= 5:
+        agreement_level = "High"
+    elif stdev_score <= 15:
+        agreement_level = "Medium"
+    else:
+        agreement_level = "Low"
+    return {
+        "models": models,
+        "dimensions": dimensions,
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "recommendations": recommendations,
+        "mean_score": mean_score,
+        "stdev_score": stdev_score,
+        "agreement_level": agreement_level,
+    }
+
+
+def _get_single_semantic_part_data(conn, paper_id, domain_id):
+    """Return semantic part-score context for one domain."""
+    rows = conn.execute(
+        "SELECT part_kind, overall_score FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=? AND scope='section-part' "
+        "AND part_kind IS NOT NULL "
+        "ORDER BY run_number DESC",
+        (paper_id, domain_id),
+    ).fetchall()
+    seen = set()
+    parts = []
+    for r in rows:
+        pk = r["part_kind"]
+        if pk not in seen:
+            seen.add(pk)
+            score = round(r["overall_score"], 1)
+            parts.append({
+                "part_kind": pk,
+                "score": score,
+                "verdict": "PASS" if score >= 70 else "FAIL",
+                "findings": [],
+            })
+    return {"parts": parts}
+
+
+def _get_single_plagiarism_data(conn, paper_id, domain_id):
+    """Return plagiarism audit context for one domain."""
+    row = conn.execute(
+        "SELECT verdict, findings FROM academic_plagiarism_findings "
+        "WHERE paper_id=? AND domain_id=? AND pass_type='forensic' "
+        "ORDER BY id DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    if not row:
+        return {"verdict": "N/A", "findings": []}
+    findings_list = json.loads(row["findings"]) if row["findings"] else []
+    findings = [{"check_id": f.get("check_id", ""), "detail": f.get("detail", ""), "severity": f.get("severity", "")} for f in findings_list]
+    return {"verdict": row["verdict"], "findings": findings}
+
+
+def _get_single_humanize_data(conn, paper_id, domain_id):
+    """Return humanize pass context for one domain."""
+    rows = conn.execute(
+        "SELECT pass_kind, iteration, risk_flags FROM academic_humanize_passes "
+        "WHERE paper_id=? AND domain_id=? "
+        "ORDER BY pass_kind, iteration DESC",
+        (paper_id, domain_id),
+    ).fetchall()
+    det_iter, det_flags = "", ""
+    sem_iter, sem_flags = "", ""
+    all_flags = set()
+    for r in rows:
+        pk = r["pass_kind"]
+        flags = r["risk_flags"] or ""
+        if pk == "deterministic" and not det_iter:
+            det_iter = str(r["iteration"])
+            det_flags = flags
+        elif pk == "semantic" and not sem_iter:
+            sem_iter = str(r["iteration"])
+            sem_flags = flags
+        for f in flags.split(","):
+            f = f.strip()
+            if f:
+                all_flags.add(f)
+    return {
+        "det_iteration": det_iter,
+        "det_risk_flags": det_flags or "None",
+        "sem_iteration": sem_iter,
+        "sem_risk_flags": sem_flags or "None",
+        "risk_flag_list": sorted(all_flags),
+    }
+
+
+def _get_single_domain_summary_data(conn, paper_id, domain_id, domain_key):
+    """Return domain aggregate summary context for one domain."""
+    # Get deterministic score (PASS=100, FAIL=0 for simplicity, or count passed/total)
+    det = conn.execute(
+        "SELECT verdict, findings FROM academic_deterministic_findings "
+        "WHERE paper_id=? AND domain_id=? "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    det_score = None
+    if det:
+        findings = json.loads(det["findings"]) if det["findings"] else []
+        if findings:
+            passed = sum(1 for f in findings if f.get("passed"))
+            det_score = round(passed / len(findings) * 100, 1)
+
+    # Get semantic blended score (from section-full, latest)
+    sem = conn.execute(
+        "SELECT overall_score FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
+        "ORDER BY run_number DESC LIMIT 1",
+        (paper_id, domain_id),
+    ).fetchone()
+    sem_score = round(sem["overall_score"], 1) if sem else None
+
+    # Final score = 50/50 blend
+    final_score = None
+    if det_score is not None and sem_score is not None:
+        final_score = round(0.5 * det_score + 0.5 * sem_score, 1)
+    elif det_score is not None:
+        final_score = det_score
+    elif sem_score is not None:
+        final_score = sem_score
+
+    # Score band from score_bands.yaml (inline lookup)
+    score_band = "N/A"
+    if final_score is not None:
+        if final_score >= 95: score_band = "Excellent"
+        elif final_score >= 90: score_band = "Very Good"
+        elif final_score >= 80: score_band = "Good"
+        elif final_score >= 70: score_band = "Acceptable"
+        else: score_band = "Needs Improvement"
+
+    # Trend
+    history = academic_schema.get_score_history(conn, paper_id, domain_key)
+    trend = "N/A"
+    if history:
+        latest = history[-1]
+        if latest.get("trend_delta") is not None:
+            d = latest["trend_delta"]
+            trend = "Improved" if d > 0.1 else "Regressed" if d < -0.1 else "Unchanged"
+
+    return {
+        "final_score": str(final_score) if final_score is not None else "N/A",
+        "score_band": score_band,
+        "deterministic_score": str(det_score) if det_score is not None else "N/A",
+        "semantic_score": str(sem_score) if sem_score is not None else "N/A",
+        "trend": trend,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Legacy helpers kept for backward-compat (pipeline-progress, whole-paper)
+# ---------------------------------------------------------------------------
 
 def _get_part_scores(conn, paper_id, domains):
     """Pivot section-part semantic scores into per-domain rows:
@@ -214,8 +331,6 @@ def _get_part_scores(conn, paper_id, domains):
         pk = r["part_kind"]
         if did not in latest:
             latest[did] = {}
-        # Since we ORDER BY run_number DESC and iterate sequentially,
-        # first occurrence per (domain_id, part_kind) is the latest.
         if pk not in latest[did]:
             latest[did][pk] = round(r["overall_score"], 1)
 
@@ -237,59 +352,17 @@ def _get_part_scores(conn, paper_id, domains):
     return result
 
 
-def _get_humanize_data(conn, paper_id, domains):
-    """Group academic_humanize_passes by (domain, pass_kind) for the
-    deterministic report's Humanize Passes section."""
-    rows = conn.execute(
-        "SELECT d.domain_key, h.pass_kind, h.iteration, h.risk_flags "
-        "FROM academic_humanize_passes h "
-        "JOIN academic_domains d ON d.id = h.domain_id "
-        "WHERE h.paper_id=? "
-        "ORDER BY d.sort_order, h.pass_kind, h.iteration DESC",
-        (paper_id,),
+def _get_plag_data(conn, paper_id, domains):
+    """Get plagiarism verdicts per domain."""
+    results = conn.execute(
+        "SELECT d.domain_key, p.verdict FROM academic_plagiarism_findings p "
+        "JOIN academic_domains d ON d.id = p.domain_id "
+        "WHERE p.paper_id=? AND p.pass_type='forensic' "
+        "AND p.id IN (SELECT MAX(id) FROM academic_plagiarism_findings "
+        "WHERE paper_id=? AND pass_type='forensic' GROUP BY domain_id)",
+        (paper_id, paper_id),
     ).fetchall()
-
-    # Group by domain_key
-    by_domain = {}
-    for r in rows:
-        dk = r["domain_key"]
-        if dk not in by_domain:
-            by_domain[dk] = {"deterministic": [], "semantic": []}
-        pk = r["pass_kind"] or "deterministic"
-        if pk in by_domain[dk]:
-            by_domain[dk][pk].append(r)
-
-    result = []
-    for _, domain_key, _, _ in domains:
-        data = by_domain.get(domain_key, {"deterministic": [], "semantic": []})
-        det_passes = data["deterministic"]
-        sem_passes = data["semantic"]
-        # Domain is flagged if it has any humanize pass record
-        flagged = bool(det_passes or sem_passes)
-        det_pass = "Yes" if det_passes else ("—" if not flagged else "No")
-        sem_pass = "Yes" if sem_passes else ("—" if not flagged else "No")
-        # Collect unique risk flags from the latest pass of each kind
-        risk_flags_set = set()
-        for p in det_passes[:1]:
-            for flag in (p.get("risk_flags") or "").split(","):
-                flag = flag.strip()
-                if flag:
-                    risk_flags_set.add(flag)
-        for p in sem_passes[:1]:
-            for flag in (p.get("risk_flags") or "").split(","):
-                flag = flag.strip()
-                if flag:
-                    risk_flags_set.add(flag)
-        result.append({
-            "domain_key": domain_key,
-            "flagged": "Yes" if flagged else "No",
-            "det_pass": det_pass,
-            "det_pass_class": _status_class("PASS" if det_pass == "Yes" else "FAIL"),
-            "sem_pass": sem_pass,
-            "sem_pass_class": _status_class("PASS" if sem_pass == "Yes" else "FAIL"),
-            "risk_flags": ", ".join(sorted(risk_flags_set)) if risk_flags_set else "—",
-        })
-    return result
+    return {r["domain_key"]: r["verdict"] for r in results}
 
 
 def _get_whole_paper_check(conn, paper_id):
@@ -341,6 +414,10 @@ def _get_pipeline_progress_data(conn, paper_id, domains):
     return domain_rows, whole, complete_count
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload.get("paper_id")
@@ -361,19 +438,6 @@ def main():
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         title = paper["title"] or f"Paper {paper_id}"
 
-        rows, det_pass, det_total, sem_scores, sem_below = \
-            _get_domain_data(conn, paper_id, domains)
-        plag_map = _get_plag_data(conn, paper_id, domains)
-        part_scores = _get_part_scores(conn, paper_id, domains)
-        humanize_data = _get_humanize_data(conn, paper_id, domains)
-        doc_budget_status = _get_whole_paper_check(conn, paper_id)
-
-        for row in rows:
-            row["plag_verdict"] = plag_map.get(row["domain_key"], "N/A")
-
-        sem_mean = (round(sum(sem_scores) / len(sem_scores), 1)
-                    if sem_scores else "N/A")
-
         # --- Context shared by all templates ---
         base_ctx = {
             "title": title,
@@ -381,26 +445,50 @@ def main():
             "paper_id": str(paper_id),
         }
 
-        # --- Deterministic context ---
-        det_ctx = {**base_ctx, "domains": rows}
-        det_ctx["total_domains"] = str(len(rows))
-        det_ctx["all_pass"] = "Yes" if all(
-            r["verdict"] == "PASS" for r in rows) else "No"
-        det_ctx["failed_count"] = str(sum(
-            1 for r in rows if r["verdict"] != "PASS"))
-        det_ctx["document_budget_status"] = doc_budget_status
-        det_ctx["document_budget_class"] = _status_class(doc_budget_status)
-        det_ctx["humanize"] = humanize_data
+        # --- Output directory ---
+        output_dir = os.path.join(str(repo_root), "docs", "paper",
+                                  f"paper-{paper_id}", "audit")
+        os.makedirs(output_dir, exist_ok=True)
 
-        # --- Semantic context ---
-        sem_ctx = {**base_ctx}
-        sem_ctx["domains_full"] = rows
-        sem_ctx["domains_parts"] = part_scores
-        sem_ctx["mean_score"] = str(sem_mean)
-        sem_ctx["below_threshold_count"] = str(sem_below)
-        sem_ctx["threshold"] = "70"
+        rendered = []
 
-        # --- Pipeline-progress context ---
+        # --- Per-domain render loop ---
+        for domain_id, domain_key, display_name, sort_order in domains:
+            domain_out = os.path.join(output_dir, "domain", domain_key)
+            os.makedirs(domain_out, exist_ok=True)
+
+            ctx_builders = {
+                "deterministic": lambda _did=domain_id, _dk=domain_key: _get_single_deterministic_data(conn, paper_id, _did, _dk),
+                "semantic-full": lambda _did=domain_id: _get_single_semantic_full_data(conn, paper_id, _did),
+                "semantic-part": lambda _did=domain_id: _get_single_semantic_part_data(conn, paper_id, _did),
+                "plagiarism": lambda _did=domain_id: _get_single_plagiarism_data(conn, paper_id, _did),
+                "humanize": lambda _did=domain_id: _get_single_humanize_data(conn, paper_id, _did),
+                "summary": lambda _did=domain_id, _dk=domain_key: _get_single_domain_summary_data(conn, paper_id, _did, _dk),
+            }
+
+            for kind, ctx_builder in ctx_builders.items():
+                ctx = {**base_ctx, **ctx_builder()}
+                # Markdown
+                md_tpl = _load_template(TEMPLATES_MD, f"domain/{domain_key}/{kind}.md")
+                if md_tpl:
+                    md_out = chevron.render(md_tpl, ctx)
+                    md_path = os.path.join(domain_out, f"{kind}.md")
+                    with open(md_path, "w") as f:
+                        f.write(md_out)
+                    academic_schema.record_report(conn, paper_id, "markdown", md_path, report_kind=f"audit-{domain_key}-{kind}")
+                    rendered.append(md_path)
+                # HTML
+                html_tpl = _load_template(TEMPLATES_HTML, f"domain/{domain_key}/{kind}.html")
+                if html_tpl:
+                    html_out = chevron.render(html_tpl, ctx)
+                    html_path = os.path.join(domain_out, f"{kind}.html")
+                    with open(html_path, "w") as f:
+                        f.write(html_out)
+                    academic_schema.record_report(conn, paper_id, "html", html_path, report_kind=f"audit-{domain_key}-{kind}")
+                    rendered.append(html_path)
+
+        # --- Shared reports (pipeline-progress, whole-paper-summary) ---
+        # Pipeline-progress
         pipeline_domains, pipeline_whole, complete_count = \
             _get_pipeline_progress_data(conn, paper_id, domains)
         pipe_ctx = {**base_ctx}
@@ -416,52 +504,7 @@ def main():
         pipe_ctx["pending_summary"] = (", ".join(pending_list[:10])
                                        if pending_list else "none")
 
-        # --- Summary context ---
-        all_pass = all(r["verdict"] == "PASS" for r in rows)
-        sem_all_pass = all(
-            r["sem_score"] is None or r["sem_score"] >= 70 for r in rows)
-
-        history = academic_schema.get_score_history(conn, paper_id)
-        whole_score = None
-        whole_band = None
-        whole_trend = "N/A"
-        if history:
-            latest = history[-1]
-            whole_score = round(latest["final_score"], 1)
-            whole_band = latest["score_band"]
-            if latest.get("trend_delta") is not None:
-                d = latest["trend_delta"]
-                whole_trend = ("Improved" if d > 0.1
-                               else "Regressed" if d < -0.1
-                               else "Unchanged")
-
-        sum_ctx = {**base_ctx}
-        sum_ctx["whole_paper_score"] = str(whole_score) if whole_score else "N/A"
-        sum_ctx["whole_paper_band"] = whole_band or "N/A"
-        sum_ctx["whole_paper_trend"] = whole_trend
-        sum_ctx["det_passed"] = str(det_pass)
-        sum_ctx["det_total"] = str(det_total)
-        sum_ctx["det_failed_domains"] = ", ".join(
-            r["domain_key"] for r in rows if r["verdict"] != "PASS") or "—"
-        sum_ctx["sem_mean"] = str(sem_mean)
-        sum_ctx["sem_below"] = str(sem_below)
-        sum_ctx["plag_summary"] = ", ".join(
-            f"{k}: {v}" for k, v in plag_map.items()) or "N/A"
-        sum_ctx["humanize_count"] = str(sum(
-            1 for h in humanize_data if h["flagged"] == "Yes"))
-
-        # --- Output directory ---
-        output_dir = os.path.join(str(repo_root), "docs", "paper",
-                                  f"paper-{paper_id}", "audit")
-        os.makedirs(output_dir, exist_ok=True)
-
-        rendered = []
-
-        # --- Render each template pair (markdown + HTML) ---
-        for name, ctx in [("deterministic", det_ctx),
-                          ("semantic", sem_ctx),
-                          ("pipeline-progress", pipe_ctx),
-                          ("summary", sum_ctx)]:
+        for name, ctx in [("pipeline-progress", pipe_ctx)]:
             # Markdown
             md_tpl = _load_template(TEMPLATES_MD, f"{name}.md")
             if md_tpl:
@@ -473,7 +516,6 @@ def main():
                     conn, paper_id, "markdown", md_path,
                     report_kind=f"audit-{name}")
                 rendered.append(md_path)
-
             # HTML
             html_tpl = _load_template(TEMPLATES_HTML, f"{name}.html")
             if html_tpl:
@@ -486,25 +528,126 @@ def main():
                     report_kind=f"audit-{name}")
                 rendered.append(html_path)
 
+        # Whole-paper-summary (with domain_aggregates)
+        plag_map = _get_plag_data(conn, paper_id, domains)
+        part_scores = _get_part_scores(conn, paper_id, domains)
+        humanize_data_legacy = []
+        for _, domain_key, _, _ in domains:
+            sd = _get_single_domain_summary_data(
+                conn, paper_id,
+                next(d[0] for d in domains if d[1] == domain_key),
+                domain_key,
+            )
+            humanize_data_legacy.append({"domain_key": domain_key, **sd})
+
+        whole_history = academic_schema.get_score_history(conn, paper_id)
+        whole_score = None
+        whole_band = None
+        whole_trend = "N/A"
+        if whole_history:
+            latest = whole_history[-1]
+            whole_score = round(latest["final_score"], 1)
+            whole_band = latest["score_band"]
+            if latest.get("trend_delta") is not None:
+                d = latest["trend_delta"]
+                whole_trend = ("Improved" if d > 0.1
+                               else "Regressed" if d < -0.1
+                               else "Unchanged")
+
+        det_pass_count = 0
+        det_total_count = 0
+        sem_scores = []
+        sem_below = 0
+        for domain_id, domain_key, _, _ in domains:
+            det = conn.execute(
+                "SELECT verdict, findings FROM academic_deterministic_findings "
+                "WHERE paper_id=? AND domain_id=? "
+                "ORDER BY run_number DESC LIMIT 1",
+                (paper_id, domain_id),
+            ).fetchone()
+            if det:
+                findings = json.loads(det["findings"]) if det["findings"] else []
+                passed = sum(1 for f in findings if f.get("passed", False))
+                det_pass_count += passed
+                det_total_count += len(findings)
+            sem = conn.execute(
+                "SELECT overall_score FROM academic_semantic_runs "
+                "WHERE paper_id=? AND domain_id=? AND scope='section-full' "
+                "ORDER BY run_number DESC LIMIT 1",
+                (paper_id, domain_id),
+            ).fetchone()
+            if sem:
+                sem_scores.append(sem["overall_score"])
+                if sem["overall_score"] < 70:
+                    sem_below += 1
+
+        sem_mean = (round(sum(sem_scores) / len(sem_scores), 1)
+                    if sem_scores else "N/A")
+
+        sum_ctx = {**base_ctx}
+        sum_ctx["whole_paper_score"] = str(whole_score) if whole_score else "N/A"
+        sum_ctx["whole_paper_band"] = whole_band or "N/A"
+        sum_ctx["whole_paper_trend"] = whole_trend
+        sum_ctx["det_passed"] = str(det_pass_count)
+        sum_ctx["det_total"] = str(det_total_count)
+        failed_domain_keys = []
+        for domain_id, domain_key, _, _ in domains:
+            det = conn.execute(
+                "SELECT verdict FROM academic_deterministic_findings "
+                "WHERE paper_id=? AND domain_id=? "
+                "ORDER BY run_number DESC LIMIT 1",
+                (paper_id, domain_id),
+            ).fetchone()
+            if det and det["verdict"] != "PASS":
+                failed_domain_keys.append(domain_key)
+        sum_ctx["det_failed_domains"] = ", ".join(failed_domain_keys) or "—"
+        sum_ctx["sem_mean"] = str(sem_mean)
+        sum_ctx["sem_below"] = str(sem_below)
+        sum_ctx["plag_summary"] = ", ".join(
+            f"{k}: {v}" for k, v in plag_map.items()) or "N/A"
+        sum_ctx["humanize_count"] = str(sum(
+            1 for h in humanize_data_legacy if h.get("final_score") is not None))
+
+        # domain_aggregates for the whole-paper-summary template
+        domain_aggregates = []
+        for domain_id, domain_key, display_name, sort_order in domains:
+            sd = _get_single_domain_summary_data(conn, paper_id, domain_id, domain_key)
+            domain_aggregates.append({
+                "domain_key": domain_key,
+                "final_score": sd["final_score"],
+                "score_band": sd["score_band"],
+            })
+        sum_ctx["domain_aggregates"] = domain_aggregates
+
+        # Render whole-paper-summary
+        md_tpl = _load_template(TEMPLATES_MD, "whole-paper-summary.md")
+        if md_tpl:
+            md_out = chevron.render(md_tpl, sum_ctx)
+            md_path = os.path.join(output_dir, "whole-paper-summary.md")
+            with open(md_path, "w") as f:
+                f.write(md_out)
+            academic_schema.record_report(
+                conn, paper_id, "markdown", md_path,
+                report_kind="audit-whole-paper-summary")
+            rendered.append(md_path)
+
+        html_tpl = _load_template(TEMPLATES_HTML, "whole-paper-summary.html")
+        if html_tpl:
+            html_out = chevron.render(html_tpl, sum_ctx)
+            html_path = os.path.join(output_dir, "whole-paper-summary.html")
+            with open(html_path, "w") as f:
+                f.write(html_out)
+            academic_schema.record_report(
+                conn, paper_id, "html", html_path,
+                report_kind="audit-whole-paper-summary")
+            rendered.append(html_path)
+
         conn.commit()
         write_envelope(out_path, status="ok",
                        message=f"audit reports generated: {len(rendered)} files",
                        files=rendered)
     finally:
         conn.close()
-
-
-def _get_plag_data(conn, paper_id, domains):
-    """Get plagiarism verdicts per domain."""
-    results = conn.execute(
-        "SELECT d.domain_key, p.verdict FROM academic_plagiarism_findings p "
-        "JOIN academic_domains d ON d.id = p.domain_id "
-        "WHERE p.paper_id=? AND p.pass_type='forensic' "
-        "AND p.id IN (SELECT MAX(id) FROM academic_plagiarism_findings "
-        "WHERE paper_id=? AND pass_type='forensic' GROUP BY domain_id)",
-        (paper_id, paper_id),
-    ).fetchall()
-    return {r["domain_key"]: r["verdict"] for r in results}
 
 
 if __name__ == "__main__":
