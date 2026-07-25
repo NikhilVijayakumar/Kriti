@@ -1,24 +1,29 @@
-id: novelty
-domain: novelty
+id: gaps
+domain: gaps
 checks:
-  - id: nv-001
-    name: differentiation_targets
-    rule: regex_match
+  - id: ga-001
+    name: word_count_in_range
+    rule: word_count_in_range
+    severity: critical
+    config: { min: 200, max: 500 }
+    description: "Gaps word count within configured range"
+  - id: ga-002
+    name: severity_tagged
+    rule: severity_tagged
     severity: warning
-    config: { pattern: "(?i)(?:propose|introduce|novel|differs.from|unlike|contrast)" }
-    description: "Novelty claims have differentiation targets"
-  - id: nv-002
+    description: "Every gap has a severity tag (HIGH/MEDIUM/LOW)"
+  - id: ga-003
     name: no_placeholders
     rule: no_placeholders
     severity: critical
     description: "No unfilled template markers"
-  - id: novl-cit
+  - id: gaps-cit
     name: citation_marker_present
     rule: min_citation_count
     severity: critical
     config: { min: 1 }
     description: "Domain contains at least one citation marker"
-  - id: novl-bfit
+  - id: gaps-bfit
     name: budget_fit_applied
     rule: budget_fit_applied
     severity: critical

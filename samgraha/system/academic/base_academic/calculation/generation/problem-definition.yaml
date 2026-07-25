@@ -1,24 +1,24 @@
-id: discussion
-domain: discussion
+id: problem-definition
+domain: problem-definition
 checks:
-  - id: di-001
-    name: threats_to_validity
-    rule: regex_match
-    severity: warning
-    config: { pattern: "(?i)(?:threats?.to.validity|validity|internal.validity|external.validity)" }
-    description: "Threats-to-validity subsection present"
-  - id: di-002
+  - id: pd-001
+    name: word_count_in_range
+    rule: word_count_in_range
+    severity: critical
+    config: { min: 300, max: 600 }
+    description: "Problem definition word count within configured range"
+  - id: pd-002
     name: no_placeholders
     rule: no_placeholders
     severity: critical
     description: "No unfilled template markers"
-  - id: disc-cit
+  - id: pd-cit
     name: citation_marker_present
     rule: min_citation_count
     severity: critical
     config: { min: 1 }
     description: "Domain contains at least one citation marker"
-  - id: disc-bfit
+  - id: pd-bfit
     name: budget_fit_applied
     rule: budget_fit_applied
     severity: critical
