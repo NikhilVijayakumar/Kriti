@@ -9,6 +9,18 @@
 
 ---
 
+## What Will Be Audited (computed)
+
+**Models this round:** {{#models}}{{ . }} {{/models}}
+
+| Domain | Deterministic Checks | Rubric Criteria |
+|---|---|---|
+{{#domains}}
+| {{ domain_key }} | {{ det_rule_count }} ({{ det_critical_count }} critical) | {{#rubric_found}}{{ rubric_criterion_count }}{{/rubric_found}}{{^rubric_found}}rubric not found{{/rubric_found}} |
+{{/domains}}
+
+---
+
 {{{ content_md }}}
 
 ---

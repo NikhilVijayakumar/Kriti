@@ -75,6 +75,11 @@ def ensure_schema(conn):
         with open(fpath, "r", encoding="utf-8") as fh:
             sql = fh.read()
         conn.executescript(sql)
+    # Migration: add metadata column to academic_proposals if missing
+    try:
+        conn.execute("ALTER TABLE academic_proposals ADD COLUMN metadata TEXT")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
 
 

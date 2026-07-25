@@ -8,8 +8,13 @@ they approve it.
 
 ## Input
 You will receive (from `gather-proposal-context`, phase=audit):
-- `domains`: `[{domain_key, det_rule_count, rubric_summary}]` — every
-  domain that has completed generation and is ready to audit
+- `domains`: `[{domain_key, det_rule_count, det_critical_count,
+  rubric_criterion_count, rubric_found}]` — every domain that has
+  completed generation and is ready to audit, with real counts from the
+  same rule/rubric files `deterministic_audit.py` and
+  `semantic-audit.md` read. The template renders these in the "What Will
+  Be Audited" table; don't restate the numbers in `content_md` — write
+  about what they mean for this round's audit scope.
 - `models`: the model(s) this audit round will run (from `--models`,
   defaults to `["default"]` if none were requested)
 - `redraft_of`: present if the previous audit proposal was rejected —
@@ -31,12 +36,16 @@ joining the ensemble, or a rejected draft being re-checked.
 3. If `redraft_of` is present, address `user_comment` directly
 4. Don't restate the rubric's full rule text — `rubric_summary` is
    already a summary; one clause per domain is enough
+5. The "What Will Be Audited" table is computed from the same rule/rubric
+   files the audit scripts read — don't repeat those numbers in
+   `content_md`, write about what they mean for this round's audit scope
 
 ## Output Format
 Return a JSON object:
 ```json
 {
   "summary": "One-paragraph overview of this audit round's scope.",
-  "content_md": "Full proposal body, matching templates/proposal/markdown/audit.md's shape."
+  "content_md": "Full proposal body, matching templates/proposal/markdown/audit.md's shape.",
+  "computed_context": "<pass through the full domains array and models list from Input — persist stores this for template rendering>"
 }
 ```

@@ -178,13 +178,13 @@ prompts:
   # --- document-semantic-audit usecase (5f) ---
   - name: document-semantic-audit
     location: ../../prompt/document-audit/document-semantic-audit.md
-  # --- propose-generation / propose-audit / propose-report / propose-fix usecases ---
+  # --- propose-generation / propose-audit / propose-fix usecases ---
+  # (propose-report has no prompt — deterministic-only, see standard.yaml's
+  # usecases: block and gather_proposal_context.py's _gather_report_context())
   - name: generation-proposal
     location: ../../prompt/propose/generation-proposal.md
   - name: audit-proposal
     location: ../../prompt/propose/audit-proposal.md
-  - name: report-proposal
-    location: ../../prompt/propose/report-proposal.md
   - name: fix-proposal
     location: ../../prompt/propose/fix-proposal.md
   # --- shared / not yet wired into any usecase's dispatch ---
@@ -805,20 +805,23 @@ usecases:
 
   - name: propose-report
     description: "draft a whole-run proposal of what report artifacts this run will produce"
+    # Deterministic-only — 3 steps, no prompt/semantic step. render-charts/
+    # render-audit-report/render-paper are 100% script+template+DB (no LLM
+    # step anywhere in that chain, confirmed against this file — render-paper
+    # has no script registered yet, "planned, not yet built" per plan/usecase/
+    # 6c-render-paper.md), and every fact in a report proposal is already
+    # computed by gather-proposal-context — nothing for a model to judge, so
+    # nothing to stage a prepare_semantic_step/complete_semantic_step for.
     steps:
       - order: 1
         kind: deterministic
-        description: "Gather latest score + report-kind list"
+        description: "Gather latest score + report-kind list, auto-build proposal summary"
         script: gather-proposal-context
       - order: 2
-        kind: semantic
-        description: "Draft the report proposal"
-        prompt: report-proposal
-      - order: 3
         kind: deterministic
         description: "Persist proposal (status=pending)"
         script: persist-proposal
-      - order: 4
+      - order: 3
         kind: deterministic
         description: "Render proposal to markdown+html"
         script: render-proposal

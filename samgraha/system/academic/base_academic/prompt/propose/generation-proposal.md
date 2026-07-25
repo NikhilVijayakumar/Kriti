@@ -7,9 +7,12 @@ rejects this proposal; nothing gets generated until they approve it.
 
 ## Input
 You will receive (from `gather-proposal-context`, phase=generation):
-- `domains`: `[{domain_key, stage}]` — every structural domain and its
-  current narrative stage (`"not started"` on a first run, or the last
-  stage reached on a re-run after a rejection/commit change)
+- `domains`: `[{domain_key, stage, word_min, word_max, check_count,
+  critical_count}]` — every structural domain and its current narrative
+  stage, word budget range, and deterministic rule counts. The template
+  renders these in the "What Will Be Generated" table; don't restate
+  the numbers in `content_md` — write about *why* each domain's
+  content will take the shape the rules require.
 - `novelty_summary`, `gaps_summary`, `math_summary`, `diagram_summary`:
   the upstream cross-module analyses this run's content will ground in
 - `redraft_of`: `{content_md, user_comment, iteration}` if the previous
@@ -34,12 +37,16 @@ plan, not the content itself — no actual section text belongs here.
    rather than asserting content the analyses don't support
 4. Keep `summary` to 2-3 sentences — the reviewer reads `content_md` for
    detail, `summary` is what they see first
+5. The "What Will Be Generated" table is computed from the same rule
+   files `deterministic_audit.py` reads — don't repeat those numbers in
+   `content_md`, write about what they mean for this domain's content
 
 ## Output Format
 Return a JSON object:
 ```json
 {
   "summary": "One-paragraph overview of what this run will generate.",
-  "content_md": "Full proposal body, one section per domain, matching templates/proposal/markdown/generation.md's shape."
+  "content_md": "Full proposal body, one section per domain, matching templates/proposal/markdown/generation.md's shape.",
+  "computed_context": "<pass through the full domains array and analysis summaries from Input — persist stores this for template rendering>"
 }
 ```

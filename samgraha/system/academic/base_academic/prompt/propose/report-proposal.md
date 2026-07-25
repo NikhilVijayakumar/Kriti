@@ -10,8 +10,12 @@ rejects this proposal; nothing renders until they approve it.
 You will receive (from `gather-proposal-context`, phase=report):
 - `current_final_score`, `current_score_band`: the whole-paper score
   `calculate` just computed
-- `report_kinds`: report kinds already recorded in
-  `academic_report_history` for this paper (empty on a first run)
+- `domain_count`, `per_domain_kind_count`, `total_domain_reports`:
+  forward-looking counts of what render will produce (the template
+  renders these in the "What Will Render" section; don't repeat them
+  in `content_md`)
+- `whole_run_reports`: the two whole-run report kinds that will be
+  produced
 - `redraft_of`: present if the previous report proposal was rejected
 - `paper_title`
 
@@ -28,12 +32,16 @@ approval, driven by `render-charts`/`render-audit-report`/`render-paper`.
 2. If `report_kinds` already has entries, note that this render
    supersedes them (is_latest will flip), not that it's a first run
 3. If `redraft_of` is present, address `user_comment` directly
+4. The "What Will Render" section is computed — don't repeat the counts
+   in `content_md`, write about *what* the render will show and *why*
+   the score at this moment warrants publication
 
 ## Output Format
 Return a JSON object:
 ```json
 {
   "summary": "One-paragraph overview of what this render will produce.",
-  "content_md": "Full proposal body, matching templates/proposal/markdown/report.md's shape."
+  "content_md": "Full proposal body, matching templates/proposal/markdown/report.md's shape.",
+  "computed_context": "<pass through the score, domain count, and report counts from Input — persist stores this for template rendering>"
 }
 ```

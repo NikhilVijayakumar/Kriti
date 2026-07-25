@@ -12,6 +12,7 @@ own latest=1 fix-proposal row concurrently; omitting it here would pick
 an arbitrary one via ORDER BY created_at DESC LIMIT 1 instead of the
 one actually being rendered.
 """
+import json
 import os
 import sys
 from pathlib import Path
@@ -55,6 +56,14 @@ def main():
                            message=f"no proposal for phase={phase}")
             return
         ctx = dict(row)
+        # Merge computed context from gather_proposal_context.py
+        # (stored as JSON in metadata column by persist_proposal.py)
+        if ctx.get("metadata"):
+            try:
+                computed = json.loads(ctx["metadata"])
+                ctx.update(computed)
+            except (json.JSONDecodeError, TypeError):
+                pass
         # Flatten for chevron — scope_domain_id -> target_domain key
         if ctx.get("scope_domain_id"):
             dom_row = conn.execute(

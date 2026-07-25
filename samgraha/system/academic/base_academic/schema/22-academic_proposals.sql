@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS academic_proposals (
     user_comment    TEXT    NOT NULL DEFAULT '',
     -- raw text driving a user-request fix proposal, OR a rejection
     -- reason on a decided row (§6b) — same column, different moment.
+    metadata        TEXT,
+    -- JSON blob of computed context from gather_proposal_context.py
+    -- (domains, triggering_findings, score counts, etc.) — rendered
+    -- into template computed-field sections by render_proposal.py.
     is_latest       INTEGER NOT NULL DEFAULT 1,
     created_at      TEXT    NOT NULL,
     decided_at      TEXT

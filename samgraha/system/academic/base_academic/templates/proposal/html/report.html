@@ -29,6 +29,13 @@
 
     <p>{{ summary }}</p>
     <hr>
+
+    <h2>What Will Render (computed)</h2>
+    <p><strong>Current score:</strong> {{ current_final_score }} ({{ current_score_band }})</p>
+    <p><strong>Per-domain reports:</strong> {{ total_domain_reports }} ({{ domain_count }} domains × {{ per_domain_kind_count }} kinds)</p>
+    <p><strong>Whole-run reports:</strong> {{#whole_run_reports}}{{ . }} {{/whole_run_reports}}</p>
+    <hr>
+
     <pre class="content">{{ content_md }}</pre>
     <hr>
 

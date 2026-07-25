@@ -30,6 +30,18 @@
 
     <p>{{ summary }}</p>
     <hr>
+
+    <h2>Failing Checks This Fix Addresses (computed)</h2>
+    <ul>
+    {{#triggering_findings}}
+    <li><strong>{{ rule }}</strong> ({{ check_id }}): {{ detail }}</li>
+    {{/triggering_findings}}
+    </ul>
+    {{^triggering_findings}}
+    <p>(no deterministic findings — this fix is driven by <code>user_comment</code> alone)</p>
+    {{/triggering_findings}}
+    <hr>
+
     <pre class="content">{{ content_md }}</pre>
     <hr>
 

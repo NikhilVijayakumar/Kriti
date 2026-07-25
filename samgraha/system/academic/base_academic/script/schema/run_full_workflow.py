@@ -651,32 +651,62 @@ def _checkpoint(session, conn, repo_root, paper_id, phase, commit_sha, steps, re
 
     if _proposal_needs_draft(conn, paper_id, phase, commit_sha):
         uc_steps = steps_of(steps, f"propose-{phase}")
-        if len(uc_steps) < 4:
-            print(f"  WARNING: no steps for propose-{phase} — skipping proposal gate")
-            return
-        gather, prompt_step, persist, render = uc_steps[0], uc_steps[1], uc_steps[2], uc_steps[3]
         gather_input = {"paper_id": paper_id, "phase": phase, "commit_sha": commit_sha}
-        try:
-            session.call("run_script_step", {"step_id": gather["id"],
-                                             "repo_path": repo_root, "input": gather_input})
-            prompt = session.call("prepare_semantic_step",
-                                  {"step_id": prompt_step["id"], "repo_path": repo_root})
-            report["pending_semantic"].append({
-                "label": f"propose-{phase}",
-                "semantic_step_id": prompt_step["id"],
-                "persist_step_id": persist["id"],
-                "render_step_id": render["id"],
-                "prompt_name": prompt.get("prompt_name", ""),
-            })
-        except Exception as e:
-            report["failed"].append({"label": f"propose-{phase}", "stage": "prepare_semantic",
-                                     "message": str(e)})
+        if len(uc_steps) == 3:
+            # Deterministic-only phase (report — no LLM judgment involved,
+            # gather-proposal-context already builds summary/content_md
+            # itself, see gather_proposal_context.py's _gather_report_
+            # context()). Run gather -> persist -> render synchronously,
+            # no prepare_semantic_step/pending_semantic staging.
+            gather, persist, render = uc_steps
+            try:
+                gathered = session.call("run_script_step", {"step_id": gather["id"],
+                                                             "repo_path": repo_root, "input": gather_input})
+                persist_input = {
+                    "paper_id": paper_id, "phase": phase, "source": "pipeline",
+                    "commit_sha": commit_sha, "iteration": gathered.get("iteration", 0),
+                    "summary": gathered.get("summary", ""), "content_md": gathered.get("content_md", ""),
+                    "computed_context": gathered.get("computed_context"),
+                }
+                session.call("run_script_step", {"step_id": persist["id"],
+                                                 "repo_path": repo_root, "input": persist_input})
+                session.call("run_script_step", {"step_id": render["id"],
+                                                 "repo_path": repo_root,
+                                                 "input": {"paper_id": paper_id, "phase": phase}})
+                report["ran"].append({"step": f"propose-{phase}", "status": "ok"})
+            except Exception as e:
+                report["failed"].append({"label": f"propose-{phase}", "stage": "run",
+                                         "message": str(e)})
+        elif len(uc_steps) == 4:
+            gather, prompt_step, persist, render = uc_steps
+            try:
+                session.call("run_script_step", {"step_id": gather["id"],
+                                                 "repo_path": repo_root, "input": gather_input})
+                prompt = session.call("prepare_semantic_step",
+                                      {"step_id": prompt_step["id"], "repo_path": repo_root})
+                report["pending_semantic"].append({
+                    "label": f"propose-{phase}",
+                    "semantic_step_id": prompt_step["id"],
+                    "persist_step_id": persist["id"],
+                    "render_step_id": render["id"],
+                    "prompt_name": prompt.get("prompt_name", ""),
+                })
+            except Exception as e:
+                report["failed"].append({"label": f"propose-{phase}", "stage": "prepare_semantic",
+                                         "message": str(e)})
+        else:
+            print(f"  WARNING: unexpected step count for propose-{phase} "
+                  f"({len(uc_steps)}) — skipping proposal gate")
+            return
     else:
         print(f"  propose-{phase}: draft already pending review, not redrafting")
 
     print(f"\n== PAUSED: awaiting approval for propose-{phase} ==")
-    print(f"  review: docs/paper/paper-{paper_id}/proposal/{phase}.md "
-          f"(once the staged semantic step above is completed, persisted, and rendered)")
+    if phase == "report":
+        print(f"  review: docs/paper/paper-{paper_id}/proposal/{phase}.md (already rendered — deterministic-only)")
+    else:
+        print(f"  review: docs/paper/paper-{paper_id}/proposal/{phase}.md "
+              f"(once the staged semantic step above is completed, persisted, and rendered)")
     print(f"  then: approve_proposal.py --phase {phase}  (or --reject --reason ...)")
     report["paused_at"] = phase
     Path(report_path).write_text(json.dumps(report, indent=2))

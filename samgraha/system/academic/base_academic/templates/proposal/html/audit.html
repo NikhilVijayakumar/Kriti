@@ -29,6 +29,19 @@
 
     <p>{{ summary }}</p>
     <hr>
+
+    <h2>What Will Be Audited (computed)</h2>
+    <p><strong>Models this round:</strong> {{#models}}{{ . }} {{/models}}</p>
+    <table>
+        <thead><tr><th>Domain</th><th>Deterministic Checks</th><th>Rubric Criteria</th></tr></thead>
+        <tbody>
+        {{#domains}}
+        <tr><td>{{ domain_key }}</td><td>{{ det_rule_count }} ({{ det_critical_count }} critical)</td><td>{{#rubric_found}}{{ rubric_criterion_count }}{{/rubric_found}}{{^rubric_found}}rubric not found{{/rubric_found}}</td></tr>
+        {{/domains}}
+        </tbody>
+    </table>
+    <hr>
+
     <pre class="content">{{ content_md }}</pre>
     <hr>
 

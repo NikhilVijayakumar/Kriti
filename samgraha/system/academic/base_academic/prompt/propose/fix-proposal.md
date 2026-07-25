@@ -16,9 +16,12 @@ You will receive (from `gather-proposal-context`, phase=fix):
   and no domain was named
 - `user_comment`: the user's free-text request, if `source='user-request'`
   (empty for pipeline-triggered fixes)
-- `triggering_finding`: the failing deterministic findings JSON, if this
-  was triggered by `fix_loop`'s automatic threshold check (empty for
-  user-request fixes)
+- `triggering_findings`: list of `{check_id, rule, detail}` objects —
+  the failing checks from the latest deterministic audit for this domain
+  (empty for user-request fixes). The template renders these in the
+  "Failing Checks" section; don't repeat the list in `content_md` —
+  write about *why* these checks failed and *how* the fix addresses them.
+- `triggering_finding_count`: number of failing checks
 - `redraft_of`: present if a previous fix proposal for this
   (phase, scope_domain_id) was rejected
 - `paper_title`
@@ -28,9 +31,9 @@ State what will change in the target domain's content and why. If
 `target_domain` is null, your first job is to determine which domain the
 `user_comment` is actually about — name it explicitly in `content_md`;
 downstream steps only regenerate the domain you name, so an unresolved
-target here means nothing gets fixed. If `triggering_finding` is
-present, explain the fix in terms of that specific finding, not a
-generic rewrite. If `user_comment` is present, quote or closely
+target here means nothing gets fixed. If `triggering_findings` is
+non-empty, explain the fix in terms of those specific failing checks,
+not a generic rewrite. If `user_comment` is present, quote or closely
 paraphrase what the user actually asked for — don't substitute your own
 judgment about what should change without grounding it in their words.
 
@@ -45,6 +48,9 @@ judgment about what should change without grounding it in their words.
 3. If `redraft_of` is present, address its `user_comment` (the rejection
    reason) directly
 4. Quote the current content excerpt being changed, not just the change
+5. The "Failing Checks" section is computed — don't repeat the check
+   list in `content_md`, write about *why* those checks failed and
+   *how* the proposed fix addresses each one
 
 ## Output Format
 Return a JSON object:
@@ -52,6 +58,7 @@ Return a JSON object:
 {
   "summary": "One-paragraph statement of what will change and why.",
   "content_md": "Full proposal body, matching templates/proposal/markdown/fix.md's shape.",
-  "resolved_domain_key": "the domain key this fix targets, or null if unresolved"
+  "resolved_domain_key": "the domain key this fix targets, or null if unresolved",
+  "computed_context": "<pass through the full triggering_findings list and target_domain from Input — persist stores this for template rendering>"
 }
 ```

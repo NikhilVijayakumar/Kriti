@@ -10,6 +10,17 @@
 
 ---
 
+## Failing Checks This Fix Addresses (computed)
+
+{{#triggering_findings}}
+- **{{ rule }}** ({{ check_id }}): {{ detail }}
+{{/triggering_findings}}
+{{^triggering_findings}}
+(no deterministic findings — this fix is driven by `user_comment` alone)
+{{/triggering_findings}}
+
+---
+
 {{{ content_md }}}
 
 ---

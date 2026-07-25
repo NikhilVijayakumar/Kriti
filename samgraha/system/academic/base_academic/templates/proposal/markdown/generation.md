@@ -9,6 +9,16 @@
 
 ---
 
+## What Will Be Generated (computed)
+
+| Domain | Stage | Word Range | Rule Checks (critical) |
+|---|---|---|---|
+{{#domains}}
+| {{ domain_key }} | {{ stage }} | {{ word_min }}–{{ word_max }} | {{ check_count }} ({{ critical_count }}) |
+{{/domains}}
+
+---
+
 {{{ content_md }}}
 
 ---

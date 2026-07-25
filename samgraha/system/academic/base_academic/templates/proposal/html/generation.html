@@ -29,6 +29,18 @@
 
     <p>{{ summary }}</p>
     <hr>
+
+    <h2>What Will Be Generated (computed)</h2>
+    <table>
+        <thead><tr><th>Domain</th><th>Stage</th><th>Word Range</th><th>Rule Checks (critical)</th></tr></thead>
+        <tbody>
+        {{#domains}}
+        <tr><td>{{ domain_key }}</td><td>{{ stage }}</td><td>{{ word_min }}–{{ word_max }}</td><td>{{ check_count }} ({{ critical_count }})</td></tr>
+        {{/domains}}
+        </tbody>
+    </table>
+    <hr>
+
     <pre class="content">{{ content_md }}</pre>
     <hr>
 
