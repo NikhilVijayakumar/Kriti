@@ -7,6 +7,6 @@ bands:
   - { min: 70, max: 79,  rating: Acceptable }
   - { min: 0,  max: 69,  rating: Needs Improvement }
 note: >
-  Bands apply to final_score. Same rating vocabulary as the repo's other
-  standards, so plan/core/loop.yaml's default threshold ("Acceptable")
-  resolves without needing an explicit override.
+  Bands apply to final_score. Same rating vocabulary as base_academic,
+  so plan/core/loop.yaml's default threshold ("Acceptable") resolves
+  without needing an explicit override.

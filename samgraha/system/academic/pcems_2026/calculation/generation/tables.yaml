@@ -1,0 +1,39 @@
+id: tables
+domain: tables
+note: >
+  Cross-cutting, guide-sourced domain (no base_academic precedent). Tables
+  have no standalone generated document — these checks run as additional
+  rows during findings/methodology's own 5-audit-det-* scans. Checks
+  validate the already-drafted section content, not a separate draft.
+checks:
+  - id: tb-001
+    name: table_word_tools
+    rule: table_created_with_word_tools
+    severity: critical
+    description: "Tables not inserted as images (regex-based: no ![](png/jpg/svg) in table context)"
+  - id: tb-002
+    name: table_caption_above
+    rule: table_caption_position
+    severity: warning
+    description: "Table caption appears above the table (regex-based: 'Table N' line before pipe-table)"
+  - id: tb-003
+    name: table_numbered
+    rule: sequential_numbering
+    severity: warning
+    description: "Table numbering is sequential (regex-based: Table I/1, II/2, ... monotonically increasing)"
+  - id: tb-004
+    name: table_referenced_in_text
+    rule: referenced_before_appearance
+    severity: warning
+    description: "Every table referenced in text before its pipe-table block (regex-based)"
+  - id: tb-005
+    name: table_units_in_headers
+    rule: regex_match
+    severity: warning
+    config: { pattern: "\\(.*%|\\(.*ms|\\(.*dB|\\(.*Hz|\\(.*s\\)" }
+    description: "Units specified in column headers"
+  - id: tb-006
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

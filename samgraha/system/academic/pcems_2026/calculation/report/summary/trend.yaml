@@ -16,6 +16,4 @@ formula: |
   else: "Unchanged"
 note: >
   Tolerance prevents float-noise flip-flopping across successive audits of
-  the same paper draft. Resolved independently for semantic_document and
-  final_score (here the same number, but tracked as separate scored
-  entities for consistency with the repo's other standards).
+  the same paper draft.

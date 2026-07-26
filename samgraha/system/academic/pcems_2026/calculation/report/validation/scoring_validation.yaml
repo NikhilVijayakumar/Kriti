@@ -1,5 +1,5 @@
 id: scoring_validation
-description: "Validates scoring pipeline integrity for pcems_2026"
+description: "Validates scoring pipeline integrity for PCEMS 2026"
 version: "1.0"
 
 checks:

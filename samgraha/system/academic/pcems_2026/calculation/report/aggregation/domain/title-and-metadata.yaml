@@ -1,0 +1,11 @@
+id: aggregation_title-and-metadata
+calculation: weighted_merge
+scope: domain
+inputs:
+  deterministic: calculation/generation/title-and-metadata.yaml
+  semantic: calculation/report/semantic/full-part-blend.yaml
+weights:
+  deterministic: 0.50
+  semantic: 0.50
+formula: |
+  final_score = (deterministic.score * weights.deterministic) + (semantic.score * weights.semantic)

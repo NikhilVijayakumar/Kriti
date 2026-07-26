@@ -1,0 +1,39 @@
+id: figures
+domain: figures
+note: >
+  Cross-cutting, guide-sourced domain (no base_academic precedent). Figures
+  have no standalone generated document — these checks run as additional
+  rows during findings/methodology's own 5-audit-det-* scans. Checks
+  validate the already-drafted section content, not a separate draft.
+checks:
+  - id: fg-001
+    name: figure_referenced_in_text
+    rule: referenced_before_appearance
+    severity: warning
+    description: "Every figure referenced in text before it appears (regex-based)"
+  - id: fg-002
+    name: figure_placed_inline
+    rule: figure_placement
+    severity: warning
+    description: "Figure placed near first reference (regex-based: within 5 lines)"
+  - id: fg-003
+    name: figure_caption_below
+    rule: figure_caption_position
+    severity: warning
+    description: "Figure caption appears below the figure (regex-based: 'Fig. N' line after figure)"
+  - id: fg-004
+    name: figure_numbered
+    rule: sequential_numbering
+    severity: warning
+    description: "Figure numbering is sequential (regex-based: Fig. 1/2/3... monotonically increasing)"
+  - id: fg-005
+    name: figure_axes_labeled
+    rule: regex_match
+    severity: warning
+    config: { pattern: "(?i)(?:axis|label|unit|\\(%\\)|\\(ms\\)|\\(s\\))" }
+    description: "Axes labeled with units where applicable"
+  - id: fg-006
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No unfilled template markers"

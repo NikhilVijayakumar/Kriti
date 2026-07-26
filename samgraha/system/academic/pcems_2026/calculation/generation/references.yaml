@@ -1,0 +1,43 @@
+id: references
+domain: references
+checks:
+  - id: rf-001
+    name: word_count_in_range
+    rule: word_count_in_range
+    severity: critical
+    config: { min: 20, max: 300 }
+    description: "Reference list word count within configured range"
+  - id: rf-002
+    name: min_reference_count
+    rule: min_citation_count
+    severity: warning
+    config: { min: 15 }
+    description: "Minimum 15 references (target 20-25)"
+  - id: rf-003
+    name: max_reference_count
+    rule: max_citation_count
+    severity: warning
+    config: { max: 30 }
+    description: "Maximum 30 references"
+  - id: rf-004
+    name: consistent_format
+    rule: regex_match
+    severity: warning
+    config: { pattern: "\\[\\d+\\]" }
+    description: "IEEE numbered citation style ([1], [2], etc.)"
+  - id: rf-005
+    name: no_placeholders
+    rule: no_placeholders
+    severity: critical
+    description: "No placeholder entries in references"
+  - id: rf-006
+    name: recency_check
+    rule: regex_match
+    severity: warning
+    config: { pattern: "202[0-9]|2025|2026" }
+    description: "At least 50% of references from last 5 years"
+  - id: refs-bfit
+    name: budget_fit_applied
+    rule: budget_fit_applied
+    severity: critical
+    description: "stage='budget-fit' narrative row exists for this domain"

@@ -1,0 +1,4 @@
+total_word_count:
+  min: 4000
+  max: 8000
+  # PCEMS 2026 conference paper — override to match venue's page/word limit.

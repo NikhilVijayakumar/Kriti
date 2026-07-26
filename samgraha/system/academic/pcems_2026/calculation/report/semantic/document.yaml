@@ -1,0 +1,15 @@
+id: semantic_document_v1
+calculation: sum_capped_at_100
+scope: document
+inputs:
+  from: audit/semantic/document/{domain}.md
+  fields: [criterion_id, points, mandatory, passed]
+formula: |
+  score = min(100, sum(points) where passed=true)
+rollup: null
+note: >
+  PCEMS 2026 uses a two-bucket scoring model:
+  semantic_document + deterministic_document (50/50 default weights).
+  One rubric file per paper domain at audit/semantic/document/{domain}.md.
+  Mandatory criterion failure forfeits that criterion's points entirely,
+  no partial credit.

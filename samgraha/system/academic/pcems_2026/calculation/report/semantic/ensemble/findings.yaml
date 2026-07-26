@@ -1,0 +1,17 @@
+id: semantic_ensemble_findings
+calculation: reliability_aware_ensemble
+scope: section-full
+inputs:
+  from: academic_semantic_runs WHERE domain_id=(SELECT id FROM academic_domains WHERE domain_key='findings') AND scope='section-full'
+  fields: [model, overall_score, reasoning]
+formula: |
+  mean_score = mean(scores)
+  stdev_score = stdev(scores)
+  agreement = "High" if stdev_score <= 5 else "Medium" if stdev_score <= 15 else "Low"
+  final_score = mean_score
+outputs:
+  - score
+  - agreement
+  - stdev
+note: >
+  Single-model rounds (stdev undefined / n=1) report agreement=N/A.
