@@ -1,0 +1,21 @@
+<div class="report report-plagiarism">
+  <h2>Findings — Plagiarism Forensic Audit</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <div class="verdict">
+    <h3>Verdict</h3>
+    <p class="verdict-{{ verdict }}">{{ verdict }}</p>
+  </div>
+
+  <div class="findings">
+    <h3>Findings</h3>
+    <ul>
+      {{#findings}}
+      <li><strong>{{ check_id }}</strong>: {{ detail }} (severity: {{ severity }})</li>
+      {{/findings}}
+    </ul>
+    {{^findings}}
+    <p>No findings recorded.</p>
+    {{/findings}}
+  </div>
+</div>

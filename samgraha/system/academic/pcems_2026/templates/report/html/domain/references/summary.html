@@ -1,0 +1,21 @@
+<div class="report report-summary">
+  <h2>References — Domain Summary</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <div class="score-card">
+    <h3>Aggregation Score</h3>
+    <p class="final-score">Final Score: <strong>{{ final_score }}</strong></p>
+    <p class="score-band">Band: {{ score_band }}</p>
+  </div>
+
+  <div class="component-scores">
+    <h3>Component Scores</h3>
+    <p>Deterministic: {{ deterministic_score }}</p>
+    <p>Semantic (blended): {{ semantic_score }}</p>
+  </div>
+
+  <div class="score-history">
+    <h3>Score History</h3>
+    <p>Trend: {{ trend }}</p>
+  </div>
+</div>

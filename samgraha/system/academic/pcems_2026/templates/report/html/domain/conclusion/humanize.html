@@ -1,0 +1,22 @@
+<div class="report report-humanize">
+  <h2>Conclusion — Humanize Passes</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <div class="pass-details">
+    <h3>Deterministic Pass</h3>
+    <p>Iteration: {{ det_iteration }}</p>
+    <p>Risk Flags: {{ det_risk_flags }}</p>
+
+    <h3>Semantic Pass</h3>
+    <p>Iteration: {{ sem_iteration }}</p>
+    <p>Risk Flags: {{ sem_risk_flags }}</p>
+  </div>
+
+  <div class="risk-flags">
+    <h3>Risk Flags Detail</h3>
+    <ul>
+      {{#risk_flag_list}}<li>{{ . }}</li>{{/risk_flag_list}}
+    </ul>
+    {{^risk_flag_list}}<p>No risk flags.</p>{{/risk_flag_list}}
+  </div>
+</div>

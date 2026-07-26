@@ -1,0 +1,24 @@
+<div class="report report-deterministic">
+  <h2>Title and Metadata — Deterministic Audit</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <table class="check-breakdown">
+    <thead>
+      <tr><th>Check</th><th>Status</th><th>Detail</th></tr>
+    </thead>
+    <tbody>
+      {{#checks}}
+      <tr>
+        <td>{{ check_id }}</td>
+        <td class="status-{{ status }}">{{ status }}</td>
+        <td>{{ detail }}</td>
+      </tr>
+      {{/checks}}
+    </tbody>
+  </table>
+
+  <div class="verdict">
+    <h3>Verdict</h3>
+    <p class="verdict-{{ verdict }}">{{ verdict }}</p>
+  </div>
+</div>

@@ -1,0 +1,54 @@
+<div class="report report-semantic-full">
+  <h2>Introduction — Semantic Audit (Full)</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <table class="model-scores">
+    <thead>
+      <tr><th>Model</th><th>Score</th><th>Agreement</th></tr>
+    </thead>
+    <tbody>
+      {{#models}}
+      <tr>
+        <td>{{ model }}</td>
+        <td>{{ score }}</td>
+        <td>{{ agreement }}</td>
+      </tr>
+      {{/models}}
+    </tbody>
+  </table>
+
+  <div class="ensemble">
+    <h3>Ensemble</h3>
+    <p>Mean Score: {{ mean_score }}</p>
+    <p>Agreement: {{ agreement_level }}</p>
+    <p>Std Dev: {{ stdev_score }}</p>
+  </div>
+
+  <table class="dimension-scores">
+    <thead>
+      <tr><th>Dimension</th><th>Score</th><th>Evidence</th></tr>
+    </thead>
+    <tbody>
+      {{#dimensions}}
+      <tr>
+        <td>{{ dimension_key }}</td>
+        <td>{{ score }}</td>
+        <td>{{ evidence }}</td>
+      </tr>
+      {{/dimensions}}
+    </tbody>
+  </table>
+
+  <div class="findings">
+    <h3>Findings</h3>
+    <ul class="strengths">
+      {{#strengths}}<li class="strength">{{ . }}</li>{{/strengths}}
+    </ul>
+    <ul class="weaknesses">
+      {{#weaknesses}}<li class="weakness">{{ . }}</li>{{/weaknesses}}
+    </ul>
+    <ul class="recommendations">
+      {{#recommendations}}<li class="recommendation">{{ . }}</li>{{/recommendations}}
+    </ul>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+<section class="domain domain-references">
+  <h2>References</h2>
+  <ol class="references-list">
+    {{#references}}
+    <li id="ref-{{ index }}">
+      {{ authors }}. "{{{ title }}}." <em>{{{ journal }}}</em>,
+      vol. {{ volume }}, no. {{ issue }}, pp. {{ pages }}, {{ year }}.
+      DOI: <a href="https://doi.org/{{ doi }}">{{ doi }}</a>.
+    </li>
+    {{/references}}
+  </ol>
+</section>

@@ -1,0 +1,30 @@
+<div class="report report-semantic-part">
+  <h2>Introduction — Semantic Audit (Part Scores)</h2>
+  <p class="meta">Generated: {{ timestamp }} | Paper: {{ paper_id }}</p>
+
+  <table class="part-scores">
+    <thead>
+      <tr><th>Part</th><th>Score</th><th>Verdict</th></tr>
+    </thead>
+    <tbody>
+      {{#parts}}
+      <tr>
+        <td>{{ part_kind }}</td>
+        <td>{{ score }}</td>
+        <td>{{ verdict }}</td>
+      </tr>
+      {{/parts}}
+    </tbody>
+  </table>
+
+  <div class="findings-by-part">
+    {{#parts}}
+    <h3>{{ part_kind }}</h3>
+    <ul>
+      {{#findings}}
+      <li><strong>{{ concern }}</strong>: {{ detail }} (severity: {{ severity }})</li>
+      {{/findings}}
+    </ul>
+    {{/parts}}
+  </div>
+</div>

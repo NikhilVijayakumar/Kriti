@@ -1,0 +1,24 @@
+<section class="domain domain-findings">
+  <h2>Experimental Setup</h2>
+  {{{ experimental_setup }}}
+
+  <h2>Results</h2>
+  {{{ results }}}
+
+  {{#tables}}
+  <table class="results-table">
+    <caption>Table {{ number }}: {{{ caption }}}</caption>
+    {{{ content }}}
+  </table>
+  {{/tables}}
+
+  <h2>Analysis</h2>
+  {{{ analysis }}}
+
+  {{#figures}}
+  <figure class="results-figure">
+    <figcaption>Figure {{ number }}: {{{ caption }}}</figcaption>
+    <p>{{{ description }}}</p>
+  </figure>
+  {{/figures}}
+</section>

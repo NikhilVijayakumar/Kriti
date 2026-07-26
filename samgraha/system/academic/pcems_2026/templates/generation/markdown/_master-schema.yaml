@@ -1,0 +1,30 @@
+# Master schema — section order for document assembly.
+#
+# PCEMS 2026 concrete system. 6 structural domains (map 1:1 to an actual
+# section, in document order) + 5 cross-cutting domains (novelty, gaps,
+# mathematics, tables, figures — audited across the whole document, not
+# confined to one section; woven into whichever structural sections they're
+# relevant to rather than rendered as their own headings).
+#
+# cross_cutting entries are NOT in `sections:` — they are audit-only
+# domains, listed separately so assemble-final-document.py knows not to
+# look for a standalone draft file to concatenate for them.
+#
+# tables/figures are guide-sourced (new — no base_academic precedent):
+# their checks apply to already-drafted findings/methodology text, not
+# repo source code. See domains/10-tables.md, 11-figures.md.
+
+sections:
+  - title-and-metadata
+  - introduction
+  - methodology
+  - findings
+  - conclusion
+  - references
+
+cross_cutting:
+  - novelty
+  - gaps
+  - mathematics
+  - tables
+  - figures

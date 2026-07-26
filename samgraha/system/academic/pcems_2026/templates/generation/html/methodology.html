@@ -1,0 +1,24 @@
+<section class="domain domain-methodology">
+  <h2>Proposed Method</h2>
+  {{{ proposed_method }}}
+
+  <h2>Architecture / Design</h2>
+  {{{ architecture }}}
+
+  {{#design_decisions}}
+  <h3>{{{ name }}}</h3>
+  {{{ rationale }}}
+  {{/design_decisions}}
+
+  <h2>Parameters and Settings</h2>
+  <table class="parameters">
+    <thead>
+      <tr><th>Parameter</th><th>Value</th><th>Justification</th></tr>
+    </thead>
+    <tbody>
+      {{#parameters}}
+      <tr><td>{{{ name }}}</td><td>{{{ value }}}</td><td>{{{ justification }}}</td></tr>
+      {{/parameters}}
+    </tbody>
+  </table>
+</section>
