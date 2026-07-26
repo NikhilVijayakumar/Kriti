@@ -21,9 +21,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PCEMS_ROOT = SCRIPT_DIR.parent  # pcems_2026/
-ACADEMIC_ROOT = PCEMS_ROOT.parent  # academic/
-COMMON = ACADEMIC_ROOT / "base_academic" / "script" / "common"
-SCHEMA_DIR = ACADEMIC_ROOT / "base_academic" / "schema"
+COMMON = PCEMS_ROOT / "script" / "common"
+SCHEMA_DIR = PCEMS_ROOT / "schema"
 
 sys.path.insert(0, str(COMMON))
 
@@ -112,7 +111,7 @@ def _check_bibtex_parser():
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "collate_references",
-            str(ACADEMIC_ROOT / "base_academic" / "script" / "assemble-paper-structure" / "collate_references.py"),
+            str(PCEMS_ROOT / "script" / "assemble-paper-structure" / "collate_references.py"),
         )
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)

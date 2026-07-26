@@ -571,6 +571,62 @@ def expand_triads(db_path, standard, domains, module_names=None,
     return count
 
 
+def resolve_docs_systems(repo_root, explicit=None):
+    """Find the target repo's own subproject name(s) under docs/paper/
+    {name}/modules/ — NOT the samgraha --standard (pcems_2026 is a ruleset
+    applied to many repos; a repo like Bodha can itself contain several
+    documented, related subprojects — Amsha/Bodha/Yantra each with their
+    own modules/). A paper covering just one subproject and a paper
+    covering all of them (a system-level paper spanning dependent
+    subprojects) are both valid asks — this doesn't force a single choice.
+
+    explicit: None (auto-detect), a single name, a comma-separated string
+    of names, or "all" (every subproject with a modules/ dir).
+
+    Returns a list of (system_name, modules_dir) pairs — empty list means
+    "not docs-first" (ambiguous auto-detect, or an explicit name that
+    doesn't exist). Ambiguous auto-detect refuses to guess rather than
+    silently picking one or silently combining all of them — combining
+    is a real choice the caller states via "all", not a default."""
+    docs_paper = repo_root / "docs" / "paper"
+    if not docs_paper.is_dir():
+        return []
+
+    all_subprojects = [d for d in docs_paper.iterdir()
+                       if d.is_dir() and not d.name.startswith(".")
+                       and (d / "modules").is_dir()]
+
+    if explicit:
+        if explicit.strip().lower() == "all":
+            return [(d.name, d / "modules") for d in all_subprojects]
+        names = [n.strip() for n in explicit.split(",") if n.strip()]
+        resolved = []
+        for name in names:
+            candidate = docs_paper / name / "modules"
+            if candidate.is_dir():
+                resolved.append((name, candidate))
+            else:
+                print(f"  docs-first: --docs-system '{name}' has no "
+                      f"docs/paper/{name}/modules/ — skipping it")
+        return resolved
+
+    if len(all_subprojects) == 1:
+        d = all_subprojects[0]
+        return [(d.name, d / "modules")]
+    if len(all_subprojects) > 1:
+        print(f"  docs-first: ambiguous — {len(all_subprojects)} subprojects have "
+              f"docs/paper/*/modules/ ({', '.join(d.name for d in all_subprojects)}). "
+              f"Pass --docs-system <name> for one, a comma-separated list for "
+              f"several, or --docs-system all to combine every one into a "
+              f"single system-level paper; skipping docs-first ingestion.")
+        return []
+
+    flat = docs_paper / "modules"
+    if flat.is_dir():
+        return [(None, flat)]
+    return []
+
+
 def expand_docs_first_ingestion(db_path, standard):
     """Expand docs-first-ingestion usecase: discover-docs-modules →
     load-docs-module-analysis → load-docs-cross-module-analysis.
@@ -851,6 +907,14 @@ def main():
                    help="Re-run audits even if commit matches (bypass skip-check)")
     p.add_argument("--models", default=None,
                    help="Comma-separated list of models for semantic audit (e.g. 'claude-sonnet-5,gpt-5')")
+    p.add_argument("--docs-system", default=None,
+                   help="Target repo's own subproject name(s) under docs/paper/{name}/modules/ "
+                        "for docs-first ingestion — distinct from --standard, which is the "
+                        "samgraha ruleset (e.g. 'pcems_2026'). One name ('Bodha') for a "
+                        "single-subproject paper, a comma-separated list ('Bodha,Amsha') or "
+                        "'all' to combine several dependent subprojects into one system-level "
+                        "paper. Auto-detected only when docs/paper/*/modules/ has exactly one "
+                        "match; ambiguous (2+) otherwise — pass this explicitly.")
     args = p.parse_args()
 
     repo_root = args.repo_root
@@ -905,30 +969,30 @@ def main():
         print(f"  classification={classification}, domains={len(domains)}, modules={len(modules)}")
 
         # --- Phase 2b: Docs-first detection ---
-        # Check if docs/paper/{system}/modules/ exists — if so, this is a
-        # docs-first repo where module analysis lives on disk, not in source code.
+        # Check if docs/paper/{docs_system}/modules/ exists for one or more
+        # subprojects — if so, this is a docs-first repo where module
+        # analysis lives on disk, not in source code. docs_systems is the
+        # target repo's OWN subproject name(s) (e.g. Bodha's Amsha/Bodha/
+        # Yantra — dependent subprojects a paper may cover individually or
+        # combined) — not args.standard, which is the samgraha ruleset
+        # (pcems_2026) applied across many repos.
         _repo = Path(repo_root)
-        docs_modules_dir = None
-        for candidate in [
-            _repo / "docs" / "paper" / args.standard / "modules",
-            _repo / "docs" / "paper" / "modules",
-        ]:
-            if candidate.is_dir():
-                docs_modules_dir = candidate
-                break
+        docs_systems = resolve_docs_systems(_repo, args.docs_system)
 
-        docs_first = docs_modules_dir is not None and classification != "NO_DOCS"
+        docs_first = bool(docs_systems) and classification != "NO_DOCS"
         if docs_first:
-            print(f"\n== docs-first ingestion (found {docs_modules_dir}) ==")
+            system_names = [n or "(flat)" for n, _ in docs_systems]
+            print(f"\n== docs-first ingestion (systems={system_names}) ==")
             expand_docs_first_ingestion(db_path, args.standard)
             steps = load_steps(db_path, args.standard)
             docs_ingestion_steps = steps_of(steps, "docs-first-ingestion")
+            docs_system_names = [n for n, _ in docs_systems if n]
             for step in docs_ingestion_steps:
                 try:
                     r = session.call("run_script_step",
                                      {"step_id": step["id"], "repo_path": repo_root,
                                       "input": {"paper_id": paper_id,
-                                                "standard": args.standard}})
+                                                "docs_systems": docs_system_names}})
                     report["ran"].append({"step": f"docs-first/{step['description'][:60]}",
                                           "status": r.get("status")})
                 except Exception as e:

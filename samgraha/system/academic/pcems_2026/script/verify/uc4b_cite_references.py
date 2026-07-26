@@ -6,8 +6,7 @@ citations and reference list."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent
-                        / "base_academic" / "script" / "verify"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import verify_main
 
 if __name__ == "__main__":

@@ -2,13 +2,12 @@
 script/schema/generate_per_domain_usecases.py (pcems_2026), do not hand-edit;
 edit that generator and re-run instead.
 
-Delegates to base_academic's verify/_common.py infrastructure via sys.path."""
+Delegates to _common.py in this same directory."""
 import sys
 from pathlib import Path
 
-# Point at base_academic's verify/ directory for _common.py
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent
-                        / "base_academic" / "script" / "verify"))
+# _common.py lives in this same directory
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _common import verify_main
 
 if __name__ == "__main__":

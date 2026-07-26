@@ -9,8 +9,7 @@ Expected --in payload: {html_path: str}
 import sys as _sys
 from pathlib import Path as _Path
 
-_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent.parent
-                        / "base_academic" / "script" / "common"))
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "common"))
 from _adapter import parse_step_args, write_envelope
 
 

@@ -2,9 +2,10 @@ name: pcems_2026
 abstract: false
 description: >
   PCEMS 2026 conference-paper system. 6 domains, single-column manuscript,
-  Word-native submission. Content standards sourced from guide/. Inherits
-  base_academic's shared schema, scripts, and relationship-type vocabulary
-  by directory-fallback convention (see below) — not a declared field.
+  Word-native submission. Content standards sourced from guide/. Originally
+  inherited base_academic's shared schema/scripts by directory-fallback
+  convention; now a self-contained fork (script/, schema/, prompt/ all
+  local) so no standard reaches into another's files.
 domains:                                    # scored sections only — matches
   - { key: title-and-metadata, sort_order: 1 } # aggregation/domain + semantic/
   - { key: introduction,       sort_order: 2 } # ensemble scope (§2.4). Cross-
