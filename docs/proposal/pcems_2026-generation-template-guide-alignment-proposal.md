@@ -1,7 +1,7 @@
 # pcems_2026 — Generation Template ↔ Guide Alignment Proposal
 
 > **Status: COMPLETE** — All 7 phases implemented and verified.
-> 20 files changed across guide, templates, calculation YAMLs, and
+> 23 files changed across guide, templates, calculation YAMLs, and
 > content_rules.py. See §5 for per-phase completion details.
 
 ## 0. Why This Document Exists
@@ -470,6 +470,6 @@ ordering constraint between them, safe to do in parallel or in any order.
 | 6 | §1.4 HTML typography | `_master-schema.html` (new), `_style.css` (already existed) | ✅ Done |
 | 7 | §2.2 findings interleaving | `findings.md` + `.html` | ✅ Done |
 
-**Total: 20 files changed.** All guide citations verified against source
+**Total: 23 files changed.** All guide citations verified against source
 files. All template variable names cross-checked between markdown and HTML
 pairs. Deterministic rule implementations confirmed in `content_rules.py`.
