@@ -178,6 +178,19 @@ def _gather_report_context(conn, paper_id):
     final_score = score_row["final_score"] if score_row else None
     score_band = score_row["score_band"] if score_row else None
 
+    # Layer 4 — reviewer-simulation runs after the pre-submission audits,
+    # its verdict belongs on the same "about to render" gate as the
+    # calculated score so a human sees both before approving.
+    rs_row = conn.execute(
+        "SELECT overall_score, reasoning FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=(SELECT id FROM academic_domains "
+        "WHERE key='reviewer-simulation') ORDER BY run_number DESC LIMIT 1",
+        (paper_id,)).fetchone()
+    reviewer_sim_score = rs_row["overall_score"] if rs_row else None
+    # reasoning holds "Decision: X (overall_score=N/30)" — see
+    # persist_reviewer_simulation.py's _reshape().
+    reviewer_sim_decision = rs_row["reasoning"] if rs_row else "not yet run"
+
     computed = {
         "current_final_score": final_score,
         "current_score_band": score_band,
@@ -185,9 +198,11 @@ def _gather_report_context(conn, paper_id):
         "per_domain_kind_count": per_domain_kind_count,
         "total_domain_reports": domain_count * per_domain_kind_count,
         "whole_run_reports": whole_run_reports,
+        "reviewer_simulation_score": reviewer_sim_score,
+        "reviewer_simulation_decision": reviewer_sim_decision,
     }
     score_label = f"{final_score} ({score_band})" if score_row else "not yet calculated"
-    summary = (f"Score {score_label} — will (re)render "
+    summary = (f"Score {score_label} — {reviewer_sim_decision} — will (re)render "
                f"{computed['total_domain_reports']} domain reports "
                f"({domain_count} domains × {per_domain_kind_count} kinds) "
                f"+ {len(whole_run_reports)} whole-run reports "

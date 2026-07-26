@@ -585,6 +585,12 @@ def usecase_status(conn, paper_id, usecase_name):
     completion criteria. Same predicate backs both the CLI verify script
     and the runtime dependency gate."""
     if usecase_name not in _USECASE_PREDICATES:
+        for prefix, factory in _PER_DOMAIN_PREDICATE_FACTORIES:
+            if usecase_name.startswith(prefix):
+                domain = usecase_name[len(prefix):]
+                if _domain_id(conn, domain) is not None:
+                    return factory(domain)(conn, paper_id)
+                break
         return False, [f"unknown usecase '{usecase_name}'"]
     _, fn = _USECASE_PREDICATES[usecase_name]
     return fn(conn, paper_id)
@@ -965,6 +971,26 @@ for _domain in STRUCTURAL_DOMAINS:
         f"{_domain}: if still flagged after deterministic pass, has >= 1 semantic humanize pass",
         _make_humanize_sem_predicate(_domain),
     )
+
+
+# Fallback for concrete systems whose domain keys don't match
+# STRUCTURAL_DOMAINS/GENERATED_DOMAINS (e.g. pcems_2026's "findings" vs
+# base_academic's generic "results") — the loops above only pre-register
+# usecase names for base_academic's own 12 domains. Rather than requiring
+# every concrete system to hand-copy these ~9 registration loops with its
+# own domain list, resolve any {prefix}-{domain} name whose domain key
+# actually exists in academic_domains directly against the same factories.
+_PER_DOMAIN_PREDICATE_FACTORIES = [
+    ("generate-section-draft-", lambda d: _make_stage_predicate(d, "generate")),
+    ("section-citations-", _make_citation_predicate),
+    ("section-supplementary-content-", lambda d: _make_stage_predicate(d, "enrich")),
+    ("section-budget-fit-", _make_budget_predicate),
+    ("deterministic-audit-", _make_det_audit_predicate),
+    ("semantic-audit-", _make_sem_audit_predicate),
+    ("plagiarism-forensic-audit-", _make_plagiarism_predicate),
+    ("humanize-deterministic-", _make_humanize_det_predicate),
+    ("humanize-semantic-", _make_humanize_sem_predicate),
+]
 
 
 @_register_usecase("cross-section-semantic-audit",

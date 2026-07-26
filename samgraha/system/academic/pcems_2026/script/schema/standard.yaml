@@ -96,6 +96,10 @@ scripts:
   - name: gather-document-evidence
     location: ../../../base_academic/script/document-audit/gather_document_evidence.py
     purpose: "concatenate all domain section texts for whole-document holistic review"
+  # --- reviewer-simulation usecase ---
+  - name: persist-reviewer-simulation
+    location: ../../../base_academic/script/reviewer-simulation/persist_reviewer_simulation.py
+    purpose: "reshape 3-persona reviewer result into generic semantic-run shape, persist to reviewer-simulation domain"
   # --- calculate usecase ---
   - name: calculate
     location: ../../../base_academic/script/calculate/calculate.py

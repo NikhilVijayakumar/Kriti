@@ -17,7 +17,8 @@ Execution order (base_academic-usecase-atomicity-proposal.md §2):
   8. plagiarism-forensic-audit -> humanize-deterministic (5c) ->
      humanize-semantic (5d, agent-driven loop for still-flagged domains)
   9. document-narrative-polish (4e) -> cross-section-semantic-audit (5e) ->
-     document-semantic-audit (5f)
+     document-semantic-audit (5f) -> reviewer-simulation (5g, gated after
+     5e/5f — Layer 4, not a replacement for the pre-submission audits)
   10. calculate -> render-charts -> render-audit-report -> render-paper
 
 Proposal gate (docs/proposal/base_academic-proposal-gate-workflow-
@@ -528,6 +529,23 @@ def expand_triads(db_path, standard, domains, module_names=None,
                      "Document holistic review", prompt_id=doc_prompt)
         _insert_step(con, uc_id, order + 2, "deterministic",
                      "Persist document score", script_id=persist_doc_script)
+        count += 3
+
+    # --- 5g. reviewer-simulation: single triad, gated after 5e/5f ---
+    uc_id = _lookup_usecase_id(con, standard, "reviewer-simulation")
+    if uc_id:
+        _truncate_usecase_steps(con, uc_id, 3)
+        gather_rs_script = _lookup_script_id(con, "gather-document-evidence")
+        rs_prompt = _lookup_prompt_id(con, "reviewer-simulation")
+        persist_rs_script = _lookup_script_id(con, "persist-reviewer-simulation")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Gather assembled document for reviewer simulation",
+                     script_id=gather_rs_script)
+        _insert_step(con, uc_id, order + 1, "semantic",
+                     "Three-persona reviewer simulation", prompt_id=rs_prompt)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Persist reviewer-simulation result", script_id=persist_rs_script)
         count += 3
 
     con.close()
@@ -1075,6 +1093,17 @@ def main():
                                      doc_steps[0], doc_steps[1], doc_steps[2],
                                      doc_input, report,
                                      label="document-semantic-audit")
+
+            # --- Phase 9b: Reviewer simulation (Layer 4 — runs after
+            # cross-section/document audits pass, not instead of them) ---
+            print("\n== reviewer-simulation ==")
+            rs_steps = steps_of(steps, "reviewer-simulation")
+            if rs_steps:
+                rs_input = {"paper_id": paper_id}
+                stage_semantic_triad(session, repo_root,
+                                     rs_steps[0], rs_steps[1], rs_steps[2],
+                                     rs_input, report,
+                                     label="reviewer-simulation")
 
         # --- Phase 10: Calculate + Render ---
         # Proposal gate splices between calculate and render — the report

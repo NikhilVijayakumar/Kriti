@@ -13,6 +13,8 @@
 
 **Current score:** {{ current_final_score }} ({{ current_score_band }})
 
+**Reviewer simulation:** {{ reviewer_simulation_decision }}
+
 **Per-domain reports:** {{ total_domain_reports }} ({{ domain_count }} domains × {{ per_domain_kind_count }} kinds)
 
 **Whole-run reports:** {{#whole_run_reports}}{{ . }} {{/whole_run_reports}}
