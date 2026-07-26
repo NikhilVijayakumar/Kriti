@@ -9,6 +9,16 @@ import re
 from collections import defaultdict
 
 
+# ── shared constants ────────────────────────────────────────────────
+
+_ROMAN_NUMERALS = {
+    'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,'VIII':8,'IX':9,'X':10,
+    'XI':11,'XII':12,'XIII':13,'XIV':14,'XV':15,'XVI':16,'XVII':17,
+    'XVIII':18,'XIX':19,'XX':20,
+}
+_ROMAN_SET = set(_ROMAN_NUMERALS.keys())
+
+
 def _check_regex(pattern, text, flags=0):
     return bool(re.search(pattern, text, flags))
 
@@ -124,19 +134,16 @@ def _check_acronym_defined_at_first_use(text):
     "Something (ABC)" appears before the acronym is used standalone.
     Flags acronyms that appear before their parenthetical definition.
     """
-    _ROMAN = {'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
-              'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'}
-
     # Find all definition positions: (ABC) or (Full Form ABC) patterns
     definition_positions = {}
     for m in re.finditer(r'\(([A-Za-z ]+([A-Z]{2,}))\)', text):
         acr = m.group(2)
-        if acr not in _ROMAN:
+        if acr not in _ROMAN_SET:
             definition_positions.setdefault(acr, m.start())
     # Also match pure (ABC) patterns
     for m in re.finditer(r'\(([A-Z]{2,})\)', text):
         acr = m.group(1)
-        if acr not in _ROMAN:
+        if acr not in _ROMAN_SET:
             definition_positions.setdefault(acr, m.start())
 
     # Find all acronym uses (not inside parentheses) and their positions
@@ -147,7 +154,7 @@ def _check_acronym_defined_at_first_use(text):
     issues = []
     for m in re.finditer(r'\b([A-Z]{2,})\b', stripped):
         acr = m.group(1)
-        if acr in _ROMAN or acr in definition_positions:
+        if acr in _ROMAN_SET or acr in definition_positions:
             continue
         # This acronym has no definition anywhere — always flagged
         issues.append(acr)
@@ -155,7 +162,7 @@ def _check_acronym_defined_at_first_use(text):
     # Also check acronyms used before their definition
     for m in re.finditer(r'\b([A-Z]{2,})\b', text):
         acr = m.group(1)
-        if acr in _ROMAN or acr not in definition_positions:
+        if acr in _ROMAN_SET or acr not in definition_positions:
             continue
         # Acronym has a definition — check if use comes before definition
         use_pos = m.start()
@@ -223,10 +230,26 @@ def _check_sentence_length_distribution(text, target_min=15, target_max=25):
 
 
 def _check_citation_figure_table_collision(text):
-    """Check that citation numbers [N] don't collide with Fig. N or Table N."""
-    citations = set(int(m) for m in re.findall(r'\[(\d+)\]', text))
-    figures = set(int(m) for m in re.findall(r'(?i)fig(?:ure|\.)\s+(\d+)', text))
-    tables = set(int(m) for m in re.findall(r'(?i)table\s+(\d+)', text))
+    """Check that citation numbers [N] don't collide with Fig. N or Table N.
+
+    Handles multi-citation brackets [1,2], [1, 2], [5;6] and Roman numeral
+    figure/table labels (Fig. III, Table IV).
+    """
+    def _parse_fig_table_num(s):
+        s = s.upper().strip()
+        return _ROMAN_NUMERALS.get(s, int(s) if s.isdigit() else 0)
+
+    # Extract citation numbers from [N], [1,2], [1, 2], [5;6], etc.
+    citations = set()
+    for m in re.finditer(r'\[(\d+(?:[,;\s]+\d+)*)\]', text):
+        for n in re.findall(r'\d+', m.group(1)):
+            citations.add(int(n))
+
+    # Extract figure and table numbers (arabic + Roman numeral)
+    figures = set(_parse_fig_table_num(n) for n in re.findall(
+        r'(?i)(?:fig(?:ure|\.)?)\s+([IVXLCDM]+|\d+)', text))
+    tables = set(_parse_fig_table_num(n) for n in re.findall(
+        r'(?i)(?:table)\s+([IVXLCDM]+|\d+)', text))
 
     fig_collisions = citations & figures
     table_collisions = citations & tables
@@ -419,11 +442,7 @@ def evaluate_rule(check, text, draft_texts=None):
                 return True, "no numbered items to check"
             def _parse_num(s):
                 s = s.upper().strip()
-                roman = {'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,
-                         'VIII':8,'IX':9,'X':10,'XI':11,'XII':12,'XIII':13,
-                         'XIV':14,'XV':15,'XVI':16,'XVII':17,'XVIII':18,
-                         'XIX':19,'XX':20}
-                return roman.get(s, int(s) if s.isdigit() else 0)
+                return _ROMAN_NUMERALS.get(s, int(s) if s.isdigit() else 0)
             nums = [_parse_num(n) for _, n in matches]
             sequential = all(nums[i] <= nums[i + 1] for i in range(len(nums) - 1))
             return sequential, f"numbering: {'sequential' if sequential else 'non-sequential'} ({nums})"

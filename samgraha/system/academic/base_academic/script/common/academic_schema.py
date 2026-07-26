@@ -809,8 +809,11 @@ _register_usecase_fn(
 @_register_usecase("document-narrative-polish",
                     "every structural domain has a stage='polish' narrative + total in range")
 def _uc_document_polish(conn, paper_id):
+    placeholders = ",".join("?" for _ in STRUCTURAL_DOMAINS)
     domains = conn.execute(
-        "SELECT key FROM academic_domains ORDER BY sort_order"
+        f"SELECT key FROM academic_domains WHERE key IN ({placeholders}) "
+        "ORDER BY sort_order",
+        STRUCTURAL_DOMAINS,
     ).fetchall()
     missing = []
     for (dk,) in domains:
@@ -994,7 +997,7 @@ def _uc_reviewer_simulation(conn, paper_id):
         return False, ["reviewer-simulation domain not registered"]
     row = conn.execute(
         "SELECT COUNT(*) FROM academic_semantic_runs "
-        "WHERE paper_id=? AND domain_id=?",
+        "WHERE paper_id=? AND domain_id=? AND scope='cross-section'",
         (paper_id, domain_id),
     ).fetchone()
     if row[0] < 1:

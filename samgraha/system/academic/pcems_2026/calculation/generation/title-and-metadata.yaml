@@ -49,3 +49,13 @@ checks:
     rule: ai_language_flags
     severity: warning
     description: "No AI-generated language flags (Writing Guide/01)"
+  - id: tm-acrdef
+    name: acronym_defined_at_first_use
+    rule: acronym_defined_at_first_use
+    severity: warning
+    description: "Acronyms (2+ uppercase letters) defined before first use"
+  - id: tm-termcon
+    name: terminology_consistency
+    rule: terminology_consistency
+    severity: warning
+    description: "No casing/hyphenation variants of same term"

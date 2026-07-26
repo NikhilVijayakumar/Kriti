@@ -54,3 +54,25 @@ checks:
     rule: citation_figure_table_collision
     severity: warning
     description: "Citation numbers [N] don't collide with Fig. N or Table N"
+  - id: fi-acrdef
+    name: acronym_defined_at_first_use
+    rule: acronym_defined_at_first_use
+    severity: warning
+    description: "Acronyms (2+ uppercase letters) defined before first use"
+  - id: fi-termcon
+    name: terminology_consistency
+    rule: terminology_consistency
+    severity: warning
+    description: "No casing/hyphenation variants of same term"
+  - id: fi-sentlen
+    name: sentence_length_distribution
+    rule: sentence_length_distribution
+    severity: warning
+    config: { min: 15, max: 25 }
+    description: "80% of sentences within 15-25 words (Writing Guide/01)"
+  - id: fi-readability
+    name: readability_score_in_range
+    rule: readability_score_in_range
+    severity: info
+    config: { min: 30, max: 60, metric: flesch_reading_ease }
+    description: "Flesch reading ease 30-60 (academic prose target)"

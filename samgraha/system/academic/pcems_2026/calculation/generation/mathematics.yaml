@@ -51,3 +51,30 @@ checks:
     rule: ai_language_flags
     severity: warning
     description: "No AI-generated language flags (Writing Guide/01)"
+  - id: ma-cftcol
+    name: citation_figure_table_collision
+    rule: citation_figure_table_collision
+    severity: warning
+    description: "Citation numbers [N] don't collide with Fig. N or Table N"
+  - id: ma-acrdef
+    name: acronym_defined_at_first_use
+    rule: acronym_defined_at_first_use
+    severity: warning
+    description: "Acronyms (2+ uppercase letters) defined before first use"
+  - id: ma-termcon
+    name: terminology_consistency
+    rule: terminology_consistency
+    severity: warning
+    description: "No casing/hyphenation variants of same term"
+  - id: ma-sentlen
+    name: sentence_length_distribution
+    rule: sentence_length_distribution
+    severity: warning
+    config: { min: 15, max: 25 }
+    description: "80% of sentences within 15-25 words (Writing Guide/01)"
+  - id: ma-readability
+    name: readability_score_in_range
+    rule: readability_score_in_range
+    severity: info
+    config: { min: 30, max: 60, metric: flesch_reading_ease }
+    description: "Flesch reading ease 30-60 (academic prose target)"
