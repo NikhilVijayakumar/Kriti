@@ -7,8 +7,14 @@ Gates on all 11 section-citations-{domain} usecases completing first —
 hard-fails rather than collating a partial citation list from whichever
 domains happened to finish.
 
+If the paper's metadata contains a "bibliography_path" key, external
+citations from that file are merged with in-repo citations. File format:
+one citation per line (plain text or BibTeX @article/@inproceedings blocks).
+
 Expected --in payload: {paper_id: int}
 """
+import json as _json
+import re as _re
 import sys as _sys
 from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent / "common"))
@@ -17,6 +23,46 @@ import sys
 
 sys.path.insert(0, str(SCRIPTS_DIR / "common"))
 import academic_schema  # noqa: E402
+
+
+def _parse_bibtex(text):
+    """Extract citation strings from BibTeX @article/@inproceedings/etc. blocks."""
+    citations = []
+    for match in _re.finditer(
+        r'@\w+\{[^,]+,\s*(.*?)\n\}', text, _re.DOTALL
+    ):
+        block = match.group(1)
+        author = _re.search(r'author\s*=\s*\{(.+?)\}', block)
+        title = _re.search(r'title\s*=\s*\{(.+?)\}', block)
+        year = _re.search(r'year\s*=\s*\{?(\d{4})\}?', block)
+        journal = _re.search(r'(?:journal|booktitle)\s*=\s*\{(.+?)\}', block)
+        parts = []
+        if author:
+            parts.append(author.group(1).strip())
+        if title:
+            parts.append(f'"{title.group(1).strip()}"')
+        if journal:
+            parts.append(journal.group(1).strip())
+        if year:
+            parts.append(year.group(1).strip())
+        if parts:
+            citations.append(", ".join(parts))
+    return citations
+
+
+def _load_external_citations(path_str):
+    """Load external citations from a file (plain text or BibTeX)."""
+    path = _Path(path_str)
+    if not path.is_file():
+        return []
+    text = path.read_text(encoding="utf-8")
+    if text.lstrip().startswith("@"):
+        return _parse_bibtex(text)
+    # Plain text: one citation per line, skip blanks and comments
+    return [
+        line.strip() for line in text.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
 
 
 def main():
@@ -40,6 +86,25 @@ def main():
 
         citations = academic_schema.get_section_citations(conn, paper_id)
         deduped = list(dict.fromkeys(c["citation"] for c in citations))
+
+        # Merge external bibliography if provided via metadata
+        paper = academic_schema.get_paper(conn, paper_id)
+        metadata = {}
+        if paper and paper["metadata"]:
+            try:
+                metadata = _json.loads(paper["metadata"])
+            except (TypeError, ValueError):
+                pass
+        bib_path = metadata.get("bibliography_path")
+        if bib_path:
+            ext_citations = _load_external_citations(bib_path)
+            # Append external citations not already present
+            existing = set(deduped)
+            for c in ext_citations:
+                if c not in existing:
+                    deduped.append(c)
+                    existing.add(c)
+
         sections = []
         if deduped:
             sections = [{"heading": "References", "text": "\n".join(

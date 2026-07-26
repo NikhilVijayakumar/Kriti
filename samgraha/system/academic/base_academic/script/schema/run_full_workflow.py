@@ -303,9 +303,10 @@ def expand_triads(db_path, standard, domains, module_names=None,
     gen_domains = [d for d in domains if d != "references"]
     if uc_id:
         _truncate_usecase_steps(con, uc_id, 3 * len(gen_domains))
-        gen_prompt = _lookup_prompt_id(con, "generate-section")
         order = 1
         for domain in gen_domains:
+            gen_prompt = (_lookup_prompt_id(con, f"generate-{domain}")
+                          or _lookup_prompt_id(con, "generate-section"))
             _insert_step(con, uc_id, order, "deterministic",
                          f"Pre: gather docs + analysis for {domain}",
                          script_id=gather_domain_script)

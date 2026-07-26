@@ -144,6 +144,26 @@ def get_paper(conn, paper_id):
     return conn.execute("SELECT * FROM academic_papers WHERE id=?", (paper_id,)).fetchone()
 
 
+def set_paper_metadata(conn, paper_id, key, value):
+    """Set a single key in the paper's metadata JSON blob."""
+    import json
+    paper = get_paper(conn, paper_id)
+    if not paper:
+        return
+    meta = {}
+    if paper["metadata"]:
+        try:
+            meta = json.loads(paper["metadata"])
+        except (TypeError, ValueError):
+            pass
+    meta[key] = value
+    conn.execute(
+        "UPDATE academic_papers SET metadata=?, updated_at=? WHERE id=?",
+        (json.dumps(meta), now_iso(), paper_id),
+    )
+    conn.commit()
+
+
 # ---------------------------------------------------------------------------
 # Repo classification
 # ---------------------------------------------------------------------------

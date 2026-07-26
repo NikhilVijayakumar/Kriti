@@ -149,6 +149,22 @@ prompts:
   # --- assemble-paper-structure usecase (4a-4d) ---
   - name: generate-section
     location: ../../../base_academic/prompt/assemble-paper-structure/generate-section.md
+  - name: generate-title-and-metadata
+    location: ../../../pcems_2026/prompt/generation/title-and-metadata.md
+  - name: generate-introduction
+    location: ../../../pcems_2026/prompt/generation/introduction.md
+  - name: generate-methodology
+    location: ../../../pcems_2026/prompt/generation/methodology.md
+  - name: generate-findings
+    location: ../../../pcems_2026/prompt/generation/findings.md
+  - name: generate-conclusion
+    location: ../../../pcems_2026/prompt/generation/conclusion.md
+  - name: generate-novelty
+    location: ../../../pcems_2026/prompt/generation/novelty.md
+  - name: generate-gaps
+    location: ../../../pcems_2026/prompt/generation/gaps.md
+  - name: generate-mathematics
+    location: ../../../pcems_2026/prompt/generation/mathematics.md
   - name: literature-review-pass
     location: ../../../base_academic/prompt/assemble-paper-structure/literature-review-pass.md
   - name: section-enrichment
@@ -157,30 +173,30 @@ prompts:
     location: ../../../base_academic/prompt/assemble-paper-structure/fit-to-budget.md
   # --- semantic-audit usecase ---
   - name: semantic-audit
-    location: ../../../base_academic/prompt/semantic-audit/semantic-audit.md
+    location: ../../../pcems_2026/prompt/audit/semantic-audit.md
   - name: semantic-audit-part
-    location: ../../../base_academic/prompt/semantic-audit/semantic-audit-part.md
+    location: ../../../pcems_2026/prompt/audit/semantic-audit-part.md
   # --- plagiarism-forensic-audit usecase ---
   - name: plagiarism-fingerprint-audit
-    location: ../../../base_academic/prompt/plagiarism-forensic-audit/plagiarism-fingerprint-audit.md
+    location: ../../../pcems_2026/prompt/audit/plagiarism-audit.md
   - name: targeted-rewrite
-    location: ../../../base_academic/prompt/plagiarism-forensic-audit/targeted-rewrite.md
+    location: ../../../pcems_2026/prompt/audit/targeted-rewrite.md
   # --- humanize usecase ---
   - name: humanize-section
-    location: ../../../base_academic/prompt/humanize/humanifier.md
+    location: ../../../pcems_2026/prompt/audit/humanize.md
   # --- cross-section-semantic-audit usecase ---
   - name: cross-section-semantic-audit
-    location: ../../../base_academic/prompt/cross-section-audit/cross-section-semantic-audit.md
+    location: ../../../pcems_2026/prompt/audit/cross-section-audit.md
   # --- document-semantic-audit usecase ---
   - name: document-semantic-audit
-    location: ../../../base_academic/prompt/document-audit/document-semantic-audit.md
+    location: ../../../pcems_2026/prompt/audit/document-audit.md
   # --- propose usecases ---
   - name: generation-proposal
-    location: ../../../base_academic/prompt/propose/generation-proposal.md
+    location: ../../../pcems_2026/prompt/propose/generation-proposal.md
   - name: audit-proposal
-    location: ../../../base_academic/prompt/propose/audit-proposal.md
+    location: ../../../pcems_2026/prompt/propose/audit-proposal.md
   - name: fix-proposal
-    location: ../../../base_academic/prompt/propose/fix-proposal.md
+    location: ../../../pcems_2026/prompt/propose/fix-proposal.md
 
 custom_tables:
   - table_name: academic_papers
