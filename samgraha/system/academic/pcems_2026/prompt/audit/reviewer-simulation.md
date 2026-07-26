@@ -67,6 +67,13 @@ Evaluate against:
 - Are figures readable? Are tables properly formatted? Is the writing
   clear and precise?
 
+**Calibration — real accepted-paper scope** (from `reference/sample_paper`'s
+11 accepted papers in this venue, `_summary.json`): 2,428–4,781 words
+(avg. 3,628), 4–6 pages (avg. ~5.5). A paper far outside this range —
+padded thin on content, or so dense it can't be a 4-6 page manuscript —
+is a real organization/scope concern grounded in what actually gets
+accepted here, not an arbitrary target.
+
 **Score 1–10 anchors**:
 - 1–3 (Weak): Major clarity issues, figures unreadable, tables
   poorly constructed, sections feel disconnected.

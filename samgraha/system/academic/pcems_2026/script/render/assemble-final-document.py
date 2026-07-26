@@ -188,14 +188,21 @@ def main():
     assembled_html = "\n\n".join(assembled_parts)
     final_html = master_html.replace("{{{ assembled_sections }}}", assembled_html)
 
-    out_path.write_text(final_html, encoding="utf-8")
+    # Write the artifact to its own path under docs/paper/ — out_path is
+    # reserved for the status envelope (write_envelope below would
+    # otherwise clobber the HTML we just wrote, since both would target
+    # the same file).
+    html_dir = repo_root / "docs" / "paper" / f"paper-{paper_id}"
+    html_dir.mkdir(parents=True, exist_ok=True)
+    html_path = html_dir / "assembled.html"
+    html_path.write_text(final_html, encoding="utf-8")
 
     write_envelope(
         out_path, status="ok",
         message=f"assembled {len(assembled_parts)} sections for paper {paper_id}",
         paper_id=paper_id,
         sections_assembled=len(assembled_parts),
-        output_path=str(out_path),
+        html_path=str(html_path),
     )
 
 

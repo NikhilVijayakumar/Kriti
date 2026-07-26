@@ -15,9 +15,26 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent.parent
                         / "base_academic" / "script" / "common"))
 from _adapter import parse_step_args, write_envelope
 
+# Default reference doc — Arial font hierarchy per the official template
+# spec (reference/template/extracted/Template_PCEMS2026.txt), built by
+# generate_reference_docx.py. Without this, pandoc's default DOCX styles
+# use Calibri, not the template's required Arial 14/12/12/11pt hierarchy.
+DEFAULT_REFERENCE_DOCX = (_Path(__file__).resolve().parent.parent
+                          / "reference" / "template"
+                          / "Template_PCEMS2026_reference.docx")
+
 
 def _find_pandoc():
-    return shutil.which("pandoc")
+    on_path = shutil.which("pandoc")
+    if on_path:
+        return on_path
+    # Fall back to pypandoc-binary's bundled pandoc (requirements.txt) —
+    # no system-level pandoc install needed.
+    try:
+        import pypandoc
+        return pypandoc.get_pandoc_path()
+    except (ImportError, OSError):
+        return None
 
 
 def main():
@@ -40,8 +57,9 @@ def main():
     cmd = [pandoc, str(html_path), "-o", str(docx_path),
            "--from", "html", "--to", "docx"]
 
-    # Optional reference doc for custom styles
-    ref_doc = payload.get("reference_docx")
+    # Reference doc for custom styles — explicit payload override, else
+    # the template's own Arial style set.
+    ref_doc = payload.get("reference_docx") or str(DEFAULT_REFERENCE_DOCX)
     if ref_doc and _Path(ref_doc).is_file():
         cmd.extend(["--reference-doc", ref_doc])
 

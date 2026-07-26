@@ -104,6 +104,19 @@ scripts:
   - name: calculate
     location: ../../../base_academic/script/calculate/calculate.py
     purpose: "compute final_score from semantic + deterministic buckets (50/50), track trend"
+  # --- render-paper usecase ---
+  - name: assemble-final-document
+    location: ../../../pcems_2026/script/render/assemble-final-document.py
+    purpose: "concatenate all domain drafts + cross-cutting content into one HTML document"
+  - name: render-docx
+    location: ../../../pcems_2026/script/render/render-docx.py
+    purpose: "convert assembled HTML to DOCX via pandoc"
+  - name: render-pdf
+    location: ../../../pcems_2026/script/render/render-pdf.py
+    purpose: "convert assembled HTML to PDF via Playwright/Chromium"
+  - name: extract-mermaid-images
+    location: ../../../pcems_2026/script/render/extract-mermaid-images.py
+    purpose: "rasterize inline mermaid diagrams to PNG, replace <pre> blocks with <img> tags"
   # --- render-audit-report usecase ---
   - name: generate-audit-report
     location: ../../../base_academic/script/render-audit-report/generate_audit_report.py

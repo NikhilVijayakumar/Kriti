@@ -26,6 +26,19 @@ cross-section consistency (which checks terminology/claim alignment).
 
 6. **Template compliance** — does the paper follow PCEMS 2026 template
    structure (title block order, section numbering, formatting per template/guide)?
+   Ground this against the official template's own text
+   (`reference/template/extracted/Template_PCEMS2026.txt`), the literal
+   source of truth, not just the guide's paraphrase of it:
+
+   > Single column format. Must contain: Introduction, Methodology,
+   > Findings, Conclusion, References (sections may be renamed,
+   > subsections allowed). Submitted as a Microsoft Word document. All
+   > images placed in the text just after their first point of reference
+   > — not collected at the end. Tables built with Word's table function,
+   > placed immediately after their first reference — not at the end.
+   > References in 8pt font, APA style. Heading 1: Arial 12pt bold.
+   > Heading 2: Arial 12pt. Heading 3: Arial 12pt italics. Body text:
+   > Arial 11pt.
 
 ## Pre-Revision Assessment (Reviewer Expectations/03)
 

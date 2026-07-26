@@ -69,10 +69,9 @@ def main():
     mermaid_blocks = _extract_mermaid_blocks(html_content)
 
     if not mermaid_blocks:
-        out_path.write_text(html_content, encoding="utf-8")
         write_envelope(out_path, status="ok",
                        message="no mermaid blocks found",
-                       diagrams_rendered=0)
+                       diagrams_rendered=0, html_path=str(html_path))
         return
 
     # Create images directory
@@ -102,7 +101,12 @@ def main():
             )
             rendered_count += 1
 
-    out_path.write_text(html_content, encoding="utf-8")
+    # Overwrite html_path in place (this step modifies the assembled
+    # document, it doesn't produce a separate artifact) — out_path is
+    # reserved for the status envelope, same split assemble-final-
+    # document.py uses, for the same reason (write_envelope would
+    # otherwise clobber it).
+    html_path.write_text(html_content, encoding="utf-8")
 
     write_envelope(
         out_path, status="ok",
@@ -110,6 +114,7 @@ def main():
         diagrams_rendered=rendered_count,
         diagrams_total=len(mermaid_blocks),
         images_dir=str(images_dir),
+        html_path=str(html_path),
     )
 
 

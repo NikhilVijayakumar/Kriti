@@ -548,6 +548,25 @@ def expand_triads(db_path, standard, domains, module_names=None,
                      "Persist reviewer-simulation result", script_id=persist_rs_script)
         count += 3
 
+    # --- render-paper: assemble -> rasterize mermaid -> docx -> pdf ---
+    uc_id = _lookup_usecase_id(con, standard, "render-paper")
+    if uc_id:
+        _truncate_usecase_steps(con, uc_id, 4)
+        assemble_script = _lookup_script_id(con, "assemble-final-document")
+        mermaid_script = _lookup_script_id(con, "extract-mermaid-images")
+        docx_script = _lookup_script_id(con, "render-docx")
+        pdf_script = _lookup_script_id(con, "render-pdf")
+        order = 1
+        _insert_step(con, uc_id, order, "deterministic",
+                     "Assemble final HTML document", script_id=assemble_script)
+        _insert_step(con, uc_id, order + 1, "deterministic",
+                     "Rasterize mermaid diagrams to PNG", script_id=mermaid_script)
+        _insert_step(con, uc_id, order + 2, "deterministic",
+                     "Render DOCX from assembled HTML", script_id=docx_script)
+        _insert_step(con, uc_id, order + 3, "deterministic",
+                     "Render PDF from assembled HTML", script_id=pdf_script)
+        count += 4
+
     con.close()
     return count
 
@@ -598,6 +617,60 @@ def run_triads_for_usecase(session, repo_root, steps, usecase, domains,
         pre_input = input_fn(domain)
         stage_semantic_triad(session, repo_root, pre, sem, post, pre_input, report,
                              label=f"{label_prefix}/{domain}")
+
+
+def run_render_paper(session, repo_root, steps, paper_id, report):
+    """render-paper's 4 steps chain real outputs into each other (assemble's
+    html_path feeds mermaid rasterization, whose html_path feeds both render
+    steps) — the generic single-step loop below can't do that (fixed empty
+    input per step), so this mirrors the gather->transform->persist
+    threading _checkpoint() already does for propose-{phase}."""
+    uc_steps = steps_of(steps, "render-paper")
+    if len(uc_steps) != 4:
+        return
+    assemble, mermaid, docx, pdf = uc_steps
+
+    try:
+        assembled = session.call("run_script_step", {
+            "step_id": assemble["id"], "repo_path": repo_root,
+            "input": {"paper_id": paper_id}}, timeout_secs=120)
+        report["ran"].append({"step": "render-paper/assemble",
+                              "status": assembled.get("status"),
+                              "message": assembled.get("message", "")[:500]})
+    except Exception as e:
+        report["failed"].append({"label": "render-paper/assemble", "stage": "run",
+                                 "message": str(e)})
+        return
+
+    html_path = assembled.get("html_path")
+    if not html_path:
+        report["failed"].append({"label": "render-paper", "stage": "run",
+                                 "message": "assemble step returned no html_path"})
+        return
+
+    try:
+        rasterized = session.call("run_script_step", {
+            "step_id": mermaid["id"], "repo_path": repo_root,
+            "input": {"html_path": html_path}}, timeout_secs=120)
+        report["ran"].append({"step": "render-paper/mermaid",
+                              "status": rasterized.get("status"),
+                              "message": rasterized.get("message", "")[:500]})
+        html_path = rasterized.get("html_path", html_path)
+    except Exception as e:
+        report["failed"].append({"label": "render-paper/mermaid", "stage": "run",
+                                 "message": str(e)})
+        # Non-fatal — render steps still work on the un-rasterized HTML
+        # (mermaid blocks just render as literal text instead of images).
+
+    for step, label in ((docx, "render-paper/docx"), (pdf, "render-paper/pdf")):
+        try:
+            r = session.call("run_script_step", {
+                "step_id": step["id"], "repo_path": repo_root,
+                "input": {"html_path": html_path}}, timeout_secs=120)
+            report["ran"].append({"step": label, "status": r.get("status"),
+                                  "message": r.get("message", "")[:500]})
+        except Exception as e:
+            report["failed"].append({"label": label, "stage": "run", "message": str(e)})
 
 
 def run_deterministic_triads_for_usecase(session, repo_root, steps, usecase,
@@ -1127,7 +1200,7 @@ def main():
         _checkpoint(session, conn, repo_root, paper_id, "report",
                    commit_sha, steps, report, report_path)
 
-        for usecase in ("render-charts", "render-audit-report", "render-paper"):
+        for usecase in ("render-charts", "render-audit-report"):
             uc_steps = steps_of(steps, usecase)
             if uc_steps:
                 step = uc_steps[0]
@@ -1140,6 +1213,9 @@ def main():
                 except Exception as e:
                     report["failed"].append({"label": usecase, "stage": "run",
                                              "message": str(e)})
+
+        print("\n== render-paper ==")
+        run_render_paper(session, repo_root, steps, paper_id, report)
 
     finally:
         conn.close()
