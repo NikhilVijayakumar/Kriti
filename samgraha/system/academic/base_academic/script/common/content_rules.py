@@ -6,6 +6,7 @@ deterministic_audit.py (post-generation audit).  Single implementation
 of what each rule means — avoids drift between the two call-sites.
 """
 import re
+from collections import defaultdict
 
 
 def _check_regex(pattern, text, flags=0):
@@ -88,6 +89,181 @@ def _check_formula_count(text):
     block = len(re.findall(r'\$\$.*?\$\$', text, re.DOTALL))
     bracket = len(re.findall(r'\\\[.*?\\\]', text, re.DOTALL))
     return block + bracket
+
+
+# ── writing-quality helpers ─────────────────────────────────────────
+
+_AI_LANGUAGE_WORDS = [
+    "delve", "landscape", "tapestry", "crucial", "paramount", "pivotal",
+    "leverage", "harness", "unlock", "robust", "novel", "comprehensive",
+]
+_AI_LANGUAGE_PHRASES = [
+    "it should be noted that", "it is worth mentioning",
+    "in the realm of", "in the landscape of",
+]
+
+
+def _check_ai_language_flags(text):
+    """Detect AI-generated language word/phrase flags."""
+    flags = []
+    text_lower = text.lower()
+    for word in _AI_LANGUAGE_WORDS:
+        matches = re.findall(r'\b' + re.escape(word) + r'\b', text_lower)
+        if matches:
+            flags.append(f"{word} ({len(matches)}x)")
+    for phrase in _AI_LANGUAGE_PHRASES:
+        if phrase in text_lower:
+            flags.append(f'"{phrase}"')
+    return len(flags) == 0, f"flags found: {', '.join(flags)}" if flags else "no AI-language flags"
+
+
+def _check_acronym_defined_at_first_use(text):
+    """Check that acronyms (2+ uppercase letters) are defined before use.
+
+    An acronym is "defined" if a pattern like "Full Name (ABC)" or
+    "Something (ABC)" appears before the acronym is used standalone.
+    Flags acronyms that appear before their parenthetical definition.
+    """
+    _ROMAN = {'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+              'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'}
+
+    # Find all definition positions: (ABC) or (Full Form ABC) patterns
+    definition_positions = {}
+    for m in re.finditer(r'\(([A-Za-z ]+([A-Z]{2,}))\)', text):
+        acr = m.group(2)
+        if acr not in _ROMAN:
+            definition_positions.setdefault(acr, m.start())
+    # Also match pure (ABC) patterns
+    for m in re.finditer(r'\(([A-Z]{2,})\)', text):
+        acr = m.group(1)
+        if acr not in _ROMAN:
+            definition_positions.setdefault(acr, m.start())
+
+    # Find all acronym uses (not inside parentheses) and their positions
+    # Remove parenthetical definitions to avoid matching inside them
+    stripped = re.sub(r'\([A-Z]{2,}\)', '', text)
+    # Track where each stripped character came from in the original
+    # Simple approach: find acronyms in stripped, map back to original positions
+    issues = []
+    for m in re.finditer(r'\b([A-Z]{2,})\b', stripped):
+        acr = m.group(1)
+        if acr in _ROMAN or acr in definition_positions:
+            continue
+        # This acronym has no definition anywhere — always flagged
+        issues.append(acr)
+
+    # Also check acronyms used before their definition
+    for m in re.finditer(r'\b([A-Z]{2,})\b', text):
+        acr = m.group(1)
+        if acr in _ROMAN or acr not in definition_positions:
+            continue
+        # Acronym has a definition — check if use comes before definition
+        use_pos = m.start()
+        def_pos = definition_positions[acr]
+        # Only flag if this use is NOT the definition itself (not inside parens)
+        # Check if this position is inside (...) by looking backwards
+        before = text[:use_pos]
+        if before.rstrip().endswith('('):
+            continue  # This is part of the definition pattern
+        if use_pos < def_pos:
+            issues.append(f"{acr} (used before definition)")
+
+    if issues:
+        return False, f"undefined acronyms: {', '.join(sorted(set(issues)))}"
+    return True, "all acronyms defined at first use"
+
+
+def _check_terminology_consistency(text):
+    """Flag term variants — same concept, different casing/hyphenation.
+
+    Extracts multi-word terms, normalizes (lowercase, no hyphens/spaces),
+    and flags groups with 2+ variants.
+    """
+    # Extract hyphenated and multi-word terms
+    terms = re.findall(r'\b([A-Za-z]+(?:[- ][A-Za-z]+)+)\b', text)
+    normalized = defaultdict(list)
+    for term in terms:
+        key = re.sub(r'[-\s]+', '', term.lower())
+        normalized[key].append(term)
+
+    variants = {k: sorted(set(v)) for k, v in normalized.items() if len(set(v)) > 1}
+    if variants:
+        details = [f"{', '.join(v)}" for v in variants.values()]
+        return False, f"terminology variants: {'; '.join(details)}"
+    return True, "terminology consistent"
+
+
+def _check_sentence_length_distribution(text, target_min=15, target_max=25):
+    """Check sentence length against Writing Guide/01 targets (15-25 words/sentence).
+
+    Returns pass if ≥80% of sentences are within range.
+    """
+    # Split on sentence-ending punctuation, skip empty
+    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+    if not sentences:
+        return True, "no sentences to check"
+
+    in_range = 0
+    too_short = 0
+    too_long = 0
+    for s in sentences:
+        wc = len(re.findall(r'\S+', s))
+        if target_min <= wc <= target_max:
+            in_range += 1
+        elif wc < target_min:
+            too_short += 1
+        else:
+            too_long += 1
+
+    total = len(sentences)
+    pct = in_range / total * 100
+    if pct >= 80:
+        return True, f"{pct:.0f}% sentences in {target_min}-{target_max} word range ({in_range}/{total})"
+    return False, f"only {pct:.0f}% sentences in range ({in_range}/{total}), {too_short} too short, {too_long} too long"
+
+
+def _check_citation_figure_table_collision(text):
+    """Check that citation numbers [N] don't collide with Fig. N or Table N."""
+    citations = set(int(m) for m in re.findall(r'\[(\d+)\]', text))
+    figures = set(int(m) for m in re.findall(r'(?i)fig(?:ure|\.)\s+(\d+)', text))
+    tables = set(int(m) for m in re.findall(r'(?i)table\s+(\d+)', text))
+
+    fig_collisions = citations & figures
+    table_collisions = citations & tables
+    all_collisions = fig_collisions | table_collisions
+
+    if all_collisions:
+        parts = []
+        if fig_collisions:
+            parts.append(f"cite-fig: {sorted(fig_collisions)}")
+        if table_collisions:
+            parts.append(f"cite-table: {sorted(table_collisions)}")
+        return False, f"numbering collisions: {'; '.join(parts)}"
+    return True, "no citation-figure-table collisions"
+
+
+def _check_readability_score(text, min_score=None, max_score=None,
+                              metric="flesch_reading_ease"):
+    """Check readability score via textstat.
+
+    metric: flesch_reading_ease (default, higher=easier, target 30-60 for
+            academic prose), flesch_kincaid_grade, gunning_fog, etc.
+    """
+    try:
+        import textstat
+    except ImportError:
+        return True, "textstat not installed — readability check skipped"
+
+    scorer = getattr(textstat, metric, None)
+    if scorer is None:
+        return True, f"unknown metric '{metric}'"
+
+    score = scorer(text)
+    if min_score is not None and score < min_score:
+        return False, f"{metric}={score:.1f} < minimum {min_score}"
+    if max_score is not None and score > max_score:
+        return False, f"{metric}={score:.1f} > maximum {max_score}"
+    return True, f"{metric}={score:.1f}"
 
 
 # ── public API ──────────────────────────────────────────────────────
@@ -294,6 +470,24 @@ def evaluate_rule(check, text, draft_texts=None):
                 return False, "no '## Abstract' section found to word-count"
             passed, detail = _check_word_count(m.group(1), min_words, max_words)
             return passed, f"abstract {detail}"
+        # ── writing-quality rules ──
+        elif rule == "ai_language_flags":
+            return _check_ai_language_flags(text)
+        elif rule == "acronym_defined_at_first_use":
+            return _check_acronym_defined_at_first_use(text)
+        elif rule == "terminology_consistency":
+            return _check_terminology_consistency(text)
+        elif rule == "sentence_length_distribution":
+            cfg = check.get("config", {})
+            return _check_sentence_length_distribution(
+                text, cfg.get("min", 15), cfg.get("max", 25))
+        elif rule == "citation_figure_table_collision":
+            return _check_citation_figure_table_collision(text)
+        elif rule == "readability_score_in_range":
+            cfg = check.get("config", {})
+            return _check_readability_score(
+                text, cfg.get("min"), cfg.get("max"),
+                cfg.get("metric", "flesch_reading_ease"))
         else:
             return True, f"unknown rule '{rule}' — passed by default"
     except Exception as e:

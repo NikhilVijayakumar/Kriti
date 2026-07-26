@@ -1,0 +1,3 @@
+# Kriti repo dependencies
+# Added by pcems_2026 review-pipeline proposal — Phase 3 (readability scoring)
+textstat>=0.7.3

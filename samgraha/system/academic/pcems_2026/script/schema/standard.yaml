@@ -190,6 +190,9 @@ prompts:
   # --- document-semantic-audit usecase ---
   - name: document-semantic-audit
     location: ../../../pcems_2026/prompt/audit/document-audit.md
+  # --- reviewer-simulation usecase ---
+  - name: reviewer-simulation
+    location: ../../../pcems_2026/prompt/audit/reviewer-simulation.md
   # --- propose usecases ---
   - name: generation-proposal
     location: ../../../pcems_2026/prompt/propose/generation-proposal.md
@@ -475,6 +478,10 @@ usecases:
 
   - name: document-semantic-audit
     description: "whole-document holistic review as one continuous document"
+    steps: []
+
+  - name: reviewer-simulation
+    description: "three-persona reviewer simulation producing Accept/Minor/Major/Reject verdict"
     steps: []
 
   - name: calculate

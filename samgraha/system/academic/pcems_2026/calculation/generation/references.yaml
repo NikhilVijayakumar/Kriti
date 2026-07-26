@@ -41,3 +41,8 @@ checks:
     rule: budget_fit_applied
     severity: info
     description: "stage='budget-fit' narrative row exists for this domain"
+  - id: re-ailang
+    name: ai_language_flags
+    rule: ai_language_flags
+    severity: warning
+    description: "No AI-generated language flags (Writing Guide/01)"

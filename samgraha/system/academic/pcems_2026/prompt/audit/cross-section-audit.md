@@ -28,12 +28,7 @@ side-by-side.
    match the findings section's actual results exactly
    (Reviewer Expectations/03 abstract-weakness table).
 
-6. **Citation-figure-table numbering collision** — do any citation numbers
-   `[N]` collide with figure numbers (Fig. N) or table numbers (Table N)?
-   This causes ambiguous references. (Checklists/03-final-review.md:
-   "No citation overlaps with figure/table numbers")
-
-7. **Contribution visibility** — is the paper's contribution reinforced
+6. **Contribution visibility** — is the paper's contribution reinforced
    across Introduction, Methodology, Experimental Evaluation, Results,
    and Conclusion (Philosophy/philosophy.md)?
 

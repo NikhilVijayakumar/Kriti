@@ -37,3 +37,8 @@ checks:
     rule: no_placeholders
     severity: critical
     description: "No unfilled template markers"
+  - id: fg-ailang
+    name: ai_language_flags
+    rule: ai_language_flags
+    severity: warning
+    description: "No AI-generated language flags (Writing Guide/01)"

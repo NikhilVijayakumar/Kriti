@@ -24,9 +24,6 @@ cross-section consistency (which checks terminology/claim alignment).
 5. **Abstract accuracy** — does the abstract accurately represent the
    full paper, or does it overclaim/underclaim?
 
-6. **Template compliance** — does the paper follow PCEMS 2026 template
-   structure (title block order, section numbering, formatting per template/guide)?
-
 ## Pre-Revision Assessment (Reviewer Expectations/03)
 
 Score the paper against the 6-dimension rubric from

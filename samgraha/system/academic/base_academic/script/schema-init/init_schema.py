@@ -108,6 +108,13 @@ def main():
     if domains_list:
         academic_schema.seed_domains(conn, domains_list)
 
+    # Seed cross-cutting audit domains (not per-section, used by
+    # cross-section-semantic-audit, document-semantic-audit, and
+    # reviewer-simulation usecases that store results with a domain key).
+    academic_schema.seed_domains(conn, [
+        ("reviewer-simulation", "Reviewer Simulation", 99, 1.0),
+    ])
+
     # Seed templates from the system directory
     system_dir = str(SCRIPTS_DIR / "..")
     academic_schema.seed_templates(conn, system_dir)

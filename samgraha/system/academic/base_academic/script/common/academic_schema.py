@@ -986,6 +986,22 @@ def _uc_document(conn, paper_id):
     return True, [f"document runs: {row[0]}"]
 
 
+@_register_usecase("reviewer-simulation",
+                    ">= 1 run with domain_id=reviewer-simulation")
+def _uc_reviewer_simulation(conn, paper_id):
+    domain_id = _domain_id(conn, "reviewer-simulation")
+    if domain_id is None:
+        return False, ["reviewer-simulation domain not registered"]
+    row = conn.execute(
+        "SELECT COUNT(*) FROM academic_semantic_runs "
+        "WHERE paper_id=? AND domain_id=?",
+        (paper_id, domain_id),
+    ).fetchone()
+    if row[0] < 1:
+        return False, ["no reviewer-simulation runs"]
+    return True, [f"reviewer-simulation runs: {row[0]}"]
+
+
 @_register_usecase("calculate",
                     "academic_score_history has a whole-paper row")
 def _uc_calculate(conn, paper_id):
