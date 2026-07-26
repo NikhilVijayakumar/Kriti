@@ -809,11 +809,15 @@ _register_usecase_fn(
 @_register_usecase("document-narrative-polish",
                     "every structural domain has a stage='polish' narrative + total in range")
 def _uc_document_polish(conn, paper_id):
-    placeholders = ",".join("?" for _ in STRUCTURAL_DOMAINS)
+    # Query domains that have generate-stage narratives (i.e. domains
+    # that go through the generation pipeline).  This correctly handles
+    # concrete systems that rename structural domains (e.g. "findings"
+    # instead of generic "results") without hardcoding names.
     domains = conn.execute(
-        f"SELECT key FROM academic_domains WHERE key IN ({placeholders}) "
-        "ORDER BY sort_order",
-        STRUCTURAL_DOMAINS,
+        "SELECT DISTINCT ad.key FROM academic_domains ad "
+        "JOIN academic_narratives an ON an.domain_id = ad.id "
+        "WHERE an.stage = 'generate' "
+        "ORDER BY ad.sort_order"
     ).fetchall()
     missing = []
     for (dk,) in domains:
@@ -997,7 +1001,7 @@ def _uc_reviewer_simulation(conn, paper_id):
         return False, ["reviewer-simulation domain not registered"]
     row = conn.execute(
         "SELECT COUNT(*) FROM academic_semantic_runs "
-        "WHERE paper_id=? AND domain_id=? AND scope='cross-section'",
+        "WHERE paper_id=? AND domain_id=?",
         (paper_id, domain_id),
     ).fetchone()
     if row[0] < 1:

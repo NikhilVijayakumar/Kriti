@@ -80,9 +80,12 @@ def main():
     conn = academic_schema.get_conn(db_path)
     try:
         domains = academic_schema.get_all_domains(conn)
+        structural = set(academic_schema.STRUCTURAL_DOMAINS)
         results = []
 
         for domain_id, domain_key, display_name, sort_order in domains:
+            if domain_key not in structural:
+                continue
             # Get latest semantic score
             sem_row = conn.execute(
                 "SELECT overall_score FROM academic_semantic_runs "
