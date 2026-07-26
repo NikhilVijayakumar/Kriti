@@ -1,45 +1,38 @@
-# References Semantic Audit
-
-This section details the References Semantic Audit.
-
-## Version
-1.0.0
-
-## Engineering Intent
-Enforces PCEMS 2026's strict APA formatting/typography rule for References and the Q1 Reviewer Persona citation-quality rules.
-
-## Audit Objectives
-- All references are formatted in strict APA style; section heading is Heading 1 (Arial, 12pt bold); reference items are strictly 8pt font.
-- Zero unverified/predatory sources (blogs, non-peer-reviewed URLs, known predatory journals).
-- 100% match between in-text citations and the References list.
-
-## Expected Quality
-- Every reference entry is independently verifiable and APA-formatted without exception.
-
-## Red Flags
-- Reference items in a font size other than 8pt.
-- Non-APA formatted entries.
-- An in-text citation with no matching References entry, or vice versa.
+# Semantic Rubric: References
 
 ## Scoring Criteria
 
-| ID | Weight | Score | Description |
-|---|---|---|---|
-| C1 | mandatory | 0 or 40 | All references are APA-formatted, heading is Heading 1 Arial 12pt bold, entries are 8pt font |
-| C2 | mandatory | 0 or 30 | Zero unverified/predatory sources |
-| C3 | mandatory | 0 or 30 | 100% match between in-text citations and the References list |
+### C1: Source Legitimacy
+- **criterion_id**: C1
+- **points**: 25
+- **mandatory**: true
+- **description**: Are sources from legitimate journals, conferences, and publishers (not blogs, predatory venues)?
+- **pass_condition**: All references from peer-reviewed or reputable sources
 
-Score = sum of passed criterion scores, capped at 100.
-Mandatory criterion failure = ERROR.
+### C2: Citation Consistency
+- **criterion_id**: C2
+- **points**: 20
+- **mandatory**: false
+- **description**: Do citations to the same prior work stay consistent (not split into two entries)?
+- **pass_condition**: No duplicate entries for the same underlying work
 
-## Output Schema
-```json
-{
-  "criterion_id": "C1",
-  "passed": false,
-  "confidence": 0.90,
-  "severity": "error",
-  "evidence": { "excerpt": "Reference list rendered at 10pt font." },
-  "message": "Reference entries must be strictly 8pt font per PCEMS 2026 typography rules."
-}
-```
+### C3: Reference Count Appropriateness
+- **criterion_id**: C3
+- **points**: 15
+- **mandatory**: false
+- **description**: Is the reference count appropriate for the paper's scope?
+- **pass_condition**: 15-30 references, balanced mix of journals and conferences
+
+### C4: Recency Mix
+- **criterion_id**: C4
+- **points**: 15
+- **mandatory**: false
+- **description**: Are at least 50% of references from the last 5 years?
+- **pass_condition**: Half or more references from 2021-2026
+
+### C5: DOI Completeness
+- **criterion_id**: C5
+- **points**: 10
+- **mandatory**: false
+- **description**: Are DOIs included where available?
+- **pass_condition**: DOIs present for journal articles

@@ -1,43 +1,38 @@
-# Conclusion Semantic Audit
-
-This section details the Conclusion Semantic Audit.
-
-## Version
-1.0.0
-
-## Engineering Intent
-Verifies Conclusion's typography matches spec and that its claims are grounded in what Findings actually validated, not overstated. This file owns the receiving end of the Findings → Conclusion bridge.
-
-## Audit Objectives
-- Section heading is Heading 1 (Arial, 12pt bold); body text is Arial 11pt.
-- Claims of contribution/superiority are grounded in what Findings demonstrated — no unsupported claims.
-
-## Expected Quality
-- Every summarized contribution has a traceable counterpart in Findings.
-
-## Red Flags
-- Heading/body font or size deviates from spec.
-- A claim of superiority with no corresponding result in Findings.
+# Semantic Rubric: Conclusion
 
 ## Scoring Criteria
 
-| ID | Weight | Score | Description |
-|---|---|---|---|
-| C1 | mandatory | 0 or 50 | Heading and body typography match spec |
-| C2 | mandatory | 0 or 30 | Claims of contribution/superiority are grounded in what Findings actually validated |
-| C3 | recommended | 0 or 20 | Zero informal language or predictable AI transition-word fingerprints |
+### C1: Contribution Alignment
+- **criterion_id**: C1
+- **points**: 25
+- **mandatory**: true
+- **description**: Does the restated contribution match what the Introduction originally promised?
+- **pass_condition**: Contribution statement mirrors Introduction, no scope drift
 
-Score = sum of passed criterion scores, capped at 100.
-Mandatory criterion failure = ERROR. Recommended = WARNING.
+### C2: Specific Impact Statement
+- **criterion_id**: C2
+- **points**: 20
+- **mandatory**: false
+- **description**: Is the practical-impact statement specific to this work, not a generic closing sentence?
+- **pass_condition**: Impact references specific results/methods from this paper
 
-## Output Schema
-```json
-{
-  "criterion_id": "C2",
-  "passed": false,
-  "confidence": 0.80,
-  "severity": "error",
-  "evidence": { "excerpt": "Our method is the best-performing approach in the field." },
-  "message": "Superiority claim has no corresponding baseline comparison in Findings."
-}
-```
+### C3: Future Work Quality
+- **criterion_id**: C3
+- **points**: 15
+- **mandatory**: false
+- **description**: Are future work directions specific and actionable?
+- **pass_condition**: Future work names concrete directions (not "more research is needed")
+
+### C4: No New Claims
+- **criterion_id**: C4
+- **points**: 20
+- **mandatory**: true
+- **description**: Does the conclusion avoid new claims, citations, or data not in earlier sections?
+- **pass_condition**: No new numbers, citations, or assertions
+
+### C5: Problem Connection
+- **criterion_id**: C5
+- **points**: 10
+- **mandatory**: false
+- **description**: Does the conclusion connect back to the problem stated in the Introduction?
+- **pass_condition**: Explicit reference to the original problem/gap
