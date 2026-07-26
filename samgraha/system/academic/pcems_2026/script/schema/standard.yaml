@@ -43,6 +43,16 @@ scripts:
   - name: persist-cross-module-analysis
     location: ../../../base_academic/script/_shared/analysis/persist_cross_module_analysis.py
     purpose: "persist cross-module analysis + write to docs/paper/{system}/cross_module/"
+  # --- shared: docs-first ingestion ---
+  - name: discover-docs-modules
+    location: ../../../base_academic/script/_shared/analysis/discover_docs_modules.py
+    purpose: "discover module boundaries from docs/paper/{system}/modules/ structure"
+  - name: load-docs-module-analysis
+    location: ../../../base_academic/script/_shared/analysis/load_docs_module_analysis.py
+    purpose: "load pre-existing per-module analysis .md files into academic_module_analysis"
+  - name: load-docs-cross-module-analysis
+    location: ../../../base_academic/script/_shared/analysis/load_docs_cross_module_analysis.py
+    purpose: "load pre-existing cross_module/*.md files into academic_cross_module_analysis"
   # --- shared: assemble-paper-structure + semantic-audit ---
   - name: gather-domain-evidence
     location: ../../../base_academic/script/_shared/gather_domain_evidence.py
@@ -302,6 +312,10 @@ usecases:
         kind: deterministic
         description: "Scan repo for author-supplied documentation; persist classification"
         script: classify-repo
+
+  - name: docs-first-ingestion
+    description: "discover module structure from docs/paper/{system}/modules/ and load pre-existing analysis into DB"
+    steps: []
 
   - name: novelty-analysis
     description: "identify what's novel, sourced from the repo's actual documentation"

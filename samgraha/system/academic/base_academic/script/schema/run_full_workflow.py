@@ -571,6 +571,40 @@ def expand_triads(db_path, standard, domains, module_names=None,
     return count
 
 
+def expand_docs_first_ingestion(db_path, standard):
+    """Expand docs-first-ingestion usecase: discover-docs-modules →
+    load-docs-module-analysis → load-docs-cross-module-analysis.
+
+    Returns the number of steps inserted."""
+    con = sqlite3.connect(db_path)
+    con.row_factory = sqlite3.Row
+    count = 0
+
+    uc_id = _lookup_usecase_id(con, standard, "docs-first-ingestion")
+    if not uc_id:
+        con.close()
+        return 0
+
+    discover_script = _lookup_script_id(con, "discover-docs-modules")
+    load_mod_script = _lookup_script_id(con, "load-docs-module-analysis")
+    load_xmod_script = _lookup_script_id(con, "load-docs-cross-module-analysis")
+
+    _truncate_usecase_steps(con, uc_id, 3)
+    _insert_step(con, uc_id, 1, "deterministic",
+                 "Discover module boundaries from docs/paper/{system}/modules/",
+                 script_id=discover_script)
+    _insert_step(con, uc_id, 2, "deterministic",
+                 "Load per-module analysis .md files into DB",
+                 script_id=load_mod_script)
+    _insert_step(con, uc_id, 3, "deterministic",
+                 "Load cross-module analysis .md files into DB",
+                 script_id=load_xmod_script)
+    count = 3
+
+    con.close()
+    return count
+
+
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
@@ -870,6 +904,40 @@ def main():
         modules = modules_for_paper(db_path, paper_id) if paper_id else []
         print(f"  classification={classification}, domains={len(domains)}, modules={len(modules)}")
 
+        # --- Phase 2b: Docs-first detection ---
+        # Check if docs/paper/{system}/modules/ exists — if so, this is a
+        # docs-first repo where module analysis lives on disk, not in source code.
+        _repo = Path(repo_root)
+        docs_modules_dir = None
+        for candidate in [
+            _repo / "docs" / "paper" / args.standard / "modules",
+            _repo / "docs" / "paper" / "modules",
+        ]:
+            if candidate.is_dir():
+                docs_modules_dir = candidate
+                break
+
+        docs_first = docs_modules_dir is not None and classification != "NO_DOCS"
+        if docs_first:
+            print(f"\n== docs-first ingestion (found {docs_modules_dir}) ==")
+            expand_docs_first_ingestion(db_path, args.standard)
+            steps = load_steps(db_path, args.standard)
+            docs_ingestion_steps = steps_of(steps, "docs-first-ingestion")
+            for step in docs_ingestion_steps:
+                try:
+                    r = session.call("run_script_step",
+                                     {"step_id": step["id"], "repo_path": repo_root,
+                                      "input": {"paper_id": paper_id,
+                                                "standard": args.standard}})
+                    report["ran"].append({"step": f"docs-first/{step['description'][:60]}",
+                                          "status": r.get("status")})
+                except Exception as e:
+                    report["failed"].append({"label": f"docs-first/{step['description'][:60]}",
+                                             "stage": "run", "message": str(e)})
+            # Re-query modules — docs-first ingestion registered them
+            modules = modules_for_paper(db_path, paper_id)
+            print(f"  docs-first: {len(modules)} modules now in DB")
+
         # --- Phase 3: Expand triads into DB ---
         print(f"\n== expand_triads ({len(domains)} domains, {len(modules)} modules) ==")
         insert_count = expand_triads(db_path, args.standard, domains,
@@ -888,7 +956,9 @@ def main():
             gen_domains = [d for d in domains if d != "references"]
 
             # --- Phase 4: Analysis usecases (novelty, gap, math, diagrams) ---
-            if modules:
+            # Skip for docs-first repos — analysis already loaded from disk
+            # by docs-first-ingestion in Phase 2b.
+            if modules and not docs_first:
                 for analysis_usecase in ("novelty-analysis", "gap-analysis",
                                          "mathematics-analysis",
                                          "diagram-architecture-analysis"):
