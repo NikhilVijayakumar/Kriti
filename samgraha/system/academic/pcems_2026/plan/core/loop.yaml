@@ -1,14 +1,13 @@
 id: plan_loop_v1
 source: SYSTEM.md
 note: >
-  Academic-paper class — generates a paper's domains from existing project
-  documentation/evidence, audits for PCEMS 2026 compliance, fixes what
-  fails. Distinct from the dev class (base_dev/*_dev: generates full
-  project docs and drives implementation/build) and the hackathon class
-  (python_hackathon: audit-only, multi-repo, competitive leaderboard — no
-  generation at all). pcems_2026 has no deterministic layer and no
-  section-scoped audits, so this loop only ever touches the
-  semantic_document bucket (see calculation/semantic/document.yaml).
+  PCEMS 2026 academic-paper class — generates a paper's domains from existing
+  project documentation/evidence, audits for compliance with both deterministic
+  and semantic checks, fixes what fails. Inherits base_academic's shared
+  calculation infrastructure, fix-loop template, and relationship-type
+  vocabulary by directory-fallback convention. Extends base_academic's
+  loop.yaml with concrete tiers and relationships (base_academic leaves
+  within_tier_ordering empty for concrete systems to populate).
 
 threshold:
   score: acceptable_minimum  # resolved at runtime from score_bands
@@ -17,23 +16,35 @@ threshold:
 max_iterations: 5
 fallback: human_review
 
-within_tier_ordering:
+tiers:
   - tier: 1
-    from: introduction
-    to: methodology
-    rule: introduction (the stated gap) must complete before methodology is generated/audited
-  # All other domains within a tier: full parallel.
-  # from/to are the machine-readable domain keys (see 00-domain-relationships.md);
-  # this edge is tier 1's only "mandatory: true" relationship.
+    domains: [introduction]
+  - tier: 2
+    domains: [methodology]
+  - tier: 3
+    domains: [findings]
+  - tier: 4
+    domains: [conclusion, title-and-metadata]
+  - tier: 5
+    domains: [references]
+
+relationships:
+  - { from: introduction, type: guides,    to: methodology, mandatory: true }
+  - { from: methodology,  type: validates, to: findings,    mandatory: true }
+  - { from: findings,     type: guides,    to: conclusion,  mandatory: true }
+  - { from: methodology,  type: informs,   to: title-and-metadata, mandatory: false }
+  - { from: findings,     type: informs,   to: title-and-metadata, mandatory: false }
+
+relationship_types: [guides, requires, validates, informs]
+
+within_tier_ordering: []  # every tier above is single-domain except tier 4
+  # (conclusion, title-and-metadata — the two are independent within the
+  # tier, per the "informs, mandatory: false" edges above, so no ordering
+  # rule is needed between them).
 
 path_selection:
-  # Evidence step — academic-class specific, optional. "Find evidence in
-  # implementation" from the proposal: if the target repo has an actual
-  # implementation/experiment-results artifact, pull concrete numbers from
-  # it before generating Findings. Degrades gracefully — if no
-  # implementation is available, generation proceeds from author-supplied
-  # notes, and the semantic audit's evidence-grounded criterion (see
-  # audit/semantic/document/04-findings.md C3) will flag any unverifiable claim.
+  # Evidence step — academic-class specific, optional. For PCEMS 2026,
+  # findings is the primary evidence domain (dataset results, metrics).
   evidence:
     applies_to_domains: [findings]
     source: implementation (optional, repo-dependent)
@@ -41,41 +52,52 @@ path_selection:
 
   # Path A: no existing draft for this domain → generate from scratch
   generate:
-    template: templates/generation/document/{domain}.md
-    context: all already-completed upstream domains (from tiers.yaml relationships) + evidence step output when available
+    template: templates/generation/markdown/{domain}.md
+    context: all already-completed upstream domains (from tiers relationships) + evidence step output when available
     note: >
       A domain's generation call includes its upstream tiers' completed
-      output as input context, not just its own template — same as the dev
-      class. templates/generation/document/{domain}.md is not yet authored
-      for pcems_2026 (templates/generation/ is currently empty); this loop
-      describes the target shape.
+      output as input context, not just its own template.
 
   # Path B: draft exists but doesn't conform → audit → fix
   audit:
     semantic_document: audit/semantic/document/{domain}.md
     report_templates:
-      - templates/audit/summary/{domain}-report.md
+      - templates/report/markdown/domain/{domain}/summary.md
     note: >
-      No deterministic_document/section or semantic_section keys — this
-      standard doesn't define those layers.
+      Semantic rubric files at audit/semantic/document/{domain}.md are
+      sourced from each domain's "Semantic Judgment Criteria" section
+      (see §2.11 of the implementation proposal).
 
 scoring:
-  final_score: calculation/summary/final_score.yaml
-  score_bands: calculation/summary/score_bands.yaml
+  final_score: calculation/report/summary/final_score.yaml
+  score_bands: calculation/report/summary/score_bands.yaml
 
 validate:
-  source: calculation/validation/scoring_validation.yaml
+  source: calculation/report/validation/scoring_validation.yaml
   on_failure: abort
 
 fix_loop:
   trigger: Path B AND final_score < threshold.score
   mechanism: >
-    Feed the finding into the domain's own generation template's
+    Feed the finding into propose-fix first. Only after that proposal is
+    approved: feed the finding into the domain's own generation template's
     ## Audit Fix slot and regenerate the whole domain document, then
-    re-audit. Document-level only — pcems_2026 has no section-scoped
+    re-audit. Document-level only — academic systems have no section-scoped
     generation templates to target a narrower regenerate at.
   max_iterations: 5
   fallback: human_review
+
+proposal_gate:
+  rule: >
+    generation/audit/report may not begin until an academic_proposals
+    row for (phase, commit_sha) has status=approved. fix regeneration
+    may not begin until an approved phase=fix proposal covers the
+    target domain.
+  phases: [generation, audit, report]
+  fix_scope: per-domain
+  rejection_retry:
+    max_iterations: 5
+    fallback: human_review
 
 tier_gate:
   rule: every domain in the tier must reach threshold before the next tier starts
