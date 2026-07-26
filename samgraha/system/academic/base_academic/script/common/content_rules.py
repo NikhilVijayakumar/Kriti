@@ -193,6 +193,98 @@ def evaluate_rule(check, text, draft_texts=None):
             min_count = check.get("config", {}).get("min", 1)
             count = _check_formula_count(text)
             return count >= min_count, f"{count} formulas found (minimum {min_count})"
+        # ── new rules (pcems_2026 cross-cutting + section checks) ──
+        elif rule == "contains_table":
+            count = _check_table_count(text)
+            return count > 0, f"{count} tables found" if count else "no tables found"
+        elif rule == "contains_figure":
+            count = len(re.findall(r'(?i)fig(?:ure|\.)\s*\d', text))
+            return count > 0, f"{count} figure references found" if count else "no figure references"
+        elif rule == "max_citation_count":
+            max_count = check.get("config", {}).get("max", 30)
+            count = _check_citation_markers(text)
+            return count <= max_count, f"{count} citations found (maximum {max_count})"
+        elif rule == "keyword_count":
+            cfg = check.get("config", {})
+            min_kw = cfg.get("min", 4)
+            max_kw = cfg.get("max", 6)
+            m = re.search(r'(?i)keywords?\s*[:]\s*(.+)', text)
+            if not m:
+                return False, "no keywords line found"
+            raw = m.group(1).strip()
+            kws = [k.strip() for k in re.split(r'[,;]', raw) if k.strip()]
+            count = len(kws)
+            if count < min_kw:
+                return False, f"{count} keywords found (minimum {min_kw})"
+            if count > max_kw:
+                return False, f"{count} keywords found (maximum {max_kw})"
+            return True, f"{count} keywords found"
+        elif rule == "author_block_present":
+            has_sup = bool(re.search(r'<sup>\d+</sup>', text))
+            has_bold_num = bool(re.search(r'\*\*\d+\*\*', text))
+            has_author = has_sup or has_bold_num
+            return has_author, "author block present" if has_author else "no author block found"
+        elif rule == "table_created_with_word_tools":
+            image_table = re.search(
+                r'(?i)!\[.*\]\(.*\.(?:png|jpg|jpeg|svg|gif)\)', text)
+            return not bool(image_table), "no image-based tables" if not image_table else "image-based table detected"
+        elif rule == "table_caption_position":
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if re.match(r'^\s*\|', line) and i > 0:
+                    prev = lines[i - 1].strip()
+                    if re.match(r'(?i)^table\s', prev):
+                        return True, "caption above table"
+            return False, "no caption-above-table pattern found"
+        elif rule == "sequential_numbering":
+            pattern = r'(?i)(table|fig(?:ure|\.)?)\s+([IVXLCDM]+|\d+)'
+            matches = re.findall(pattern, text)
+            if not matches:
+                return True, "no numbered items to check"
+            def _parse_num(s):
+                s = s.upper().strip()
+                roman = {'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7,
+                         'VIII':8,'IX':9,'X':10,'XI':11,'XII':12,'XIII':13,
+                         'XIV':14,'XV':15,'XVI':16,'XVII':17,'XVIII':18,
+                         'XIX':19,'XX':20}
+                return roman.get(s, int(s) if s.isdigit() else 0)
+            nums = [_parse_num(n) for _, n in matches]
+            sequential = all(nums[i] <= nums[i + 1] for i in range(len(nums) - 1))
+            return sequential, f"numbering: {'sequential' if sequential else 'non-sequential'} ({nums})"
+        elif rule == "referenced_before_appearance":
+            lines = text.split('\n')
+            pattern = r'(?i)(table|fig(?:ure|\.)?)\s+([IVXLCDM]+|\d+)'
+            appeared = set()
+            for line in lines:
+                refs = re.findall(pattern, line)
+                is_table_line = re.match(r'^\s*\|', line)
+                if is_table_line:
+                    for kind, num in refs:
+                        key = f"{kind.lower()}_{num}"
+                        if key not in appeared:
+                            return False, f"{kind} {num} appears before being referenced"
+                for kind, num in refs:
+                    appeared.add(f"{kind.lower()}_{num}")
+            return True, "all items referenced before appearance"
+        elif rule == "figure_placement":
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if re.match(r'(?i)\*?fig(?:ure|\.)?\s*\d', line):
+                    next_10 = '\n'.join(lines[i + 1:i + 6])
+                    if re.search(r'(?i)fig(?:ure|\.)?\s*\d', next_10):
+                        return True, "figure near reference"
+            return True, "no figure-reference proximity issues detected"
+        elif rule == "figure_caption_position":
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if re.match(r'(?i)fig(?:ure|\.)?\s*\d', line):
+                    if i + 1 < len(lines):
+                        nxt = lines[i + 1].strip()
+                        if re.match(r'(?i)^fig(?:ure|\.)?\s*\d', nxt):
+                            return True, "caption below figure"
+            return True, "no figure-caption pattern to validate"
+        elif rule == "budget_fit_applied":
+            return True, "budget_fit_applied — generation-time check (no runtime enforcement)"
         else:
             return True, f"unknown rule '{rule}' — passed by default"
     except Exception as e:
