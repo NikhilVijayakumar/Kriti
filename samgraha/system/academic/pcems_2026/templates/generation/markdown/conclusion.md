@@ -1,4 +1,4 @@
-# Conclusion
+# IV. CONCLUSION
 
 ## Summary of Contributions
 {{ contribution_summary }}

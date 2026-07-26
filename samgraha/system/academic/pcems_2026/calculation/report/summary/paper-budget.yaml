@@ -1,4 +1,10 @@
 total_word_count:
-  min: 4000
-  max: 8000
-  # PCEMS 2026 conference paper — override to match venue's page/word limit.
+  min: 2400
+  max: 4800
+  # PCEMS 2026 conference paper — Writing Guide/01-writing-principles.md's
+  # "Total paper length" row (2,400-4,800 words, target 3,200-4,000).
+  # Was 4000-8000 (base_academic's generic journal-length default, never
+  # actually overridden for this venue) — corrected per guide alignment
+  # review. Per-section ranges in calculation/generation/{domain}.yaml
+  # carry the real tolerance; this total is the harder gate individual
+  # sections trade off against.

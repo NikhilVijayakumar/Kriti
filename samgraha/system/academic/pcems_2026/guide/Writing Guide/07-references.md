@@ -103,7 +103,7 @@ Based on sample paper analysis:
 
 | Metric | Range | Target |
 |--------|-------|--------|
-| Reference count | 10-20 | 12-15 |
+| Reference count | 15-30 | 20-25 |
 | Recent references (last 5 years) | 50-80% | 60-70% |
 | Journal/conference mix | Varies | Balanced |
 
@@ -124,7 +124,7 @@ Based on sample paper analysis:
 - Include references not read by the authors
 - Use only one type of source (all journals or all conferences)
 - Use inconsistent formatting between entries
-- Exceed 20 references (unless the topic requires more)
+- Exceed 30 references
 
 ## Revision Checklist
 

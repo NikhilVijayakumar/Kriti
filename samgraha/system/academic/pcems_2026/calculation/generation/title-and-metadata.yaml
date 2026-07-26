@@ -29,6 +29,16 @@ checks:
     severity: warning
     config: { pattern: "(?i)(?:novel|first|groundbreaking|unprecedented)" }
     description: "Title flagged for unsupported superlatives"
+  - id: tm-006
+    name: abstract_word_count_in_range
+    rule: abstract_word_count_in_range
+    severity: warning
+    config: { min: 150, max: 250 }
+    description: >
+      Abstract word count within 150-250 (target 200, per Writing Guide/01
+      and Assets/03-style-card.md). Warning, not critical — per-section
+      length is secondary to the whole-paper budget (calculation/report/
+      summary/paper-budget.yaml) actually being met.
   - id: tm-bfit
     name: budget_fit_applied
     rule: budget_fit_applied

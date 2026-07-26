@@ -1,4 +1,4 @@
-# Methodology
+# II. METHODOLOGY
 
 ## Proposed Method
 {{ proposed_method }}
@@ -15,3 +15,12 @@
 {{#parameters}}
 - **{{ name }}:** {{ value }} ({{ justification }})
 {{/parameters}}
+
+## Algorithms and Equations
+{{#equations}}
+{{ formula }}
+{{ explanation }}
+{{/equations}}
+
+## Implementation Details
+{{ implementation_details }}

@@ -285,6 +285,15 @@ def evaluate_rule(check, text, draft_texts=None):
             return True, "no figure-caption pattern to validate"
         elif rule == "budget_fit_applied":
             return True, "budget_fit_applied — generation-time check (no runtime enforcement)"
+        elif rule == "abstract_word_count_in_range":
+            cfg = check.get("config", {})
+            min_words = cfg.get("min", 0)
+            max_words = cfg.get("max")
+            m = re.search(r'(?im)^##\s*abstract\s*$(.*?)(?=^##\s|\Z)', text, re.DOTALL)
+            if not m:
+                return False, "no '## Abstract' section found to word-count"
+            passed, detail = _check_word_count(m.group(1), min_words, max_words)
+            return passed, f"abstract {detail}"
         else:
             return True, f"unknown rule '{rule}' — passed by default"
     except Exception as e:
