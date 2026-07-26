@@ -80,7 +80,14 @@ def main():
     conn = academic_schema.get_conn(db_path)
     try:
         domains = academic_schema.get_all_domains(conn)
-        structural = set(academic_schema.STRUCTURAL_DOMAINS)
+        # Discover structural domains dynamically via generate-stage
+        # narratives — handles concrete systems that rename domains
+        # (e.g. "findings" instead of generic "results").
+        structural = set(r[0] for r in conn.execute(
+            "SELECT DISTINCT ad.key FROM academic_domains ad "
+            "JOIN academic_narratives an ON an.domain_id = ad.id "
+            "WHERE an.stage = 'generate'"
+        ).fetchall())
         results = []
 
         for domain_id, domain_key, display_name, sort_order in domains:
