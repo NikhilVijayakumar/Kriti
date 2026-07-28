@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=references) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: references's draft, `audit/semantic/document/06-references.md` rubric
+**Inputs**: references's draft, `audit/semantic/document/references.md` rubric
 
 **Action**: Score references's draft against its rubric. Checks source legitimacy, citation consistency, recency mix.
 

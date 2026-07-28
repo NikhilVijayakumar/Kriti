@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=title-and-metadata) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: title-and-metadata's draft, `audit/semantic/document/01-title-and-metadata.md` rubric
+**Inputs**: title-and-metadata's draft, `audit/semantic/document/title-and-metadata.md` rubric
 
 **Action**: Score title-and-metadata's draft against its rubric. Checks title specificity, keyword quality, metadata completeness.
 

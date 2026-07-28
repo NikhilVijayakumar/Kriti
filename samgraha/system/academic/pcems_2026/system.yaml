@@ -1,3 +1,10 @@
+# pcems_2026 — human-readable system manifest.
+#
+# NOTE: The machine-readable manifest for samgraha registration is
+# script/schema/standard.yaml (seeder-era format). This file is a
+# human-readable companion documenting the domain structure and is NOT
+# read by samgraha's MCP tools. See standard.yaml for registration.
+
 name: pcems_2026
 abstract: false
 description: >

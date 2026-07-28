@@ -622,6 +622,7 @@ def _uc_schema_init(conn, paper_id):
         "academic_report_history",
         "academic_section_citations",   # fixes pre-existing gap
         "academic_proposals",           # proposal gate (schema/22)
+        "academic_calculation_dependencies",  # calc dependency edges
     }
     missing = required - names
     if missing:

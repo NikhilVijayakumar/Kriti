@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=introduction) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: introduction's draft, `audit/semantic/document/02-introduction.md` rubric
+**Inputs**: introduction's draft, `audit/semantic/document/introduction.md` rubric
 
 **Action**: Score introduction's draft against its rubric. Checks problem context quality, gap specificity, contribution statement.
 

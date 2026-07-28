@@ -4,9 +4,9 @@
 **Audit Target:** The whole document — cross-cutting, new for PCEMS 2026
 (no `base_academic` precedent). Tables appear in `findings` (comparison
 tables, results tables) and sometimes `methodology` (configuration
-parameters), but the craft rules apply document-wide: every table must be
-created using Microsoft Word table tools, have a caption above it, clear
-header labels, and units in column headers.
+parameters), but the craft rules apply document-wide. Content is appended
+as a labeled sub-block at the end of `findings` — placement defined by
+`assemble-final-document.py`'s `CROSS_CUTTING_TARGETS`.
 
 ## Standard Definition
 

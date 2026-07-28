@@ -4,9 +4,9 @@
 **Audit Target:** The whole document — cross-cutting, new for PCEMS 2026
 (no `base_academic` precedent). Figures appear in `findings` (performance
 charts, results visualizations) and `methodology` (block diagrams,
-architecture figures), but the craft rules apply document-wide: every
-figure must appear immediately after its first reference, have a caption
-below it, be legible in grayscale, and meet minimum resolution requirements.
+architecture figures), but the craft rules apply document-wide. Content is
+appended as a labeled sub-block at the end of `findings` — placement
+defined by `assemble-final-document.py`'s `CROSS_CUTTING_TARGETS`.
 
 ## Standard Definition
 

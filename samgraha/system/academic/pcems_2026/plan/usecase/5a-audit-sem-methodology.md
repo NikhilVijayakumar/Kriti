@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=methodology) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: methodology's draft, `audit/semantic/document/03-methodology.md` rubric
+**Inputs**: methodology's draft, `audit/semantic/document/methodology.md` rubric
 
 **Action**: Score methodology's draft against its rubric. Checks design justification, reproducibility, variable definitions.
 

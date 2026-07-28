@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=conclusion) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: conclusion's draft, `audit/semantic/document/05-conclusion.md` rubric
+**Inputs**: conclusion's draft, `audit/semantic/document/conclusion.md` rubric
 
 **Action**: Score conclusion's draft against its rubric. Checks contribution alignment, impact statement quality, no new claims.
 

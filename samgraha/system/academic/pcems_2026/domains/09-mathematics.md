@@ -2,9 +2,10 @@
 
 **Domain:** `mathematics`
 **Audit Target:** The whole document — cross-cutting, same as `novelty`
-(§07) and `gaps` (§08). Content lives primarily in `methodology`
- derivations, complexity, equations) and `findings` (statistical results),
-audited here as its own domain because mathematical rigor is a distinct
+(§07) and `gaps` (§08). Content is appended as a labeled sub-block at the
+end of `methodology` (derivations, complexity, equations) — placement
+defined by `assemble-final-document.py`'s `CROSS_CUTTING_TARGETS`.
+Audited here as its own domain because mathematical rigor is a distinct
 failure mode from either section's structural completeness.
 
 ## Standard Definition

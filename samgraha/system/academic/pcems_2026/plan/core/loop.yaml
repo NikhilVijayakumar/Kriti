@@ -52,7 +52,7 @@ path_selection:
 
   # Path A: no existing draft for this domain → generate from scratch
   generate:
-    template: templates/generation/markdown/{domain}.md
+    template: templates/generation/html/{domain}.html
     context: all already-completed upstream domains (from tiers relationships) + evidence step output when available
     note: >
       A domain's generation call includes its upstream tiers' completed

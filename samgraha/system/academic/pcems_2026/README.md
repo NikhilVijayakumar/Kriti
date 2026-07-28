@@ -14,18 +14,26 @@ findings, conclusion, references
 
 | Component | Source |
 |-----------|--------|
-| Scripts (schema-init through render-paper) | `base_academic/script/` |
-| Verify scripts | `base_academic/script/verify/_common.py` |
-| Content rules | `base_academic/script/common/content_rules.py` |
-| Generation prompts (per-domain) | `pcems_2026/prompt/generation/` |
+| Scripts | `pcems_2026/script/` (self-contained) |
+| Verify scripts | `pcems_2026/script/verify/` |
+| Content rules | `pcems_2026/script/common/content_rules.py` |
+| Generation prompts | `pcems_2026/prompt/generation/` |
 | Audit prompts | `pcems_2026/prompt/audit/` |
 | Propose prompts | `pcems_2026/prompt/propose/` |
 | Deterministic rules | `pcems_2026/calculation/` |
 | Semantic rubrics | `pcems_2026/audit/semantic/document/` |
-| Templates (markdown + HTML) | `pcems_2026/templates/` |
+| Templates | `pcems_2026/templates/` |
 | Guide + reference | `pcems_2026/guide/` + `pcems_2026/reference/` |
 
 ## Registration
+
+The machine-readable manifest is `script/schema/standard.yaml` (seeder-era
+format). The seeder script at `script/seeder.py` reads this YAML and
+populates `knowledge.db` with all workflow rows.
+
+**Two-stage activation:**
+1. `register_standard_globally` with path pointing at this directory
+2. `register_standard` (per-repo activation) with `standard_name: pcems_2026`
 
 When registering a repository for analysis, `repo_root` must point at
 the **code root** (where top-level packages live), not at a docs folder.

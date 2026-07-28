@@ -16,6 +16,10 @@
 # relative to this file's location (script/schema/).
 
 name: pcems_2026
+version: "1.0.0"
+description: "PCEMS 2026 conference-paper evaluation system — 6 structural domains, 5 cross-cutting domains, deterministic + semantic audit, 50/50 weight split"
+seeder_script: ../seeder.py
+smoke_test: ../smoke_test.py
 
 classify_repo:
   min_doc_words: 200

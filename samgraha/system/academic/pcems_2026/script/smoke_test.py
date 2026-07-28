@@ -49,13 +49,22 @@ def _check_standard_yaml():
         return [f"standard.yaml not found at {standard_path}"]
     try:
         data = yaml.safe_load(standard_path.read_text(encoding="utf-8"))
+        # Verify required keys for the seeder-era manifest
+        errors = []
+        if not data.get("name"):
+            errors.append("missing 'name' key")
+        if not data.get("seeder_script"):
+            errors.append("missing 'seeder_script' key")
         prompts = data.get("prompts", [])
-        if len(prompts) < 30:
-            return [f"expected 32 prompt entries, got {len(prompts)}"]
+        if len(prompts) < 20:
+            errors.append(f"expected 20+ prompt entries, got {len(prompts)}")
         custom_tables = data.get("custom_tables", [])
         if len(custom_tables) < 20:
-            return [f"expected 21+ custom tables, got {len(custom_tables)}"]
-        return []
+            errors.append(f"expected 20+ custom tables, got {len(custom_tables)}")
+        scripts = data.get("scripts", [])
+        if len(scripts) < 20:
+            errors.append(f"expected 20+ script entries, got {len(scripts)}")
+        return errors
     except Exception as e:
         return [f"standard.yaml parse error: {e}"]
 

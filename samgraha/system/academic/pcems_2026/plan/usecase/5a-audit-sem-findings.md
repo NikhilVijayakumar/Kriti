@@ -4,7 +4,7 @@
 
 **Script**: `gather-domain-evidence` (mode=audit, domain=findings) -> `semantic-audit` (prompt) -> `persist-domain-semantic-score` (scope=section-full)
 
-**Inputs**: findings's draft, `audit/semantic/document/04-findings.md` rubric
+**Inputs**: findings's draft, `audit/semantic/document/findings.md` rubric
 
 **Action**: Score findings's draft against its rubric. Checks experimental setup completeness, baseline comparison, analysis depth.
 

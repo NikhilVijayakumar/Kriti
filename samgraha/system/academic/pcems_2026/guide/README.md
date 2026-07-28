@@ -122,6 +122,39 @@ New sections can be added as:
 - Template requirements change
 - Reviewer feedback identifies new patterns
 
+## System Registration
+
+pcems_2026 is a samgraha knowledge standard. To use it with samgraha:
+
+### Prerequisites
+- samgraha installed (`pip install samgraha` or from source)
+- A target repo with documentation (the paper source)
+
+### Two-Stage Activation
+
+```bash
+# 1. Register the standard globally (one-time, per machine)
+samgraha register-standard-global /path/to/pcems_2026
+
+# 2. Activate in a target repo (creates .samgraha/knowledge.db)
+samgraha register-standard /path/to/target-repo pcems_2026
+```
+
+### Key Files
+- `script/schema/standard.yaml` — machine-readable manifest (samgraha reads this)
+- `script/seeder.py` — populates knowledge.db with domains, scripts, prompts, usecases
+- `standard.metadata.json` — declares 22 custom academic_* tables
+- `script/smoke_test.py` — structural validation (no API keys needed)
+
+### Verification
+```bash
+# Run smoke test
+python script/smoke_test.py --repo-root /path/to/pcems_2026
+
+# Run seeder against a test repo
+samgraha run-script /path/to/target-repo pcems_2026 schema-init
+```
+
 ## Summary
 
 This knowledge base contains 30+ documents covering every aspect of PCEMS manuscript preparation. Use it systematically to produce publication-ready manuscripts that meet all conference requirements.

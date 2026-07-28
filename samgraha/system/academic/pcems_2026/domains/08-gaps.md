@@ -2,9 +2,9 @@
 
 **Domain:** `gaps`
 **Audit Target:** The whole document — cross-cutting, same as `novelty`
-(§07). Content is woven into `introduction` (gap identification),
-`methodology` (what the approach addresses), and `findings` (what remains
-unresolved). For PCEMS 2026, this follows `base_academic/domains/14-gaps.md`
+(§07). Content is appended as a labeled sub-block at the end of
+`introduction` (gap identification) — placement defined by
+`assemble-final-document.py`'s `CROSS_CUTTING_TARGETS`. For PCEMS 2026, this follows `base_academic/domains/14-gaps.md`
 exactly: each gap is severity-tagged, has a stated research impact, and
 (where applicable) a remediation direction.
 

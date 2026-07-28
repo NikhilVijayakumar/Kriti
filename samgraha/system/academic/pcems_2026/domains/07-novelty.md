@@ -3,9 +3,9 @@
 **Domain:** `novelty`
 **Audit Target:** The whole document — this is a cross-cutting domain, not
 confined to one section (see `templates/generation/markdown/
-_master-schema.yaml`'s `cross_cutting:` list). Its content is woven into
-`introduction` (contributions), `methodology` (design novelty), and
-`findings` (comparative positioning) rather than rendered as its own heading.
+_master-schema.yaml`'s `cross_cutting:` list). Its content is appended as a
+labeled sub-block at the end of `introduction` (contributions) — placement
+defined by `assemble-final-document.py`'s `CROSS_CUTTING_TARGETS`.
 
 ## Standard Definition
 

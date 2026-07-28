@@ -15,9 +15,8 @@ import academic_schema  # noqa: E402
 # Domains that have aggregation/domain/*.yaml + ensemble/*.yaml files.
 # Generated from the directory listing — not hand-maintained.
 _AGGREGATION_DOMAINS = [
-    "abstract", "conclusion", "discussion", "experimental-setup",
-    "introduction", "limitations", "methodology", "problem-definition",
-    "references", "related-work", "results", "title-and-metadata",
+    "title-and-metadata", "introduction", "methodology",
+    "findings", "conclusion", "references",
 ]
 
 # Ensemble part kinds (each domain has a base + these three variants).
