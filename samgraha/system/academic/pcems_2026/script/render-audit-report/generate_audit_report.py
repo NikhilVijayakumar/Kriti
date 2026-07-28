@@ -27,7 +27,7 @@ TEMPLATES_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 _PIPELINE_STAGES = [
     ("generate",          "generate-section-draft-{d}"),
     ("cite",              "section-citations-{d}"),
-    ("enrich",            "section-supplementary-content-{d}"),
+    ("enrich",            "section-enrichment-{d}"),
     ("budget",            "section-budget-fit-{d}"),
     ("det_audit",         "deterministic-audit-{d}"),
     ("sem_audit",         "semantic-audit-{d}"),

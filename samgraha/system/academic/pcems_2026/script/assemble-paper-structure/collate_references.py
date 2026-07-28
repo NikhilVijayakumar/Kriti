@@ -3,9 +3,10 @@ usecase (fan-in). Reads all academic_section_citations rows for a paper,
 deduplicates, formats a bibliography, and writes it as the references
 domain's stage='cite' draft.
 
-Gates on all 11 section-citations-{domain} usecases completing first —
-hard-fails rather than collating a partial citation list from whichever
-domains happened to finish.
+Gates on every non-references domain's section-citations-{domain} usecase
+completing first — queries live academic_domains for the paper's actual
+seeded domain set rather than the shared base_academic constant, then
+hard-fails rather than collating a partial citation list.
 
 If the paper's metadata contains a "bibliography_path" key, external
 citations from that file are merged with in-repo citations. File format:
@@ -71,8 +72,16 @@ def main():
 
     conn = academic_schema.get_conn(db_path)
     try:
+        # Query the paper's actual seeded domains, not the shared
+        # base_academic GENERATED_DOMAINS constant (which has 11 entries
+        # but pcems_2026 only seeds 6).
+        seeded = conn.execute(
+            "SELECT key FROM academic_domains WHERE key != 'references'"
+        ).fetchall()
+        seeded_domains = [r["key"] for r in seeded]
+
         outstanding = []
-        for domain in academic_schema.GENERATED_DOMAINS:
+        for domain in seeded_domains:
             complete, _detail = academic_schema.usecase_status(
                 conn, paper_id, f"section-citations-{domain}")
             if not complete:

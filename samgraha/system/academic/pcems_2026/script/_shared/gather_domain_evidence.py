@@ -4,7 +4,7 @@ Gathers evidence depending on mode:
   - generate: analysis docs + implementation evidence
   - enrich: same as generate — 3a/3b's math/architecture findings already
     land in docs/paper/{system}/cross_module/, picked up by the same
-    analysis-doc scan (section-supplementary-content, usecase 4c)
+    analysis-doc scan (section-enrichment, usecase 4c)
   - audit: current draft text + rubric criteria
   - citation: deterministic extraction of in-repo grounding markers left
     in the domain's stage='generate' text by generate-section.md's Rule 1

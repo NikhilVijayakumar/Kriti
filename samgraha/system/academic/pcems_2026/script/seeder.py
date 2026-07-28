@@ -72,13 +72,40 @@ _CITATION_STEP_TEMPLATES = [
     {"order": 2, "kind": "deterministic",
      "description": "Persist {domain} citations",
      "script": "persist-section-citations"},
+    {"order": 3, "kind": "semantic",
+     "description": "Audit {domain} citations part for quality",
+     "prompt": "semantic-audit-part"},
+    {"order": 4, "kind": "deterministic",
+     "description": "Persist {domain} citations-part semantic score",
+     "script": "persist-domain-semantic-score"},
+]
+
+# section-citations-references is a fan-in usecase — collate-references
+# reads all other domains' citations and writes the references draft.
+# Replaces the generic _CITATION_STEP_TEMPLATES for this one domain only.
+_CITATION_REFERENCES_STEPS = [
+    {"order": 1, "kind": "deterministic",
+     "description": "Collate all citations into references domain draft",
+     "script": "collate-references"},
 ]
 
 _ENRICHMENT_STEP_TEMPLATES = [
-    {"order": 1, "kind": "semantic",
+    {"order": 1, "kind": "deterministic",
+     "description": "Gather {domain} draft for enrichment",
+     "script": "gather-domain-evidence"},
+    {"order": 2, "kind": "semantic",
+     "description": "Add citation grounding to {domain}",
+     "prompt": "literature-review-pass"},
+    {"order": 3, "kind": "semantic",
      "description": "Enrich {domain} with quality improvements",
      "prompt": "section-enrichment"},
-    {"order": 2, "kind": "deterministic",
+    {"order": 4, "kind": "semantic",
+     "description": "Audit enriched {domain} for quality issues",
+     "prompt": "semantic-audit-part"},
+    {"order": 5, "kind": "deterministic",
+     "description": "Persist {domain} enrichment-part semantic score",
+     "script": "persist-domain-semantic-score"},
+    {"order": 6, "kind": "deterministic",
      "description": "Persist enriched {domain} draft",
      "script": "persist-section-draft"},
 ]
@@ -87,6 +114,18 @@ _BUDGET_STEP_TEMPLATES = [
     {"order": 1, "kind": "deterministic",
      "description": "Check {domain} word budget",
      "script": "check-word-budget"},
+    {"order": 2, "kind": "semantic",
+     "description": "Fit {domain} to word budget",
+     "prompt": "fit-to-budget"},
+    {"order": 3, "kind": "deterministic",
+     "description": "Persist budget-fitted {domain} draft",
+     "script": "persist-section-draft"},
+    {"order": 4, "kind": "semantic",
+     "description": "Audit {domain} budget-fit part for quality",
+     "prompt": "semantic-audit-part"},
+    {"order": 5, "kind": "deterministic",
+     "description": "Persist {domain} budget-fit-part semantic score",
+     "script": "persist-domain-semantic-score"},
 ]
 
 _DET_AUDIT_STEP_TEMPLATES = [
@@ -114,7 +153,13 @@ _PLAGIARISM_STEP_TEMPLATES = [
     {"order": 2, "kind": "deterministic",
      "description": "Run fingerprint check on {domain}",
      "script": "deterministic-fingerprint-check"},
-    {"order": 3, "kind": "deterministic",
+    {"order": 3, "kind": "semantic",
+     "description": "Audit {domain} for plagiarism patterns",
+     "prompt": "plagiarism-fingerprint-audit"},
+    {"order": 4, "kind": "semantic",
+     "description": "Rewrite flagged spans in {domain}",
+     "prompt": "targeted-rewrite"},
+    {"order": 5, "kind": "deterministic",
      "description": "Persist {domain} plagiarism findings",
      "script": "persist-plagiarism-findings"},
 ]
@@ -213,7 +258,7 @@ _MATHEMATICS_ANALYSIS_STEPS = [
      "description": "Gather evidence for each module",
      "script": "gather-module-evidence"},
     {"order": 3, "kind": "semantic",
-     "description": "Analyze each module for mathematics",
+     "description": "Analyze each module for mathematical formalization",
      "prompt": "module-analysis-mathematics"},
     {"order": 4, "kind": "deterministic",
      "description": "Persist per-module mathematics analysis",
@@ -226,6 +271,39 @@ _MATHEMATICS_ANALYSIS_STEPS = [
      "prompt": "cross-module-analysis-mathematics"},
     {"order": 7, "kind": "deterministic",
      "description": "Persist cross-module mathematics analysis",
+     "script": "persist-cross-module-analysis"},
+]
+
+# diagram-architecture-analysis: 3 cross-module passes (architecture,
+# dependencies, interactions) instead of 1. Uses INSERT OR IGNORE-idempotent
+# discover-modules/gather-module-evidence, safe to re-run independently.
+_DIAGRAM_ARCHITECTURE_STEPS = [
+    {"order": 1, "kind": "deterministic",
+     "description": "Discover module boundaries in the target repo",
+     "script": "discover-modules"},
+    {"order": 2, "kind": "deterministic",
+     "description": "Gather evidence for each module",
+     "script": "gather-module-evidence"},
+    {"order": 3, "kind": "deterministic",
+     "description": "Gather cross-module evidence",
+     "script": "gather-cross-module-evidence"},
+    {"order": 4, "kind": "semantic",
+     "description": "Cross-module architecture analysis",
+     "prompt": "cross-module-analysis-architecture"},
+    {"order": 5, "kind": "deterministic",
+     "description": "Persist cross-module architecture analysis",
+     "script": "persist-cross-module-analysis"},
+    {"order": 6, "kind": "semantic",
+     "description": "Cross-module dependency analysis",
+     "prompt": "cross-module-analysis-dependencies"},
+    {"order": 7, "kind": "deterministic",
+     "description": "Persist cross-module dependency analysis",
+     "script": "persist-cross-module-analysis"},
+    {"order": 8, "kind": "semantic",
+     "description": "Cross-module interaction analysis",
+     "prompt": "cross-module-analysis-interactions"},
+    {"order": 9, "kind": "deterministic",
+     "description": "Persist cross-module interaction analysis",
      "script": "persist-cross-module-analysis"},
 ]
 
@@ -307,26 +385,49 @@ _RENDER_PAPER_STEPS = [
      "script": "render-pdf"},
 ]
 
-# references has no generate-{domain} prompt (no LLM authoring — its draft
-# is collated from citations, not written), so it needs its own step list
-# instead of the generic _GENERATION_STEP_TEMPLATES pattern.
+# references has no dedicated generate-references prompt — per
+# 4a-generate-references.md, it uses the generic generate-section prompt
+# with template=templates/generation/markdown/references.md.
 _REFERENCES_GENERATION_STEPS = [
     {"order": 1, "kind": "deterministic",
      "description": "Gather evidence for references",
      "script": "gather-domain-evidence"},
-    {"order": 2, "kind": "deterministic",
-     "description": "Collate all citations into references domain draft",
-     "script": "collate-references"},
+    {"order": 2, "kind": "semantic",
+     "description": "Generate references section draft",
+     "prompt": "generate-section"},
     {"order": 3, "kind": "deterministic",
      "description": "Persist references section draft",
      "script": "persist-section-draft"},
 ]
+
+# Cross-cutting section generation — reads the already-persisted
+# academic_cross_module_analysis row and generates polished section prose.
+_CROSS_CUTTING_GENERATION_STEPS = [
+    {"order": 1, "kind": "deterministic",
+     "description": "Gather cross-cutting analysis for {domain}",
+     "script": "gather-cross-cutting-evidence"},
+    {"order": 2, "kind": "semantic",
+     "description": "Generate {domain} section draft from analysis",
+     "prompt": "generate-{domain}"},
+    {"order": 3, "kind": "deterministic",
+     "description": "Persist {domain} section draft",
+     "script": "persist-section-draft"},
+]
+
+def _make_cross_cutting_steps(domain):
+    """Create pre-substituted step list for a cross-cutting generate usecase."""
+    return [
+        {k: (v.replace("{domain}", domain) if isinstance(v, str) else v)
+         for k, v in s.items()}
+        for s in _CROSS_CUTTING_GENERATION_STEPS
+    ]
 
 # Exact-name match map for whole-document usecases
 _WHOLE_DOCUMENT_STEP_MAP = {
     "novelty-analysis": _NOVELTY_ANALYSIS_STEPS,
     "gap-analysis": _GAP_ANALYSIS_STEPS,
     "mathematics-analysis": _MATHEMATICS_ANALYSIS_STEPS,
+    "diagram-architecture-analysis": _DIAGRAM_ARCHITECTURE_STEPS,
     "docs-first-ingestion": _DOCS_FIRST_INGESTION_STEPS,
     "cross-section-semantic-audit": _CROSS_SECTION_AUDIT_STEPS,
     "document-semantic-audit": _DOCUMENT_AUDIT_STEPS,
@@ -336,16 +437,24 @@ _WHOLE_DOCUMENT_STEP_MAP = {
     "render-audit-report": _RENDER_AUDIT_REPORT_STEPS,
     "render-paper": _RENDER_PAPER_STEPS,
     "generate-section-draft-references": _REFERENCES_GENERATION_STEPS,
+    "generate-section-draft-novelty": _make_cross_cutting_steps("novelty"),
+    "generate-section-draft-gaps": _make_cross_cutting_steps("gaps"),
+    "generate-section-draft-mathematics": _make_cross_cutting_steps("mathematics"),
 }
 
 
 def _expand_domain_steps(uc_name):
     """Given a usecase name, expand step templates.
     First checks exact-name match for whole-document usecases,
+    then special-cases per-domain usecases that need non-default steps,
     then falls back to prefix-based expansion for per-domain usecases."""
     # Exact-name match (whole-document usecases)
     if uc_name in _WHOLE_DOCUMENT_STEP_MAP:
         return list(_WHOLE_DOCUMENT_STEP_MAP[uc_name])
+    # Special-case: section-citations-references uses collate-references
+    # (fan-in), not the generic citation templates.
+    if uc_name == "section-citations-references":
+        return list(_CITATION_REFERENCES_STEPS)
     # Prefix-based match (per-domain usecases)
     for prefix, tmpl in _USECASE_STEP_PATTERNS.items():
         if uc_name.startswith(prefix):
@@ -396,10 +505,25 @@ def main():
     # 1. Create academic_* tables
     academic_schema.ensure_schema(conn)
 
-    # 2. Seed 6 structural domains into both domain (core FK) and academic_domains
-    all_domain_keys = list(_DOMAIN_SORT_ORDERS.keys()) + ["reviewer-simulation"]
-    all_domain_display = dict(_DOMAIN_DISPLAY_NAMES, **{"reviewer-simulation": "Reviewer Simulation"})
-    all_domain_orders = dict(_DOMAIN_SORT_ORDERS, **{"reviewer-simulation": 99})
+    # 2. Seed 6 structural domains + reviewer-simulation + 3 cross-cutting
+    # domains into both domain (core FK) and academic_domains.
+    # Cross-cutting domains (novelty, gaps, mathematics) get sort_orders
+    # in the 90s alongside reviewer-simulation's 99.
+    all_domain_keys = list(_DOMAIN_SORT_ORDERS.keys()) + [
+        "reviewer-simulation", "novelty", "gaps", "mathematics",
+    ]
+    all_domain_display = dict(_DOMAIN_DISPLAY_NAMES, **{
+        "reviewer-simulation": "Reviewer Simulation",
+        "novelty": "Novelty",
+        "gaps": "Gaps",
+        "mathematics": "Mathematics",
+    })
+    all_domain_orders = dict(_DOMAIN_SORT_ORDERS, **{
+        "reviewer-simulation": 99,
+        "novelty": 91,
+        "gaps": 92,
+        "mathematics": 93,
+    })
 
     # Core domain table (usecase.domain_id FK target)
     for dkey in all_domain_keys:

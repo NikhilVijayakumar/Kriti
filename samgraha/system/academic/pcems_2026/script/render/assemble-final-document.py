@@ -150,13 +150,22 @@ def main():
             else:
                 domain_contexts[domain] = {}
 
-        # Read cross-cutting domains (academic_cross_module_analysis, not
-        # academic_narratives) and weave them
+        # Read cross-cutting domains — prefer academic_narratives (polished
+        # drafts from generate-section-draft-{domain}) over raw
+        # academic_cross_module_analysis blobs.
         cross_cutting_content = {}
         for cc_domain in cross_cutting:
-            analysis_row = academic_schema.get_cross_module_analysis(
-                conn, paper_id, analysis_kind=cc_domain)
-            cross_cutting_content[cc_domain] = _parse_cross_cutting(analysis_row)
+            # Try polished narrative first (stage='generate' from the
+            # generate-section-draft-{domain} usecase)
+            draft = academic_schema.get_narrative(
+                conn, paper_id, cc_domain, stage="generate")
+            if draft:
+                cross_cutting_content[cc_domain] = draft
+            else:
+                # Fall back to raw cross_module_analysis blob
+                analysis_row = academic_schema.get_cross_module_analysis(
+                    conn, paper_id, analysis_kind=cc_domain)
+                cross_cutting_content[cc_domain] = _parse_cross_cutting(analysis_row)
 
         # Weave cross-cutting content into target sections
         for cc_domain, target_section in CROSS_CUTTING_TARGETS.items():

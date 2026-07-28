@@ -43,6 +43,9 @@ scripts:
   - name: gather-cross-module-evidence
     location: ../../script/_shared/analysis/gather_cross_module_evidence.py
     purpose: "aggregate every module's evidence + repo-wide import graph"
+  - name: gather-cross-cutting-evidence
+    location: ../../script/_shared/gather_cross_cutting_evidence.py
+    purpose: "read academic_cross_module_analysis for a given analysis_kind"
   - name: persist-module-analysis
     location: ../../script/_shared/analysis/persist_module_analysis.py
     purpose: "persist one module's analysis section + write to docs/paper/{system}/modules/"
@@ -333,6 +336,23 @@ usecases:
 
   - name: mathematics-analysis
     description: "derive mathematical formalization from documentation"
+    steps: []
+
+  - name: diagram-architecture-analysis
+    description: "produce cross-module architecture, dependency, and interaction diagrams"
+    steps: []
+
+  # --- Cross-cutting section generation (novelty/gaps/mathematics) ---
+  # These generate polished section prose from the raw cross_module_analysis
+  # rows persisted by the *-analysis usecases above.
+  - name: generate-section-draft-novelty
+    description: "generate novelty section draft from cross-module analysis"
+    steps: []
+  - name: generate-section-draft-gaps
+    description: "generate gaps section draft from cross-module analysis"
+    steps: []
+  - name: generate-section-draft-mathematics
+    description: "generate mathematics section draft from cross-module analysis"
     steps: []
 
   # --- PCEMS 2026 section-domain usecases (6 domains x 9 stages) ---

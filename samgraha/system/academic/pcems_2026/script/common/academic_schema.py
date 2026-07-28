@@ -701,7 +701,7 @@ def _uc_diagram_analysis(conn, paper_id):
 
 # ---------------------------------------------------------------------------
 # Per-domain usecase registration — generate-section-draft, section-citations,
-# section-supplementary-content, section-budget-fit each get one usecase
+# section-enrichment, section-budget-fit each get one usecase
 # PER STRUCTURAL DOMAIN (base_academic-usecase-atomicity-proposal.md's
 # per-domain split) instead of one usecase looping every domain. Each
 # predicate below checks exactly one domain — a factory closure per domain,
@@ -722,6 +722,15 @@ def _make_stage_predicate(domain, stage):
 
 
 for _domain in GENERATED_DOMAINS:
+    _register_usecase_fn(
+        f"generate-section-draft-{_domain}",
+        f"{_domain} has a stage='generate' narrative",
+        _make_stage_predicate(_domain, "generate"),
+    )
+
+# Cross-cutting generate usecases (novelty, gaps, mathematics) — not in
+# GENERATED_DOMAINS but follow the same stage='generate' predicate.
+for _domain in ("novelty", "gaps", "mathematics"):
     _register_usecase_fn(
         f"generate-section-draft-{_domain}",
         f"{_domain} has a stage='generate' narrative",
@@ -774,7 +783,7 @@ _register_usecase_fn(
 
 for _domain in STRUCTURAL_DOMAINS:
     _register_usecase_fn(
-        f"section-supplementary-content-{_domain}",
+        f"section-enrichment-{_domain}",
         f"{_domain} has a stage='enrich' narrative",
         _make_stage_predicate(_domain, "enrich"),
     )
@@ -990,7 +999,7 @@ for _domain in STRUCTURAL_DOMAINS:
 _PER_DOMAIN_PREDICATE_FACTORIES = [
     ("generate-section-draft-", lambda d: _make_stage_predicate(d, "generate")),
     ("section-citations-", _make_citation_predicate),
-    ("section-supplementary-content-", lambda d: _make_stage_predicate(d, "enrich")),
+    ("section-enrichment-", lambda d: _make_stage_predicate(d, "enrich")),
     ("section-budget-fit-", _make_budget_predicate),
     ("deterministic-audit-", _make_det_audit_predicate),
     ("semantic-audit-", _make_sem_audit_predicate),
