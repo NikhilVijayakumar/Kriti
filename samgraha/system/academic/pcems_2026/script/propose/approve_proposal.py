@@ -70,7 +70,7 @@ def main():
         meta = _get_metadata(conn, proposal_id)
         # Supersede any prior pending reviews for this (paper, phase, scope)
         conn.execute(
-            "UPDATE academic_proposal_review SET is_latest=0"
+            "UPDATE academic_proposal_review SET is_latest=0 "
             "WHERE paper_id=? AND phase=? AND scope_domain_id IS ?",
             (payload["paper_id"], phase, domain_id))
         review_status = "rejected" if reject else "approved"

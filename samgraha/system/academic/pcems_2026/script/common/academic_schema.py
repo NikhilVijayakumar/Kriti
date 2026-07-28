@@ -1116,7 +1116,7 @@ def _make_proposal_predicate(phase):
             "SELECT 1 FROM proposal p "
             "JOIN usecase u ON u.id = p.usecase_id "
             "JOIN academic_proposal_review r ON r.proposal_id = p.id "
-            "WHERE u.name=? AND r.paper_id=? AND r.decision='approved' "
+            "WHERE u.name=? AND r.paper_id=? AND r.review_status='approved' "
             "ORDER BY p.id DESC LIMIT 1",
             (f"propose-{phase}", paper_id),
         ).fetchone()

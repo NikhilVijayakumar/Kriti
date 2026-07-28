@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "common")
 import academic_schema  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _phase_map import get_phase_domain_keys, get_standard_suffix  # noqa: E402
+from _phase_map import get_phase_domain_keys  # noqa: E402
 
 
 def _lookup_step_ids(conn, usecase_name):
@@ -48,24 +48,39 @@ def main():
 
         paper_title = meta["title"] if meta else "(untitled)"
         rationale = _build_rationale(phase, payload, paper_title)
-        standard_suffix = get_standard_suffix(phase)
 
         proposal_title = f"{phase} proposal for \"{paper_title}\""
         phases = []
-        for i, dk in enumerate(get_phase_domain_keys(phase)):
-            uc_name = f"generate-section-{dk}-{standard_suffix}"
-            step_ids = _lookup_step_ids(conn, uc_name)
-            extra_uc = f"generate-section-{dk}"
-            extra_ids = _lookup_step_ids(conn, extra_uc)
-            all_ids = step_ids + [sid for sid in extra_ids
-                                   if sid not in step_ids]
-            phases.append({
-                "domain": dk,
-                "phase_number": i + 1,
-                "usecases": [uc_name, extra_uc],
-                "steps": all_ids,
-                "rationale": f"covers {dk} for {phase}",
-            })
+
+        if phase == "fix":
+            scope_domain_id = payload.get("scope_domain_id")
+            if scope_domain_id is not None:
+                dk_row = conn.execute(
+                    "SELECT key FROM academic_domains WHERE id=?",
+                    (scope_domain_id,),
+                ).fetchone()
+                if dk_row:
+                    dk = dk_row["key"]
+                    uc_name = f"generate-section-draft-{dk}"
+                    step_ids = _lookup_step_ids(conn, uc_name)
+                    phases.append({
+                        "domain": dk,
+                        "phase_number": 1,
+                        "usecases": [uc_name],
+                        "steps": step_ids,
+                        "rationale": f"fix {dk} domain",
+                    })
+        else:
+            for i, dk in enumerate(get_phase_domain_keys(phase)):
+                uc_name = f"generate-section-draft-{dk}"
+                step_ids = _lookup_step_ids(conn, uc_name)
+                phases.append({
+                    "domain": dk,
+                    "phase_number": i + 1,
+                    "usecases": [uc_name],
+                    "steps": step_ids,
+                    "rationale": f"covers {dk} for {phase}",
+                })
 
         metadata = {}
         for key in ("summary", "content_md", "computed_context", "user_comment", "iteration"):

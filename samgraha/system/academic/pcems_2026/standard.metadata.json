@@ -130,17 +130,17 @@
     {
       "name": "audit-proposal",
       "purpose": "Phase-wise audit plan template",
-      "role": "proposal"
+      "role": "report"
     },
     {
       "name": "report-proposal",
       "purpose": "Phase-wise report plan template",
-      "role": "proposal"
+      "role": "report"
     },
     {
       "name": "fix-proposal",
       "purpose": "Domain-scoped fix plan template",
-      "role": "proposal"
+      "role": "report"
     },
     {
       "name": "audit-report",

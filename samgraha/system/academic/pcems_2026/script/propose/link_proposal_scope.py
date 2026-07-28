@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "common")
 import academic_schema  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _phase_map import get_phase_domain_keys, get_standard_suffix  # noqa: E402
+from _phase_map import get_phase_domain_keys  # noqa: E402
 
 
 def main():
@@ -37,8 +37,8 @@ def main():
                            message="fix proposals have no phase-wide scope")
             return
 
-        standard_suffix = get_standard_suffix(phase)
-        usecase_name = f"persist-proposal-{standard_suffix}"
+        # Find the generic proposal row by the persist-proposal step
+        usecase_name = f"propose-{phase}"
         step_id = academic_schema.get_persist_proposal_step_id(
             conn, usecase_name)
         if not step_id:
@@ -54,26 +54,39 @@ def main():
 
         rows_written = 0
         for i, dk in enumerate(scope_domains):
-            domain_id_row = conn.execute(
-                "SELECT id FROM academic_domains WHERE key=?",
-                (dk,)).fetchone()
-            if not domain_id_row:
+            # Look up generic domain_id (FK target)
+            domain_row = conn.execute(
+                "SELECT id FROM domain WHERE standard=? AND key=?",
+                ("pcems_2026", dk),
+            ).fetchone()
+            if not domain_row:
                 continue
-            domain_id = domain_id_row["id"]
+            domain_id = domain_row["id"]
 
-            usecase_name_dk = f"generate-section-{dk}-{standard_suffix}"
-            step_id_dk = academic_schema.get_persist_proposal_step_id(
-                conn, usecase_name_dk)
-            if not step_id_dk:
+            # Look up generate-section-draft-{dk} usecase for its ID
+            uc_row = conn.execute(
+                "SELECT id FROM usecase WHERE standard=? AND name=?",
+                ("pcems_2026", f"generate-section-draft-{dk}"),
+            ).fetchone()
+            if not uc_row:
                 continue
+            usecase_id = uc_row["id"]
+
+            # Look up a step within that usecase (first available)
+            step_row = conn.execute(
+                "SELECT s.id FROM step s WHERE s.usecase_id=? "
+                "ORDER BY s.step_order LIMIT 1",
+                (usecase_id,),
+            ).fetchone()
+            if not step_row:
+                continue
+            step_id_dk = step_row["id"]
 
             conn.execute(
                 "INSERT INTO academic_proposal_scope "
-                "(proposal_id, domain_id, domain_key, phase, phase_number, "
-                " usecase_name, step_id, created_at) "
-                "VALUES (?,?,?,?,?,?,?,datetime('now'))",
-                (proposal_id, domain_id, dk, phase, i + 1,
-                 usecase_name_dk, step_id_dk))
+                "(proposal_id, domain_id, usecase_id, step_id) "
+                "VALUES (?,?,?,?)",
+                (proposal_id, domain_id, usecase_id, step_id_dk))
             rows_written += 1
 
         conn.commit()
