@@ -1,4 +1,9 @@
-"""persist_proposal.py — append-only insert of a proposal row.
+"""persist_proposal.py — det step, emits proposal envelope key.
+
+Output ``{"proposal": {"title": ..., "phases": [...], "metadata": {...}}}``
+so that the deterministic step runner in step_execution.rs can validate
+against proposal.schema.json and INSERT into the generic ``proposal``
+table (execution_id, phase, title, phases_json, metadata_json).
 
 Expected --in payload:
   {paper_id: int, phase: str, scope_domain_id: int (optional),
@@ -6,9 +11,7 @@ Expected --in payload:
    user_comment: str (optional), iteration: int (optional, default 0),
    computed_context: dict (optional — domains, findings, scores, etc.)}
 
-Appends a new row with status='pending'. Flips the previous is_latest=1
-row to is_latest=0 (and status='superseded' if it was still pending).
-Decided rows (approved/rejected) are immutable — only is_latest changes.
+Legacy academic_proposals table NO LONGER written.
 """
 import json
 import sys
@@ -20,40 +23,97 @@ from _adapter import parse_step_args, write_envelope  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "common"))
 import academic_schema  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _phase_map import get_phase_domain_keys, get_standard_suffix  # noqa: E402
+
+
+def _lookup_step_ids(conn, usecase_name):
+    rows = conn.execute(
+        "SELECT s.id FROM step s JOIN usecase u ON u.id = s.usecase_id "
+        "WHERE u.name = ? ORDER BY s.step_order",
+        (usecase_name,),
+    ).fetchall()
+    return [r["id"] for r in rows]
+
 
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
+    phase = payload["phase"]
     conn = academic_schema.get_conn(db_path)
     try:
-        # §3/§6a: only a still-pending previous row gets rewritten to
-        # 'superseded' — a decided (approved/rejected) row's status is
-        # immutable history, is_latest is the only column that changes.
-        conn.execute(
-            "UPDATE academic_proposals SET is_latest=0, "
-            "status = CASE WHEN status='pending' THEN 'superseded' "
-            "ELSE status END "
-            "WHERE paper_id=? AND phase=? AND scope_domain_id IS ? "
-            "AND is_latest=1",
-            (payload["paper_id"], payload["phase"],
-             payload.get("scope_domain_id")))
-        conn.execute(
-            "INSERT INTO academic_proposals "
-            "(paper_id, phase, scope_domain_id, source, status, commit_sha, "
-            " iteration, summary, content_md, user_comment, metadata, "
-            " is_latest, created_at) "
-            "VALUES (?,?,?,?,'pending',?,?,?,?,?,?,1,datetime('now'))",
-            (payload["paper_id"], payload["phase"],
-             payload.get("scope_domain_id"),
-             payload["source"], payload["commit_sha"],
-             payload.get("iteration", 0),
-             payload["summary"], payload["content_md"],
-             payload.get("user_comment", ""),
-             json.dumps(payload.get("computed_context"))))
-        conn.commit()
+        meta = conn.execute(
+            "SELECT title FROM academic_papers WHERE id=?",
+            (payload["paper_id"],),
+        ).fetchone()
+
+        paper_title = meta["title"] if meta else "(untitled)"
+        rationale = _build_rationale(phase, payload, paper_title)
+        standard_suffix = get_standard_suffix(phase)
+
+        proposal_title = f"{phase} proposal for \"{paper_title}\""
+        phases = []
+        for i, dk in enumerate(get_phase_domain_keys(phase)):
+            uc_name = f"generate-section-{dk}-{standard_suffix}"
+            step_ids = _lookup_step_ids(conn, uc_name)
+            extra_uc = f"generate-section-{dk}"
+            extra_ids = _lookup_step_ids(conn, extra_uc)
+            all_ids = step_ids + [sid for sid in extra_ids
+                                   if sid not in step_ids]
+            phases.append({
+                "domain": dk,
+                "phase_number": i + 1,
+                "usecases": [uc_name, extra_uc],
+                "steps": all_ids,
+                "rationale": f"covers {dk} for {phase}",
+            })
+
+        metadata = {}
+        for key in ("summary", "content_md", "computed_context", "user_comment", "iteration"):
+            if payload.get(key) is not None:
+                metadata[key] = payload[key]
+
+        write_envelope(
+            out_path,
+            status="ok",
+            message=f"proposal drafted, phase={phase}",
+            proposal={
+                "title": proposal_title,
+                "phases": phases,
+                "rationale": rationale,
+                "metadata": metadata or None,
+            },
+        )
     finally:
         conn.close()
-    write_envelope(out_path, status="ok",
-                   message=f"proposal drafted, phase={payload['phase']}")
+
+
+def _build_rationale(phase, payload, paper_title):
+    ctx = payload.get("computed_context", {})
+    if phase == "generation":
+        domain_count = len(ctx.get("domains", []))
+        return (
+            f"Generation proposal for \"{paper_title}\" — "
+            f"{domain_count} structural domains to generate."
+        )
+    elif phase == "audit":
+        domain_count = len(ctx.get("domains", []))
+        return (
+            f"Audit proposal for \"{paper_title}\" — "
+            f"{domain_count} domains to audit (structural + cross-cutting)."
+        )
+    elif phase == "report":
+        score = ctx.get("current_final_score")
+        band = ctx.get("current_score_band", "")
+        score_str = f"score {score} ({band})" if score else "no score yet"
+        return (
+            f"Report proposal for \"{paper_title}\" — {score_str}."
+        )
+    elif phase == "fix":
+        return (
+            f"Fix proposal for \"{paper_title}\" — "
+            f"scope_domain_id={payload.get('scope_domain_id')}."
+        )
+    return f"Proposal for \"{paper_title}\" — phase={phase}."
 
 
 if __name__ == "__main__":

@@ -150,6 +150,9 @@ scripts:
   - name: persist-proposal
     location: ../../script/propose/persist_proposal.py
     purpose: "append-only insert of a drafted proposal row (status=pending)"
+  - name: link-proposal-scope
+    location: ../../script/propose/link_proposal_scope.py
+    purpose: "link persisted proposal to per-domain scope rows in academic_proposal_scope"
   - name: render-proposal
     location: ../../script/propose/render_proposal.py
     purpose: "render a persisted proposal to markdown + html for human review"
@@ -575,6 +578,10 @@ usecases:
         script: persist-proposal
       - order: 4
         kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
         description: "Render proposal to markdown+html"
         script: render-proposal
 
@@ -595,6 +602,10 @@ usecases:
         script: persist-proposal
       - order: 4
         kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
         description: "Render proposal to markdown+html"
         script: render-proposal
 
@@ -610,6 +621,10 @@ usecases:
         description: "Persist proposal (status=pending)"
         script: persist-proposal
       - order: 3
+        kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 4
         kind: deterministic
         description: "Render proposal to markdown+html"
         script: render-proposal

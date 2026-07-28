@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{title}}</title></head>
+<body>
+<h1>Audit Proposal</h1>
+<h2>{{title}}</h2>
+<p><strong>Phase</strong>: {{phase}} &middot; <strong>Model(s)</strong>: {{models}} &middot; <strong>Iteration</strong>: {{iteration}}</p>
+{{#summary}}<p>{{summary}}</p>{{/summary}}
+<h3>Domains Under Audit</h3>
+<ul>
+{{#domains}}
+<li><strong>{{domain_key}}</strong>: {{det_rule_count}} det rules, {{rubric_criterion_count}} rubric criteria{{#rubric_found}} (rubric found){{/rubric_found}}{{^rubric_found}} (no rubric){{/rubric_found}}</li>
+{{/domains}}
+{{^domains}}<li>No domain data available.</li>{{/domains}}
+</ul>
+{{#redraft_of}}<blockquote>Redraft of iteration {{redraft_of.iteration}}</blockquote>{{/redraft_of}}
+</body>
+</html>

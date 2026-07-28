@@ -151,8 +151,9 @@ def main():
                             "academic_templates", "academic_score_history",
                             "academic_deterministic_findings",
                             "academic_visualization_types", "academic_visualizations",
-                            "academic_report_history", "academic_section_citations",
-                            "academic_proposals", "academic_calculation_dependencies"])
+                             "academic_report_history", "academic_section_citations",
+                             "academic_proposal_review", "academic_proposal_scope",
+                             "academic_proposal_analysis_ref", "academic_calculation_dependencies"])
 
 
 if __name__ == "__main__":

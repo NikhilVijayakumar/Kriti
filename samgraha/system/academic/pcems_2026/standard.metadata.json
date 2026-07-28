@@ -101,9 +101,19 @@
       "required_columns": ["id", "paper_id", "report_kind", "file_path", "rendered_at"]
     },
     {
-      "table_name": "academic_proposals",
-      "purpose": "One row per proposal draft/decision — generation/audit/report/fix gate",
-      "required_columns": ["id", "paper_id", "phase", "status", "title"]
+      "table_name": "academic_proposal_review",
+      "purpose": "Human approval/rejection decision per generic proposal row",
+      "required_columns": ["id", "proposal_id", "paper_id", "phase", "decision", "decided_at"]
+    },
+    {
+      "table_name": "academic_proposal_scope",
+      "purpose": "Per-domain scope rows linked to a generic proposal",
+      "required_columns": ["id", "proposal_id", "domain_id", "phase", "phase_number", "usecase_name"]
+    },
+    {
+      "table_name": "academic_proposal_analysis_ref",
+      "purpose": "Generation-phase analysis row links (which analyses a proposal's generation phase covers)",
+      "required_columns": ["id", "proposal_id", "analysis_kind", "analysis_id"]
     },
     {
       "table_name": "academic_calculation_dependencies",
@@ -115,6 +125,21 @@
     {
       "name": "generation-proposal",
       "purpose": "Phase-wise generation plan template",
+      "role": "proposal"
+    },
+    {
+      "name": "audit-proposal",
+      "purpose": "Phase-wise audit plan template",
+      "role": "proposal"
+    },
+    {
+      "name": "report-proposal",
+      "purpose": "Phase-wise report plan template",
+      "role": "proposal"
+    },
+    {
+      "name": "fix-proposal",
+      "purpose": "Domain-scoped fix plan template",
       "role": "proposal"
     },
     {

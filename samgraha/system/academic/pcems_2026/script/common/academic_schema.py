@@ -81,11 +81,6 @@ def ensure_schema(conn):
         with open(fpath, "r", encoding="utf-8") as fh:
             sql = fh.read()
         conn.executescript(sql)
-    # Migration: add metadata column to academic_proposals if missing
-    try:
-        conn.execute("ALTER TABLE academic_proposals ADD COLUMN metadata TEXT")
-    except sqlite3.OperationalError:
-        pass
     # Migration: academic_visualizations provenance columns (§6)
     for stmt in [
         "ALTER TABLE academic_visualizations ADD COLUMN commit_sha TEXT NOT NULL DEFAULT ''",
@@ -621,7 +616,9 @@ def _uc_schema_init(conn, paper_id):
         "academic_visualization_types", "academic_visualizations",
         "academic_report_history",
         "academic_section_citations",   # fixes pre-existing gap
-        "academic_proposals",           # proposal gate (schema/22)
+        "academic_proposal_review",     # proposal gate (schema/24)
+        "academic_proposal_scope",      # proposal scope (schema/25)
+        "academic_proposal_analysis_ref",  # proposal analysis refs (schema/26)
         "academic_calculation_dependencies",  # calc dependency edges
     }
     missing = required - names
@@ -1109,20 +1106,23 @@ def _uc_render_paper(conn, paper_id):
 # base_academic-proposal-gate-workflow-proposal.md §2/§5). propose-fix has
 # no registry entry here: it's domain-scoped (scope_domain_id set for a
 # user-request fix), so its own verify script takes --domain and checks
-# academic_proposals directly rather than going through usecase_status()
+# academic_proposal_review directly rather than going through usecase_status()
 # with a single whole-paper name.
 # ---------------------------------------------------------------------------
 
 def _make_proposal_predicate(phase):
     def predicate(conn, paper_id):
         row = conn.execute(
-            "SELECT commit_sha FROM academic_proposals "
-            "WHERE paper_id=? AND phase=? AND scope_domain_id IS NULL "
-            "AND status='approved' AND is_latest=1", (paper_id, phase),
+            "SELECT 1 FROM proposal p "
+            "JOIN usecase u ON u.id = p.usecase_id "
+            "JOIN academic_proposal_review r ON r.proposal_id = p.id "
+            "WHERE u.name=? AND r.paper_id=? AND r.decision='approved' "
+            "ORDER BY p.id DESC LIMIT 1",
+            (f"propose-{phase}", paper_id),
         ).fetchone()
         if not row:
             return False, [f"no approved {phase} proposal"]
-        return True, [f"{phase} proposal approved at {row['commit_sha'][:8] or '(no commit)'}"]
+        return True, [f"approved {phase} proposal exists"]
     return predicate
 
 
@@ -1137,6 +1137,38 @@ _register_usecase_fn(
     lambda conn, paper_id: (True, ["approve-proposal has no predicate; "
                                     "downstream gates check the row it produces, not this usecase itself"]),
 )
+
+
+# ---------------------------------------------------------------------------
+# Proposal-id lookup — link_proposal_scope.py needs the generic proposal.id
+# that run_script_step inserted after persist_proposal.py exited.  The
+# proposal row's execution_id -> execution.step_id chain lets us find it
+# by the persist-proposal step's ID.
+# ---------------------------------------------------------------------------
+
+def get_latest_proposal_id(conn, step_id):
+    """Return the most recent proposal.id whose execution matches step_id."""
+    row = conn.execute(
+        "SELECT p.id FROM proposal p "
+        "JOIN execution e ON e.id = p.execution_id "
+        "WHERE e.step_id = ? ORDER BY e.id DESC LIMIT 1",
+        (step_id,),
+    ).fetchone()
+    return row["id"] if row else None
+
+
+def get_persist_proposal_step_id(conn, usecase_name, standard="pcems_2026"):
+    """Return the step.id for the persist-proposal script within a usecase."""
+    row = conn.execute(
+        "SELECT s.id FROM step s "
+        "JOIN step_script ss ON ss.step_id = s.id "
+        "JOIN script sc ON sc.id = ss.script_id "
+        "JOIN usecase u ON u.id = s.usecase_id "
+        "WHERE u.standard = ? AND u.name = ? AND sc.name = 'persist-proposal' "
+        "ORDER BY s.step_order LIMIT 1",
+        (standard, usecase_name),
+    ).fetchone()
+    return row["id"] if row else None
 
 
 # ---------------------------------------------------------------------------

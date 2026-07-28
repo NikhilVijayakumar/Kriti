@@ -43,10 +43,12 @@ def _load_paper_meta(conn, paper_id):
 def _redraft_context(conn, paper_id, phase, scope_domain_id):
     """If the latest row for this (phase, scope_domain) is rejected,
     surface it for the redraft (§6a)."""
+    import json
     row = conn.execute(
-        "SELECT content_md, user_comment, iteration FROM academic_proposals "
+        "SELECT content_md, user_comment, iteration "
+        "FROM academic_proposal_review "
         "WHERE paper_id=? AND phase=? AND scope_domain_id IS ? "
-        "AND is_latest=1 AND status='rejected'",
+        "AND is_latest=1 AND review_status='rejected'",
         (paper_id, phase, scope_domain_id)).fetchone()
     return dict(row) if row else None
 

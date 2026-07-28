@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{title}}</title></head>
+<body>
+<h1>Fix Proposal</h1>
+<h2>{{title}}</h2>
+<p><strong>Phase</strong>: {{phase}} &middot; <strong>Target domain</strong>: {{target_domain}} &middot; <strong>Iteration</strong>: {{iteration}}</p>
+{{#user_comment}}<p><strong>User comment</strong>: {{user_comment}}</p>{{/user_comment}}
+{{#summary}}<p>{{summary}}</p>{{/summary}}
+<h3>Triggering Findings</h3>
+<ul>
+{{#triggering_findings}}
+<li>{{#name}}<strong>{{name}}</strong>: {{/name}}{{message}} (severity={{severity}})</li>
+{{/triggering_findings}}
+{{^triggering_findings}}<li>No triggering findings &mdash; user-requested fix.</li>{{/triggering_findings}}
+</ul>
+{{#redraft_of}}<blockquote>Redraft of iteration {{redraft_of.iteration}}</blockquote>{{/redraft_of}}
+</body>
+</html>

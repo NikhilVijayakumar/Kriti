@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{title}}</title></head>
+<body>
+<h1>Report Proposal</h1>
+<h2>{{title}}</h2>
+<p><strong>Phase</strong>: {{phase}} &middot; <strong>Iteration</strong>: {{iteration}}</p>
+<p>{{summary}}</p>
+<h3>Report Scope</h3>
+<ul>
+<li><strong>Current score</strong>: {{current_final_score}} ({{current_score_band}})</li>
+<li><strong>Reviewer simulation</strong>: {{reviewer_simulation_score}} &mdash; {{reviewer_simulation_decision}}</li>
+<li><strong>Total domain reports</strong>: {{total_domain_reports}} ({{domain_count}} domains &times; {{per_domain_kind_count}} kinds)</li>
+<li><strong>Whole-run reports</strong>: {{whole_run_reports}}</li>
+</ul>
+{{#redraft_of}}<blockquote>Redraft of iteration {{redraft_of.iteration}}</blockquote>{{/redraft_of}}
+</body>
+</html>

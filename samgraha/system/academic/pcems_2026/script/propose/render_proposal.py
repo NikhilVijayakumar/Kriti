@@ -1,16 +1,13 @@
 """render_proposal.py — renders a persisted proposal to markdown + html.
 
+Reads from ``academic_proposal_review`` (written by approve_proposal.py
+with summary/content_md/iteration from metadata_json), falls back to
+generic ``proposal.metadata_json`` for backward compatibility.
+
 Expected --in payload:
   {paper_id: int, phase: str, scope_domain_id: int (optional)}
 
-Reads the latest proposal row for (paper_id, phase, scope_domain_id),
-renders through the matching template, writes to docs/paper/paper-{id}/
-proposal/. scope_domain_id must be passed for domain-scoped fix
-proposals — persist_proposal.py's is_latest flag is scoped per
-(paper, phase, scope_domain_id), so more than one domain can have its
-own latest=1 fix-proposal row concurrently; omitting it here would pick
-an arbitrary one via ORDER BY created_at DESC LIMIT 1 instead of the
-one actually being rendered.
+Render output: docs/paper/paper-{id}/proposal/{phase}.md / .html
 """
 import json
 import os
@@ -28,7 +25,7 @@ import chevron  # noqa: E402
 TEMPLATES_MD = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             "..", "..", "templates", "proposal", "markdown")
 TEMPLATES_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                              "..", "..", "templates", "proposal", "html")
+                               "..", "..", "templates", "proposal", "html")
 
 
 def _load_template(template_dir, filename):
@@ -39,6 +36,57 @@ def _load_template(template_dir, filename):
     return None
 
 
+def _build_context(conn, paper_id, phase, scope_domain_id):
+    """Build render context from academic_proposal_review, then
+    fall back to generic proposal.metadata_json."""
+    # Try review table first (has all content cols)
+    row = conn.execute(
+        "SELECT r.*, p.title FROM academic_proposal_review r "
+        "JOIN proposal p ON p.id = r.proposal_id "
+        "WHERE r.paper_id=? AND r.phase=? AND r.scope_domain_id IS ? "
+        "AND r.is_latest=1 ORDER BY r.id DESC LIMIT 1",
+        (paper_id, phase, scope_domain_id),
+    ).fetchone()
+    if row:
+        ctx = dict(row)
+        if ctx.get("computed_context"):
+            try:
+                extra = json.loads(ctx["computed_context"])
+                ctx.update(extra)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if ctx.get("scope_domain_id"):
+            dom_row = conn.execute(
+                "SELECT key FROM academic_domains WHERE id=?",
+                (ctx["scope_domain_id"],),
+            ).fetchone()
+            ctx["target_domain"] = dom_row["key"] if dom_row else ""
+        else:
+            ctx["target_domain"] = ""
+        return ctx
+
+    # Fallback to generic proposal metadata_json
+    row = conn.execute(
+        "SELECT p.title, p.metadata_json FROM proposal p "
+        "JOIN execution e ON e.id = p.execution_id "
+        "JOIN step s ON s.id = e.step_id "
+        "JOIN usecase u ON u.id = s.usecase_id "
+        "WHERE u.name LIKE ? "
+        "ORDER BY e.id DESC LIMIT 1",
+        (f"persist-proposal-{phase}%",),
+    ).fetchone()
+    if row:
+        ctx = {"title": row["title"], "target_domain": ""}
+        if row["metadata_json"]:
+            try:
+                meta = json.loads(row["metadata_json"])
+                ctx.update(meta)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return ctx
+    return None
+
+
 def main():
     repo_root, db_path, payload, out_path = parse_step_args()
     paper_id = payload["paper_id"]
@@ -46,45 +94,19 @@ def main():
     scope_domain_id = payload.get("scope_domain_id")
     conn = academic_schema.get_conn(db_path)
     try:
-        row = conn.execute(
-            "SELECT * FROM academic_proposals "
-            "WHERE paper_id=? AND phase=? AND scope_domain_id IS ? "
-            "AND is_latest=1 ORDER BY created_at DESC LIMIT 1",
-            (paper_id, phase, scope_domain_id)).fetchone()
-        if not row:
+        ctx = _build_context(conn, paper_id, phase, scope_domain_id)
+        if not ctx:
             write_envelope(out_path, status="error",
                            message=f"no proposal for phase={phase}")
             return
-        ctx = dict(row)
-        # Merge computed context from gather_proposal_context.py
-        # (stored as JSON in metadata column by persist_proposal.py)
-        if ctx.get("metadata"):
-            try:
-                computed = json.loads(ctx["metadata"])
-                ctx.update(computed)
-            except (json.JSONDecodeError, TypeError):
-                pass
-        # Flatten for chevron — scope_domain_id -> target_domain key
-        if ctx.get("scope_domain_id"):
-            dom_row = conn.execute(
-                "SELECT key FROM academic_domains WHERE id=?",
-                (ctx["scope_domain_id"],)).fetchone()
-            ctx["target_domain"] = dom_row["key"] if dom_row else ""
-        else:
-            ctx["target_domain"] = ""
     finally:
         conn.close()
 
-    # Build output directory
     output_dir = os.path.join(
         str(repo_root), "docs", "paper", f"paper-{paper_id}", "proposal")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Output filename disambiguates by domain for domain-scoped fix
-    # proposals — the template itself (fix.md) is shared across domains,
-    # but two domains' rendered fix proposals must not overwrite each
-    # other on disk the way their DB rows don't overwrite each other.
-    out_stem = f"{phase}-{ctx['target_domain']}" if ctx["target_domain"] else phase
+    out_stem = f"{phase}-{ctx.get('target_domain', '')}" if ctx.get("target_domain") else phase
 
     rendered = []
     for fmt, tpl_dir, ext in [("markdown", TEMPLATES_MD, ".md"),

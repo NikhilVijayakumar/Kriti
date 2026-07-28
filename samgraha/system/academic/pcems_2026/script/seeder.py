@@ -511,18 +511,21 @@ def main():
     # in the 90s alongside reviewer-simulation's 99.
     all_domain_keys = list(_DOMAIN_SORT_ORDERS.keys()) + [
         "reviewer-simulation", "novelty", "gaps", "mathematics",
+        "paper",  # whole-document scope for render-* / report-phase usecases
     ]
     all_domain_display = dict(_DOMAIN_DISPLAY_NAMES, **{
         "reviewer-simulation": "Reviewer Simulation",
         "novelty": "Novelty",
         "gaps": "Gaps",
         "mathematics": "Mathematics",
+        "paper": "Paper (whole-document)",
     })
     all_domain_orders = dict(_DOMAIN_SORT_ORDERS, **{
         "reviewer-simulation": 99,
         "novelty": 91,
         "gaps": 92,
         "mathematics": 93,
+        "paper": 100,
     })
 
     # Core domain table (usecase.domain_id FK target)
