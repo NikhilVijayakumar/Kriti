@@ -19,6 +19,10 @@ rules layered on top (per `guide/Mathematics/01-equation-formatting.md`
 and `02-notation-conventions.md`: equations numbered sequentially, all
 variables defined at first use, consistent notation throughout).
 
+### Extraction Source
+
+Equations and algorithms are extracted from `docs/paper/Bodha/cross_module/mathematics.md` into `academic_equation_map` and `academic_algorithm_map` before methodology generation — the generation prompt receives structured map entries (latex, pseudocode, complexity, variable definitions) rather than raw markdown, so it can cite them by stable `map_key` (EQ-1, ALG-1) without re-extracting or inventing formulas.
+
 ### Expected Evidence (Deterministic)
 
 1. **Every symbol used in an equation is defined** before or at first use

@@ -21,6 +21,10 @@ photographs, 600 DPI for line art). Seven figure types are defined in
 Line Graph, Confusion Matrix Heatmap, Flowchart, ROC/PR Curve, and Box
 Plot.
 
+### Extraction Source
+
+Figures are extracted from existing visualization assets under `docs/paper/Bodha/drafts/visualizations/` into `academic_figure_map` before findings generation. Existing assets are referenced by `asset_path` (not redrawn). Figures missing an existing asset are flagged for generation (proposal 04).
+
 ### Expected Evidence (Deterministic)
 
 1. **Every figure is referenced in the text** before it appears.

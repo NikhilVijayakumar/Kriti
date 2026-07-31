@@ -1,0 +1,50 @@
+schema:
+  id: pcems.step1.analysis-section-map
+  name: Analysis-Kind to Manuscript-Section Reference
+  version: 1.0.0
+
+description: >
+  Guidance for Step 1's target_section-assignment step — which manuscript
+  section(s) an analysis kind's findings typically belong in. Relocated
+  from step0-extract/section-map.yaml: assigning a Step-0-extracted item
+  to a manuscript section is a drafting decision, not an extraction one,
+  so this reference lives in Step 1. This is guidance for the semantic
+  assignment step, not a mechanical 1:1 rule — a figures-kind item might
+  still land in methodology instead of findings depending on what it
+  actually shows.
+
+  Section keys below are the 6 real structural domains (confirmed
+  against standard.yaml) — no invented section names.
+
+analysis_kind_sections:
+  novelty:
+    target_sections: [introduction, conclusion]
+    guidance: "Falsifiable differentiation claims — motivation in introduction, contribution recap in conclusion."
+
+  gaps:
+    target_sections: [introduction, conclusion]
+    guidance: "Field-level gaps — motivate the problem in introduction, future work in conclusion."
+
+  mathematics:
+    target_sections: [methodology, findings]
+    guidance: "Formalization and complexity analysis in methodology; results interpretation in findings."
+
+  architecture:
+    target_sections: [methodology, findings]
+    guidance: "System design in methodology; behavior under evaluation in findings."
+
+  dependencies:
+    target_sections: [methodology]
+    guidance: "Coupling/stability analysis belongs in methodology's architecture discussion."
+
+  interactions:
+    target_sections: [methodology, findings]
+    guidance: "Data/control flow in methodology; observed runtime behavior in findings."
+
+  figures:
+    target_sections: [methodology, findings]
+    guidance: "Structural diagrams (architecture, flowchart) in methodology; data charts (results, comparisons) in findings."
+
+  tables:
+    target_sections: [findings]
+    guidance: "Metric tables, comparisons, and experimental configuration summaries belong in findings."

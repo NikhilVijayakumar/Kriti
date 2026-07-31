@@ -1,0 +1,1241 @@
+# pcems_2026 — samgraha standard manifest.
+#
+# PCEMS 2026 conference-paper system: 6 section domains
+# (title-and-metadata, introduction, methodology, findings, conclusion,
+# references) + 5 cross-cutting domains (novelty, gaps, mathematics,
+# tables, figures).
+#
+# 2-state classification gate: NO_DOCS (refuse) / HAS_DOCS (Proceeds).
+# Deterministic + semantic audit layer, 50/50 weight split.
+# Two-bucket scoring model: semantic_document + deterministic_document.
+#
+# Fully self-contained — every scripts:/prompts: location: points inside
+# pcems_2026's own tree (script/, prompt/, schema/). Originally shared
+# base_academic's infrastructure by cross-directory reference; forked into
+# local copies so no standard reaches into another's files. Paths are
+# relative to this file's location (script/schema/).
+
+name: pcems_2026
+version: "1.0.0"
+description: "PCEMS 2026 conference-paper evaluation system — 6 structural domains, 5 cross-cutting domains, deterministic + semantic audit, 50/50 weight split"
+seeder_script: ../script/seeder.py
+smoke_test: ../smoke_test.py
+
+classify_repo:
+  min_doc_words: 200
+
+scripts:
+  # --- schema-init usecase ---
+  - name: init-schema
+    location: ../../common/script/init_schema.py
+    purpose: "create academic_* tables if missing, seed PCEMS 2026 domains and templates"
+  # --- classify-repo usecase ---
+  - name: classify-repo
+    location: ../../common/script/classify_repo.py
+    purpose: "entry router — scan repo for documentation, classify into NO_DOCS / HAS_DOCS"
+  # --- shared: novelty-analysis + gap-analysis + mathematics-analysis ---
+  - name: discover-modules
+    location: ../../step0-extract/analysis/script/discover_modules.py
+    purpose: "discover module boundaries in the target repo; persist to academic_modules"
+  - name: gather-module-evidence
+    location: ../../step0-extract/analysis/script/gather_module_evidence.py
+    purpose: "gather one module's source files, imports, docstrings, signatures"
+  - name: gather-cross-module-evidence
+    location: ../../step0-extract/analysis/script/gather_cross_module_evidence.py
+    purpose: "aggregate every module's evidence + repo-wide import graph"
+  - name: gather-cross-cutting-evidence
+    location: ../../step0-extract/analysis/script/gather_cross_cutting_evidence.py
+    purpose: "read academic_cross_module_analysis for a given analysis_kind"
+  - name: gather-tables-figures-evidence
+    location: ../../step1-draft-for-completeness/section/script/gather_tables_figures_evidence.py
+    purpose: "read the findings domain's current draft as evidence for a tables/figures audit (no upstream module analysis exists for these two domains)"
+  - name: persist-module-analysis
+    location: ../../step0-extract/analysis/script/persist_module_analysis.py
+    purpose: "persist one module's analysis section + write to docs/paper/{system}/modules/"
+  - name: persist-cross-module-analysis
+    location: ../../step0-extract/analysis/script/persist_cross_module_analysis.py
+    purpose: "persist cross-module analysis + write to docs/paper/{system}/cross_module/"
+  # --- shared: docs-first ingestion ---
+  - name: discover-docs-modules
+    location: ../../step0-extract/analysis/script/discover_docs_modules.py
+    purpose: "discover module boundaries from docs/paper/{system}/modules/ structure"
+  - name: load-docs-module-analysis
+    location: ../../step0-extract/analysis/script/load_docs_module_analysis.py
+    purpose: "load pre-existing per-module analysis .md files into academic_module_analysis"
+  - name: load-docs-cross-module-analysis
+    location: ../../step0-extract/analysis/script/load_docs_cross_module_analysis.py
+    purpose: "load pre-existing cross_module/*.md files into academic_cross_module_analysis"
+  # --- verify-step0-claims usecase ---
+  - name: gather-claim-evidence
+    location: ../../step0-extract/verify/script/gather_claim_evidence.py
+    purpose: "gather all map/analysis rows for a module/paper with their source_evidence + relevance_note"
+  - name: check-evidence-resolves
+    location: ../../step0-extract/verify/script/check_evidence_resolves.py
+    purpose: "deterministic — does source_evidence point at an existing file?"
+  - name: check-evidence-contains-claim
+    location: ../../step0-extract/verify/script/check_evidence_contains_claim.py
+    purpose: "deterministic — does evidence file content contain key claim terms?"
+  - name: persist-claim-findings
+    location: ../../step0-extract/verify/script/persist_claim_findings.py
+    purpose: "persist verification findings to academic_step0_claim_findings"
+  # --- shared: assemble-paper-structure + semantic-audit ---
+  - name: gather-domain-evidence
+    location: ../../step1-draft-for-completeness/section/script/gather_domain_evidence.py
+    purpose: "gather evidence for a domain — pulls docs, analysis, or draft text depending on context"
+  # --- section draft / citation / signal usecases ---
+  - name: persist-section-draft
+    location: ../../step1-draft-for-completeness/section/script/persist_section_draft.py
+    purpose: "persist generated/humanized section draft"
+  - name: persist-section-citations
+    location: ../../step1-draft-for-completeness/section/script/persist_section_citations.py
+    purpose: "persist citations to academic_section_citations"
+  - name: collate-references
+    location: ../../step0-extract/map/script/citation/collate_references.py
+    purpose: "collate all literature citations into the references domain draft"
+  - name: render-section-draft
+    location: ../../step1-draft-for-completeness/section/script/render_section_draft.py
+    purpose: "render each domain's section draft as a separate numbered markdown file"
+  - name: gather-unassigned-assets
+    location: ../../step1-draft-for-completeness/section/script/gather_unassigned_assets.py
+    purpose: "gather Step-0-extracted assets (map entries + citations) with no target_section/domain_id assigned yet"
+  - name: persist-target-section-assignments
+    location: ../../step1-draft-for-completeness/section/script/persist_target_section_assignments.py
+    purpose: "write LLM-decided target_section (or domain_id, for citations) back into the map tables"
+  - name: import-literature
+    location: ../../step0-extract/map/script/citation/import_literature.py
+    purpose: "seed academic_literature_citation from a curated bibliography file"
+  - name: classify-citations
+    location: ../../step0-extract/map/script/citation/classify_citations.py
+    purpose: "classify extracted citation markers as literature or in-repo"
+  - name: commit-input
+    location: ../../step0-extract/input/script/commit_input.py
+    purpose: "persist confirmed input metadata (title, authors, venue) to academic_papers.metadata after proposal approval"
+  - name: commit-modules
+    location: ../../step0-extract/input/script/commit_modules.py
+    purpose: "read metadata.yaml modules block, upsert one row per declared module into academic_modules with role/path/weight/reason"
+  - name: commit-map
+    location: ../../step0-extract/map/script/commit_map.py
+    purpose: "persist approved map entries to the corresponding academic_{x}_map table"
+  # --- extraction-map scripts ---
+  - name: gather-map-evidence
+    location: ../../step0-extract/map/script/gather_map_evidence.py
+    purpose: "gather source evidence files for a map extraction domain (tables, figures, equations, algorithms)"
+  - name: persist-map-entries
+    location: ../../step0-extract/map/script/persist_map_entries.py
+    purpose: "persist structured map entries into academic_{table,figure,equation,algorithm}_map"
+  # --- figure-asset-generation scripts (proposal 04) ---
+  - name: generate-mermaid-figure
+    location: ../../step0-extract/map/script/figure/generate_mermaid_figure.py
+    purpose: "validate mermaid_source via render_mmdc and persist to academic_figure_map"
+  - name: generate-data-chart
+    location: ../../step0-extract/map/script/figure/generate_data_chart.py
+    purpose: "render data-driven charts from academic_table_map rows, persist asset_path"
+  # --- keyword-map usecase (build-keyword-map) ---
+  - name: gather-keyword-evidence
+    location: ../../common/script/keyword/gather_keyword_evidence.py
+    purpose: "gather per-module approved analysis content + classification.keywords for keyword-map building"
+  - name: persist-keyword-map
+    location: ../../common/script/keyword/persist_keyword_map.py
+    purpose: "persist semantic keyword-map output rows to academic_keyword_map"
+  - name: verify-keyword-coverage
+    location: ../../common/script/keyword/verify_keyword_coverage.py
+    purpose: "compare academic_keyword_map against declared keywords, flag gaps + candidates"
+  # --- word-budget check ---
+  - name: check-word-budget
+    location: ../../step1-draft-for-completeness/section/script/check_word_budget.py
+    purpose: "deterministic word-count check against per-domain and whole-paper budgets"
+  # --- deterministic-audit usecase ---
+  - name: deterministic-audit
+    location: ../../step1-draft-for-completeness/audit/script/deterministic_audit.py
+    purpose: "run deterministic checks against calculation/deterministic/{domain}.yaml rules"
+  # --- semantic-audit usecase ---
+  - name: persist-domain-semantic-score
+    location: ../../step1-draft-for-completeness/audit/script/persist_domain_semantic_score.py
+    purpose: "persist agent's per-domain semantic score"
+  # --- plagiarism-forensic-audit usecase ---
+  - name: gather-plagiarism-context
+    location: ../../step3-plagiarism-humanize/plagiarism/script/gather_plagiarism_context.py
+    purpose: "gather current draft text for plagiarism/fingerprint check"
+  - name: deterministic-fingerprint-check
+    location: ../../step3-plagiarism-humanize/plagiarism/script/deterministic_fingerprint_check.py
+    purpose: "mechanical plagiarism pre-screen: burstiness, n-gram repetition, banned phrases"
+  - name: persist-plagiarism-findings
+    location: ../../step3-plagiarism-humanize/plagiarism/script/persist_plagiarism_findings.py
+    purpose: "persist plagiarism/fingerprint PASS/FAIL + flagged spans"
+  # --- humanize usecase ---
+  - name: gather-humanize-context
+    location: ../../step3-plagiarism-humanize/humanize/script/gather_humanize_context.py
+    purpose: "gather draft + flagged spans for humanize rewrite"
+  - name: persist-humanize-pass
+    location: ../../step3-plagiarism-humanize/humanize/script/persist_humanize_pass.py
+    purpose: "persist humanize rewrite result + change summary + risk flags"
+  - name: nlp-fingerprint-fix
+    location: ../../step3-plagiarism-humanize/humanize/script/nlp_fingerprint_fix.py
+    purpose: "deterministic Layer 1 humanize: sentence-length variance, parallel-structure breaking"
+  # --- cross-section-semantic-audit usecase ---
+  - name: gather-cross-section-evidence
+    location: ../../step4 - final paper/script/gather_cross_section_evidence.py
+    purpose: "concatenate all domain section texts for cross-section consistency review"
+  # --- document-semantic-audit usecase ---
+  - name: gather-document-evidence
+    location: ../../step4 - final paper/script/gather_document_evidence.py
+    purpose: "concatenate all domain section texts for whole-document holistic review"
+  # --- reviewer-simulation usecase ---
+  - name: persist-reviewer-simulation
+    location: ../../step4 - final paper/script/persist_reviewer_simulation.py
+    purpose: "reshape 3-persona reviewer result into generic semantic-run shape, persist to reviewer-simulation domain"
+  # --- calculate usecase ---
+  - name: calculate
+    location: ../../step4 - final paper/script/calculate.py
+    purpose: "compute final_score from semantic + deterministic buckets (50/50), track trend"
+  # --- render-paper usecase ---
+  - name: extract-tables-figures
+    location: ../../step4 - final paper/script/render/extract-tables-figures.py
+    purpose: "extract findings' embedded tables/figures into standalone files under draft/paper-{id}/{tables,visualization}/, before markdown/html assembly"
+  - name: assemble-markdown-document
+    location: ../../step4 - final paper/script/render/assemble-markdown-document.py
+    purpose: "concatenate all domain drafts + cross-cutting content into one Markdown document (section-wise draft, precedes HTML/PDF)"
+  - name: assemble-final-document
+    location: ../../step4 - final paper/script/render/assemble-final-document.py
+    purpose: "concatenate all domain drafts + cross-cutting content into one HTML document"
+  - name: render-docx
+    location: ../../step4 - final paper/script/render/render-docx.py
+    purpose: "convert assembled HTML to DOCX via pandoc"
+  - name: render-pdf
+    location: ../../step4 - final paper/script/render/render-pdf.py
+    purpose: "convert assembled HTML to PDF via Playwright/Chromium"
+  - name: extract-mermaid-images
+    location: ../../step4 - final paper/script/render/extract-mermaid-images.py
+    purpose: "rasterize inline mermaid diagrams to PNG, replace <pre> blocks with <img> tags"
+  # --- render-audit-report usecase ---
+  - name: generate-audit-report
+    location: ../../step4 - final paper/script/render-audit-report/generate_audit_report.py
+    purpose: "populate audit report template from score/audit/plagiarism results"
+  - name: render-charts
+    location: ../../step4 - final paper/script/render-audit-report/render_charts.py
+    purpose: "generate chart images from score/audit data (matplotlib Agg backend)"
+  # --- propose / approve usecases ---
+  - name: gather-proposal-context
+    location: ../../common/script/propose/gather_proposal_context.py
+    purpose: "gather upstream analysis, rubric info, failing findings, or redraft context for a proposal"
+  - name: persist-proposal
+    location: ../../common/script/propose/persist_proposal.py
+    purpose: "append-only insert of a drafted proposal row (status=pending)"
+  - name: link-proposal-scope
+    location: ../../common/script/propose/link_proposal_scope.py
+    purpose: "link persisted proposal to per-domain scope rows in academic_proposal_scope"
+  - name: render-proposal
+    location: ../../common/script/propose/render_proposal.py
+    purpose: "render a persisted proposal to markdown + html for human review"
+  - name: approve-proposal
+    location: ../../common/script/propose/approve_proposal.py
+    purpose: "human-decision step — flip a pending proposal to approved/rejected"
+  - name: archive-proposal
+    location: ../../common/script/propose/archive_proposal.py
+    purpose: "move a rendered proposal to the archive tree once its implementation is complete"
+
+prompts:
+  # --- novelty-analysis usecase ---
+  - name: module-analysis-novelty
+    location: ../../step0-extract/analysis/prompt/novelty/module-analysis-novelty.md
+  - name: cross-module-analysis-novelty
+    location: ../../step0-extract/analysis/prompt/novelty/cross-module-analysis-novelty.md
+  # --- gap-analysis usecase ---
+  - name: module-analysis-gaps
+    location: ../../step0-extract/analysis/prompt/gaps/module-analysis-gaps.md
+  - name: cross-module-analysis-gaps
+    location: ../../step0-extract/analysis/prompt/gaps/cross-module-analysis-gaps.md
+  # --- mathematics-analysis usecase ---
+  - name: module-analysis-mathematics
+    location: ../../step0-extract/analysis/prompt/mathematics/module-analysis-mathematics.md
+  - name: cross-module-analysis-mathematics
+    location: ../../step0-extract/analysis/prompt/mathematics/cross-module-analysis-mathematics.md
+  # --- diagram-architecture-analysis usecase ---
+  - name: module-analysis-architecture
+    location: ../../step0-extract/analysis/prompt/architecture/module-analysis-architecture.md
+  - name: cross-module-analysis-architecture
+    location: ../../step0-extract/analysis/prompt/architecture/cross-module-analysis-architecture.md
+  - name: cross-module-analysis-dependencies
+    location: ../../step0-extract/analysis/prompt/architecture/cross-module-analysis-dependencies.md
+  - name: cross-module-analysis-interactions
+    location: ../../step0-extract/analysis/prompt/architecture/cross-module-analysis-interactions.md
+  # --- figures-analysis usecase ---
+  - name: module-analysis-figures
+    location: ../../step0-extract/analysis/prompt/figures/module-analysis-figures.md
+  - name: cross-module-analysis-figures
+    location: ../../step0-extract/analysis/prompt/figures/cross-module-analysis-figures.md
+  # --- tables-analysis usecase ---
+  - name: module-analysis-tables
+    location: ../../step0-extract/analysis/prompt/tables/module-analysis-tables.md
+  - name: cross-module-analysis-tables
+    location: ../../step0-extract/analysis/prompt/tables/cross-module-analysis-tables.md
+  # --- keyword-map usecase (build-keyword-map) ---
+  - name: module-keyword-map
+    location: ../../step0-extract/analysis/prompt/keyword/module-keyword-map.md
+  # --- assemble-paper-structure usecase (4a-4d) ---
+  - name: generate-section
+    location: ../../step1-draft-for-completeness/section/prompt/generate-section.md
+  - name: generate-title-and-metadata
+    location: ../../step1-draft-for-completeness/section/prompt/domain/title-and-metadata.md
+  - name: generate-introduction
+    location: ../../step1-draft-for-completeness/section/prompt/domain/introduction.md
+  - name: generate-methodology
+    location: ../../step1-draft-for-completeness/section/prompt/domain/methodology.md
+  - name: generate-findings
+    location: ../../step1-draft-for-completeness/section/prompt/domain/findings.md
+  - name: generate-conclusion
+    location: ../../step1-draft-for-completeness/section/prompt/domain/conclusion.md
+  - name: generate-novelty
+    location: ../../step1-draft-for-completeness/section/prompt/domain/novelty.md
+  - name: generate-gaps
+    location: ../../step1-draft-for-completeness/section/prompt/domain/gaps.md
+  - name: generate-mathematics
+    location: ../../step1-draft-for-completeness/section/prompt/domain/mathematics.md
+  - name: generate-tables
+    location: ../../step1-draft-for-completeness/section/prompt/domain/tables.md
+  - name: generate-figures
+    location: ../../step1-draft-for-completeness/section/prompt/domain/figures.md
+  - name: figure-mermaid
+    location: ../../step1-draft-for-completeness/section/prompt/domain/figure-mermaid.md
+    purpose: "LLM generates mermaid_source for architecture_diagram/flowchart/concept_illustration rows"
+  - name: literature-review-pass
+    location: ../../step1-draft-for-completeness/section/prompt/literature-review-pass.md
+  - name: section-enrichment
+    location: ../../step1-draft-for-completeness/section/prompt/section-enrichment.md
+  - name: fit-to-budget
+    location: ../../step1-draft-for-completeness/section/prompt/fit-to-budget.md
+  # --- semantic-audit usecase ---
+  - name: semantic-audit
+    location: ../../step1-draft-for-completeness/audit/prompt/semantic-audit.md
+  - name: semantic-audit-part
+    location: ../../step1-draft-for-completeness/audit/prompt/semantic-audit-part.md
+  # --- plagiarism-forensic-audit usecase ---
+  - name: plagiarism-fingerprint-audit
+    location: ../../step3-plagiarism-humanize/plagiarism/prompt/plagiarism-audit.md
+  - name: targeted-rewrite
+    location: ../../common/prompt/propose/targeted-rewrite.md
+  # --- humanize usecase ---
+  - name: humanize-section
+    location: ../../step3-plagiarism-humanize/humanize/prompt/humanize.md
+  # --- cross-section-semantic-audit usecase ---
+  - name: cross-section-semantic-audit
+    location: ../../step4 - final paper/prompt/cross-section-audit.md
+  # --- document-semantic-audit usecase ---
+  - name: document-semantic-audit
+    location: ../../step4 - final paper/prompt/document-audit.md
+  # --- reviewer-simulation usecase ---
+  - name: reviewer-simulation
+    location: ../../step4 - final paper/prompt/reviewer-simulation.md
+  # --- propose usecases ---
+  - name: audit-proposal
+    location: ../../step1-draft-for-completeness/audit/prompt/audit-proposal.md
+  - name: fix-proposal
+    location: ../../common/prompt/propose/fix-proposal.md
+  - name: input-proposal
+    location: ../../step0-extract/input/prompt/input-proposal.md
+  - name: novelty-proposal
+    location: ../../step0-extract/map/prompt/novelty-proposal.md
+  - name: gaps-proposal
+    location: ../../step0-extract/map/prompt/gaps-proposal.md
+  - name: mathematics-proposal
+    location: ../../step0-extract/map/prompt/mathematics-proposal.md
+  - name: figures-proposal
+    location: ../../step0-extract/map/prompt/figures-proposal.md
+  - name: tables-proposal
+    location: ../../step0-extract/map/prompt/tables-proposal.md
+  - name: algorithms-proposal
+    location: ../../step0-extract/map/prompt/algorithms-proposal.md
+  - name: references-proposal
+    location: ../../step0-extract/map/prompt/references-proposal.md
+  - name: section-proposal
+    location: ../../step1-draft-for-completeness/section/prompt/section-proposal.md
+  - name: assign-target-sections
+    location: ../../step1-draft-for-completeness/section/prompt/assign-target-sections.md
+  # --- verify-step0-claims prompts ---
+  - name: claim-grounded-check
+    location: ../../step0-extract/verify/prompt/claim-grounded-check.md
+  - name: drift-check
+    location: ../../step0-extract/verify/prompt/drift-check.md
+
+custom_tables:
+  - table_name: academic_papers
+    purpose: "one row per registered paper (repo + system)"
+    owner_script: init-schema
+  - table_name: academic_repos
+    purpose: "one row per (repo_root, system) classification result (2-state)"
+    owner_script: classify-repo
+  - table_name: academic_domains
+    purpose: "lookup: scoring domains for PCEMS 2026"
+    owner_script: init-schema
+  - table_name: academic_modules
+    purpose: "one row per detected module in a repo"
+    owner_script: discover-modules
+  - table_name: academic_module_analysis
+    purpose: "per (module, analysis_kind) section content"
+    owner_script: persist-module-analysis
+  - table_name: academic_cross_module_analysis
+    purpose: "per (repo, analysis_kind) section content"
+    owner_script: persist-cross-module-analysis
+  - table_name: academic_narratives
+    purpose: "one row per (paper, domain, stage) — stores section drafts with stage tracking"
+    owner_script: persist-section-draft
+  - table_name: academic_narrative_sections
+    purpose: "per-narrative heading+text sections"
+    owner_script: persist-section-draft
+  - table_name: academic_section_citations
+    purpose: "per (paper, domain): citations attached to a structural domain's draft"
+    owner_script: persist-section-citations
+  - table_name: academic_literature_citation
+    purpose: "master registry of literature citations for a paper — curated, not LLM-generated"
+    owner_script: import-literature
+  - table_name: academic_table_map
+    purpose: "per-item registry of extracted tables from evaluation markdown"
+    owner_script: persist-map-entries
+  - table_name: academic_figure_map
+    purpose: "per-item registry of extracted figures from visualization assets"
+    owner_script: persist-map-entries
+  - table_name: academic_equation_map
+    purpose: "per-item registry of extracted equations from mathematics docs"
+    owner_script: persist-map-entries
+  - table_name: academic_algorithm_map
+    purpose: "per-item registry of extracted algorithms from mathematics docs"
+    owner_script: persist-map-entries
+  - table_name: academic_semantic_runs
+    purpose: "one row per (paper, domain, scope, model) semantic evaluation"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_semantic_dimension_scores
+    purpose: "per-dimension score+evidence for a semantic run"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_semantic_findings
+    purpose: "per-run strengths/weaknesses/recommendations"
+    owner_script: persist-domain-semantic-score
+  - table_name: academic_plagiarism_findings
+    purpose: "per (paper, domain, run, pass_type, check_kind): PASS/FAIL + flagged spans"
+    owner_script: persist-plagiarism-findings
+  - table_name: academic_humanize_passes
+    purpose: "per (paper, domain, iteration, pass_kind): change summary + risk flags"
+    owner_script: persist-humanize-pass
+  - table_name: academic_templates
+    purpose: "catalog of report/generation templates on disk"
+    owner_script: init-schema
+  - table_name: academic_score_history
+    purpose: "one row per calculate.py run (trend tracking)"
+    owner_script: calculate
+  - table_name: academic_deterministic_findings
+    purpose: "per (paper, domain, scope, run): deterministic audit verdict + findings"
+    owner_script: deterministic-audit
+  - table_name: academic_visualization_types
+    purpose: "chart type catalog"
+    owner_script: init-schema
+  - table_name: academic_visualizations
+    purpose: "one row per rendered chart image"
+    owner_script: render-charts
+  - table_name: academic_report_history
+    purpose: "one row per render run (paper or audit track)"
+    owner_script: render-paper
+  - table_name: academic_proposal_review
+    purpose: "one row per proposal review decision — gate for downstream pipeline stages"
+    owner_script: approve-proposal
+  - table_name: academic_proposal_scope
+    purpose: "domain scope rows per proposal — what domains/usecases/steps a proposal covers"
+    owner_script: link-proposal-scope
+  - table_name: academic_calculation_dependencies
+    purpose: "per calc file: declared dependency edges and whether each file is consumed at runtime"
+    owner_script: schema-init
+  - table_name: academic_step0_claim_findings
+    purpose: "per-claim verification findings for Step 0 extracted items — append-only, one row per (claim, check_kind)"
+    owner_script: verify-step0-claims
+
+usecases:
+  - name: schema-init
+    description: "create academic_* tables before anything else writes to them"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Create academic_* tables, seed PCEMS 2026 domains and templates"
+        script: init-schema
+
+  - name: classify-repo
+    description: "entry router — scan repo for documentation, classify into NO_DOCS / HAS_DOCS"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Scan repo for author-supplied documentation; persist classification"
+        script: classify-repo
+
+  - name: docs-first-ingestion
+    description: "discover module structure from docs/paper/{system}/modules/ and load pre-existing analysis into DB"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Discover module boundaries from docs/paper/{system}/modules/ directory structure"
+        script: discover-docs-modules
+      - order: 2
+        kind: deterministic
+        description: "Load per-module analysis .md files from discovered modules into academic_module_analysis"
+        script: load-docs-module-analysis
+      - order: 3
+        kind: deterministic
+        description: "Load cross_module/*.md files from cross-module pseudo-modules into academic_cross_module_analysis"
+        script: load-docs-cross-module-analysis
+
+  - name: novelty-analysis
+    description: "identify what's novel, sourced from the repo's actual documentation"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module novelty from source evidence; output markdown with evidence links"
+        prompt: module-analysis-novelty
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module novelty analysis (analysis_kind=novelty) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module novelty — system-level novelty claims and differentiation"
+        prompt: cross-module-analysis-novelty
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module novelty analysis (analysis_kind=novelty) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: gap-analysis
+    description: "identify gaps, sourced from the repo's actual documentation"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module gaps — missing features, code quality, test/docs coverage"
+        prompt: module-analysis-gaps
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module gap analysis (analysis_kind=gaps) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module gaps — integration gaps, cross-cutting concerns"
+        prompt: cross-module-analysis-gaps
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module gap analysis (analysis_kind=gaps) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: mathematics-analysis
+    description: "derive mathematical formalization from documentation"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module mathematics — algorithm identification, complexity, LaTeX formulas"
+        prompt: module-analysis-mathematics
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module mathematics analysis (analysis_kind=mathematics) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module mathematics — shared foundations, system-level complexity profile"
+        prompt: cross-module-analysis-mathematics
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module mathematics analysis (analysis_kind=mathematics) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: diagram-architecture-analysis
+    description: "produce cross-module architecture, dependency, and interaction diagrams"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module architecture — design patterns, component structure, data flow, mermaid classDiagram"
+        prompt: module-analysis-architecture
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module architecture analysis (analysis_kind=architecture) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module architecture — layer analysis, integration points, mermaid flowchart"
+        prompt: cross-module-analysis-architecture
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module architecture analysis (analysis_kind=architecture) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+      - order: 5
+        kind: semantic
+        description: "Map dependency graph — coupling, circular deps, stability analysis, mermaid flowchart"
+        prompt: cross-module-analysis-dependencies
+      - order: 6
+        kind: deterministic
+        description: "Persist cross-module dependency analysis (analysis_kind=dependencies) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+      - order: 7
+        kind: semantic
+        description: "Analyze runtime interactions — data flow, control flow, event patterns, mermaid flowchart"
+        prompt: cross-module-analysis-interactions
+      - order: 8
+        kind: deterministic
+        description: "Persist cross-module interaction analysis (analysis_kind=interactions) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: figures-analysis
+    description: "identify candidate figure locations from source code evidence"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module figure candidates — architecture diagrams, data charts, with evidence links"
+        prompt: module-analysis-figures
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module figures analysis (analysis_kind=figures) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module figures — system-level diagrams, comparative charts"
+        prompt: cross-module-analysis-figures
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module figures analysis (analysis_kind=figures) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: tables-analysis
+    description: "identify candidate table locations from source code evidence"
+    steps:
+      - order: 1
+        kind: semantic
+        description: "Analyze per-module table candidates — metric tables, comparison tables, with evidence links"
+        prompt: module-analysis-tables
+      - order: 2
+        kind: deterministic
+        description: "Persist per-module tables analysis (analysis_kind=tables) to academic_module_analysis"
+        script: persist-module-analysis
+      - order: 3
+        kind: semantic
+        description: "Synthesize cross-module tables — cross-module comparisons, aggregated results"
+        prompt: cross-module-analysis-tables
+      - order: 4
+        kind: deterministic
+        description: "Persist cross-module tables analysis (analysis_kind=tables) to academic_cross_module_analysis"
+        script: persist-cross-module-analysis
+
+  - name: build-keyword-map
+    description: "extract per-module keyword evidence from approved analysis content, persist to academic_keyword_map, then verify coverage against declared keywords"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather this module's approved novelty/gaps/data content + classification.keywords"
+        script: gather-keyword-evidence
+      - order: 2
+        kind: semantic
+        description: "Identify which keywords this module's content supports, with relevance notes + source evidence"
+        prompt: module-keyword-map
+      - order: 3
+        kind: deterministic
+        description: "Persist keyword_map rows to academic_keyword_map"
+        script: persist-keyword-map
+      - order: 4
+        kind: deterministic
+        description: "Verify keyword coverage — flag declared keywords never found, surface candidate additions"
+        script: verify-keyword-coverage
+
+  # --- Extraction tier (tables, figures, equations, algorithms) ---
+  # Runs before 4a-generate-{findings,methodology}. Populates map tables
+  # from real evidence so generation can cite structured entries rather
+  # than inventing content.
+  - name: extract-tables
+    description: "extract structured table entries from evaluation markdown into academic_table_map"
+    steps: []
+  - name: extract-figures
+    description: "extract structured figure entries from visualization assets into academic_figure_map"
+    steps: []
+  - name: extract-equations
+    description: "extract structured equation entries from mathematics docs into academic_equation_map"
+    steps: []
+  - name: extract-algorithms
+    description: "extract structured algorithm entries from mathematics docs into academic_algorithm_map"
+    steps: []
+
+  # --- Figure-asset generation (3d, runs after 3-extract-{figures,tables}) ---
+  - name: 3d-generate-figure-assets
+    description: "generate mermaid_source (structural figures) and PNG asset_path (data-chart figures) for flagged academic_figure_map rows"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather flagged figure_map entries for mermaid generation"
+        script: gather-map-evidence
+      - order: 2
+        kind: semantic
+        description: "LLM generates mermaid_source for architecture_diagram/flowchart/concept_illustration rows"
+        prompt: figure-mermaid
+      - order: 3
+        kind: deterministic
+        description: "Validate mermaid_source via render_mmdc and persist to DB"
+        script: generate-mermaid-figure
+      - order: 4
+        kind: deterministic
+        description: "Render data-driven charts from linked academic_table_map rows, persist asset_path"
+        script: generate-data-chart
+
+  # --- Cross-cutting section generation (novelty/gaps/mathematics) ---
+  # These generate polished section prose from the raw cross_module_analysis
+  # rows persisted by the *-analysis usecases above.
+  - name: generate-section-draft-novelty
+    description: "generate novelty section draft from cross-module analysis"
+    steps: []
+  - name: generate-section-draft-gaps
+    description: "generate gaps section draft from cross-module analysis"
+    steps: []
+  - name: generate-section-draft-mathematics
+    description: "generate mathematics section draft from cross-module analysis"
+    steps: []
+
+  # --- Cross-cutting section generation (tables/figures) ---
+  # No upstream *-analysis usecase exists for these two — they audit
+  # tables/figures already embedded in the findings draft instead of
+  # reading a cross_module_analysis row.
+  - name: generate-section-draft-tables
+    description: "audit tables embedded in the findings draft against table-quality rules"
+    steps: []
+  - name: generate-section-draft-figures
+    description: "audit figures embedded in the findings draft against figure-quality rules"
+    steps: []
+
+  # --- PCEMS 2026 section-domain usecases (6 domains x 9 stages) ---
+  - name: generate-section-draft-title-and-metadata
+    description: "generate title-and-metadata's initial content from its template"
+    steps: []
+  - name: section-citations-title-and-metadata
+    description: "attach real citations to title-and-metadata's draft"
+    steps: []
+  - name: section-enrichment-title-and-metadata
+    description: "enrich title-and-metadata with quality improvements"
+    steps: []
+  - name: section-budget-fit-title-and-metadata
+    description: "fit title-and-metadata into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-title-and-metadata
+    description: "run title-and-metadata's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-title-and-metadata
+    description: "score title-and-metadata against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-title-and-metadata
+    description: "plagiarism/fingerprint check title-and-metadata"
+    steps: []
+  - name: humanize-deterministic-title-and-metadata
+    description: "NLP mechanical fingerprint fix for title-and-metadata"
+    steps: []
+  - name: humanize-semantic-title-and-metadata
+    description: "LLM humanize rewrite for title-and-metadata"
+    steps: []
+
+  - name: generate-section-draft-introduction
+    description: "generate introduction's initial content from its template"
+    steps: []
+  - name: section-citations-introduction
+    description: "attach real citations to introduction's draft"
+    steps: []
+  - name: section-enrichment-introduction
+    description: "enrich introduction with quality improvements"
+    steps: []
+  - name: section-budget-fit-introduction
+    description: "fit introduction into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-introduction
+    description: "run introduction's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-introduction
+    description: "score introduction against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-introduction
+    description: "plagiarism/fingerprint check introduction"
+    steps: []
+  - name: humanize-deterministic-introduction
+    description: "NLP mechanical fingerprint fix for introduction"
+    steps: []
+  - name: humanize-semantic-introduction
+    description: "LLM humanize rewrite for introduction"
+    steps: []
+
+  - name: generate-section-draft-methodology
+    description: "generate methodology's initial content from its template"
+    steps: []
+  - name: section-citations-methodology
+    description: "attach real citations to methodology's draft"
+    steps: []
+  - name: section-enrichment-methodology
+    description: "enrich methodology with quality improvements"
+    steps: []
+  - name: section-budget-fit-methodology
+    description: "fit methodology into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-methodology
+    description: "run methodology's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-methodology
+    description: "score methodology against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-methodology
+    description: "plagiarism/fingerprint check methodology"
+    steps: []
+  - name: humanize-deterministic-methodology
+    description: "NLP mechanical fingerprint fix for methodology"
+    steps: []
+  - name: humanize-semantic-methodology
+    description: "LLM humanize rewrite for methodology"
+    steps: []
+
+  - name: generate-section-draft-findings
+    description: "generate findings's initial content from its template"
+    steps: []
+  - name: section-citations-findings
+    description: "attach real citations to findings's draft"
+    steps: []
+  - name: section-enrichment-findings
+    description: "enrich findings with quality improvements"
+    steps: []
+  - name: section-budget-fit-findings
+    description: "fit findings into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-findings
+    description: "run findings's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-findings
+    description: "score findings against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-findings
+    description: "plagiarism/fingerprint check findings"
+    steps: []
+  - name: humanize-deterministic-findings
+    description: "NLP mechanical fingerprint fix for findings"
+    steps: []
+  - name: humanize-semantic-findings
+    description: "LLM humanize rewrite for findings"
+    steps: []
+
+  - name: generate-section-draft-conclusion
+    description: "generate conclusion's initial content from its template"
+    steps: []
+  - name: section-citations-conclusion
+    description: "attach real citations to conclusion's draft"
+    steps: []
+  - name: section-enrichment-conclusion
+    description: "enrich conclusion with quality improvements"
+    steps: []
+  - name: section-budget-fit-conclusion
+    description: "fit conclusion into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-conclusion
+    description: "run conclusion's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-conclusion
+    description: "score conclusion against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-conclusion
+    description: "plagiarism/fingerprint check conclusion"
+    steps: []
+  - name: humanize-deterministic-conclusion
+    description: "NLP mechanical fingerprint fix for conclusion"
+    steps: []
+  - name: humanize-semantic-conclusion
+    description: "LLM humanize rewrite for conclusion"
+    steps: []
+
+  - name: generate-section-draft-references
+    description: "collate all citations into the references domain's draft"
+    steps: []
+  - name: section-citations-references
+    description: "validate cross-references between citations and reference list"
+    steps: []
+  - name: section-enrichment-references
+    description: "enrich references with source legitimacy and recency checks"
+    steps: []
+  - name: section-budget-fit-references
+    description: "fit references into its own configured word budget"
+    steps: []
+  - name: deterministic-audit-references
+    description: "run references's deterministic mechanical checks"
+    steps: []
+  - name: semantic-audit-references
+    description: "score references against its rubric"
+    steps: []
+  - name: plagiarism-forensic-audit-references
+    description: "plagiarism/fingerprint check references"
+    steps: []
+  - name: humanize-deterministic-references
+    description: "NLP mechanical fingerprint fix for references"
+    steps: []
+  - name: humanize-semantic-references
+    description: "LLM humanize rewrite for references"
+    steps: []
+
+  - name: section-budget-fit-total
+    description: "check whole-paper word count against the venue's total budget"
+    steps: []
+
+  # --- Cross-cutting usecases (whole-document, not per-domain) ---
+  - name: cross-section-semantic-audit
+    description: "consistency review across all sections for terminology, claims, and narrative coherence"
+    steps: []
+
+  - name: document-semantic-audit
+    description: "whole-document holistic review as one continuous document"
+    steps: []
+
+  - name: reviewer-simulation
+    description: "three-persona reviewer simulation producing Accept/Minor/Major/Reject verdict"
+    steps: []
+
+  - name: calculate
+    description: "calculate final scores from semantic + deterministic buckets + cross-section/document coherence, track trend"
+    steps: []
+
+  - name: render-charts
+    description: "generate chart images from score/audit data"
+    steps: []
+
+  - name: render-audit-report
+    description: "score-driven audit report with charts and trend visualization"
+    steps: []
+
+  - name: render-paper
+    description: "assemble paper from domain drafts, render through HTML/PDF/DOCX"
+    steps: []
+
+  # --- Proposal gate usecases ---
+  - name: propose-input
+    description: "draft a proposal of what input evidence to weight (folders/files) + paper metadata"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather current paper metadata state"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the input proposal"
+        prompt: input-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-novelty
+    description: "draft a proposal of what novelty entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather novelty map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the novelty map proposal"
+        prompt: novelty-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist novelty map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render novelty map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-gaps
+    description: "draft a proposal of what gap entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather gaps map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the gaps map proposal"
+        prompt: gaps-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist gaps map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render gaps map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-mathematics
+    description: "draft a proposal of what mathematics/equation entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather mathematics map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the mathematics map proposal"
+        prompt: mathematics-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist mathematics map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render mathematics map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-figures
+    description: "draft a proposal of what figure entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather figures map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the figures map proposal"
+        prompt: figures-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist figures map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render figures map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-tables
+    description: "draft a proposal of what table entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather tables map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the tables map proposal"
+        prompt: tables-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist tables map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render tables map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-algorithms
+    description: "draft a proposal of what algorithm entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather algorithms map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the algorithms map proposal"
+        prompt: algorithms-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist algorithms map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render algorithms map proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-map-references
+    description: "draft a proposal of what reference/citation entries to extract from source materials"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather references map context"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the references map proposal"
+        prompt: references-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist references map proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal scope"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render references map proposal to markdown+html"
+        script: render-proposal
+
+  - name: verify-step0-claims
+    description: "verify Step 0 extracted claims — evidence resolves, evidence contains claim, claim grounded, no drift — per module"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather all map/analysis rows for this module/paper with source_evidence + relevance_note"
+        script: gather-claim-evidence
+      - order: 2
+        kind: deterministic
+        description: "Check 1 — does source_evidence point at an existing file?"
+        script: check-evidence-resolves
+      - order: 3
+        kind: deterministic
+        description: "Check 2 — does evidence file content contain key claim terms?"
+        script: check-evidence-contains-claim
+      - order: 4
+        kind: semantic
+        description: "Check 3 — is the claim grounded in the evidence (not hallucinated)?"
+        prompt: claim-grounded-check
+      - order: 5
+        kind: semantic
+        description: "Check 4 — has the claim drifted from the source meaning?"
+        prompt: drift-check
+      - order: 6
+        kind: deterministic
+        description: "Persist all verification findings to academic_step0_claim_findings"
+        script: persist-claim-findings
+
+  - name: propose-section
+    description: "draft proposals for all 6 structural sections in a single batched gate"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather context for all 6 structural domains"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft proposals for all 6 sections"
+        prompt: section-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist batched section proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render section proposal to markdown+html"
+        script: render-proposal
+
+  - name: assign-target-sections
+    description: "assign target_section to Step-0-extracted map entries and citations before generation consumes them — a Step 1 drafting decision, not part of Step 0's extraction"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather Step-0-extracted assets with no target_section/domain_id yet, plus analysis-section-map.yaml guidance"
+        script: gather-unassigned-assets
+      - order: 2
+        kind: semantic
+        description: "Decide target_section per asset from its actual content, using the reference guidance"
+        prompt: assign-target-sections
+      - order: 3
+        kind: deterministic
+        description: "Write assignments back into the map tables / section citations"
+        script: persist-target-section-assignments
+
+  - name: propose-audit
+    description: "draft a whole-run proposal of what audit is about to check"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather generation-complete domains + rubrics + models"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the audit proposal"
+        prompt: audit-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 5
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-report
+    description: "draft a whole-run proposal of what report artifacts this run will produce"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather latest score + report-kind list, auto-build proposal summary"
+        script: gather-proposal-context
+      - order: 2
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 3
+        kind: deterministic
+        description: "Link proposal to per-domain scope rows"
+        script: link-proposal-scope
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: propose-fix
+    description: "draft what a fix will change and why, before regenerating a domain"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Gather failing findings or user comment + resolved domain"
+        script: gather-proposal-context
+      - order: 2
+        kind: semantic
+        description: "Draft the fix proposal"
+        prompt: fix-proposal
+      - order: 3
+        kind: deterministic
+        description: "Persist proposal (status=pending)"
+        script: persist-proposal
+      - order: 4
+        kind: deterministic
+        description: "Render proposal to markdown+html"
+        script: render-proposal
+
+  - name: approve-proposal
+    description: "human decision step — flips a pending proposal to approved/rejected"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Flip latest pending proposal to approved or rejected"
+        script: approve-proposal
+
+  - name: archive-proposal
+    description: "move a rendered proposal to the archive tree once its implementation is complete"
+    steps:
+      - order: 1
+        kind: deterministic
+        description: "Move proposal output to archive/{phase}/paper-{id}/"
+        script: archive-proposal

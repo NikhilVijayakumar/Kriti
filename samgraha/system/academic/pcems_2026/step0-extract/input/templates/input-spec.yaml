@@ -1,0 +1,9 @@
+# Weighted source specification — defines which documentation to consult
+# and in what priority.  weight (0.0–1.0) drives gather-script truncation
+# when evidence volume exceeds context budget.
+paper_id: 1
+sources:
+  - path: ""
+    weight: 1.0
+    reason: ""
+    files: []

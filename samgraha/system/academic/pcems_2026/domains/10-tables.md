@@ -20,6 +20,10 @@ in `guide/Tables/02-table-types.md`: Performance Comparison, Dataset
 Description, Configuration/Parameters, Results Across Conditions,
 Qualitative Comparison, and Feature Description.
 
+### Extraction Source
+
+Tables are extracted from `docs/paper/Bodha/drafts/5. Experimental Evaluation.md` and `6. Results and Discussion.md` into `academic_table_map` before findings generation — the generation prompt receives structured entries (caption, columns, rows, table_type) rather than raw markdown, so it can cite real experimental data by stable `map_key` (TBL-1, TBL-2) instead of inventing comparison tables.
+
 ### Expected Evidence (Deterministic)
 
 1. **Every table is created using Word table tools** — not an image of a

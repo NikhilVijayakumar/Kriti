@@ -1,0 +1,12 @@
+PyYAML
+python-docx
+python-dotenv
+chevron
+matplotlib
+numpy
+textstat
+pypandoc-binary
+playwright
+
+# playwright needs a browser binary too, not covered by pip:
+#   playwright install chromium

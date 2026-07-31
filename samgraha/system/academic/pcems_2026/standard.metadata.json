@@ -1,122 +1,122 @@
 {
   "custom_tables": [
     {
-      "table_name": "academic_papers",
+      "name": "academic_papers",
       "purpose": "One row per registered paper (repo + system)",
-      "required_columns": ["id", "repo_id", "system", "title", "created_at"]
+      "required_columns": ["id", "standard", "repo_root", "title", "created_at"]
     },
     {
-      "table_name": "academic_repos",
+      "name": "academic_repos",
       "purpose": "One row per (repo_root, system) classification result (2-state: NO_DOCS / HAS_DOCS)",
-      "required_columns": ["id", "repo_root", "system", "classification", "doc_word_count"]
+      "required_columns": ["id", "standard", "repo_root", "classification", "created_at"]
     },
     {
-      "table_name": "academic_domains",
+      "name": "academic_domains",
       "purpose": "Lookup: scoring domains for PCEMS 2026",
       "required_columns": ["id", "key", "display_name", "sort_order", "weight"]
     },
     {
-      "table_name": "academic_modules",
+      "name": "academic_modules",
       "purpose": "One row per detected module in a repo",
       "required_columns": ["id", "paper_id", "module_name", "module_path", "sort_order"]
     },
     {
-      "table_name": "academic_module_analysis",
+      "name": "academic_module_analysis",
       "purpose": "Per (module, analysis_kind) section content",
       "required_columns": ["id", "module_id", "analysis_kind", "content", "file_path"]
     },
     {
-      "table_name": "academic_cross_module_analysis",
+      "name": "academic_cross_module_analysis",
       "purpose": "Per (repo, analysis_kind) section content",
       "required_columns": ["id", "paper_id", "analysis_kind", "content", "file_path"]
     },
     {
-      "table_name": "academic_narratives",
+      "name": "academic_narratives",
       "purpose": "One row per (paper, domain, stage) — stores section drafts with stage tracking",
-      "required_columns": ["id", "paper_id", "domain_id", "stage", "iteration", "commit_sha"]
+      "required_columns": ["id", "paper_id", "domain_id", "stage", "iteration"]
     },
     {
-      "table_name": "academic_narrative_sections",
+      "name": "academic_narrative_sections",
       "purpose": "Per-narrative heading+text sections",
       "required_columns": ["id", "narrative_id", "heading", "text", "sort_order"]
     },
     {
-      "table_name": "academic_section_citations",
+      "name": "academic_section_citations",
       "purpose": "Per (paper, domain): citations attached to a structural domain's draft",
-      "required_columns": ["id", "paper_id", "domain_id", "citation_key", "citation_text"]
+      "required_columns": ["id", "paper_id", "domain_id", "source_kind", "citation"]
     },
     {
-      "table_name": "academic_semantic_runs",
+      "name": "academic_semantic_runs",
       "purpose": "One row per (paper, domain, scope, model) semantic evaluation",
-      "required_columns": ["id", "paper_id", "domain_id", "scope", "model", "run_number", "score"]
+      "required_columns": ["id", "paper_id", "domain_id", "scope", "model", "run_number", "overall_score"]
     },
     {
-      "table_name": "academic_semantic_dimension_scores",
+      "name": "academic_semantic_dimension_scores",
       "purpose": "Per-dimension score+evidence for a semantic run",
-      "required_columns": ["id", "run_id", "dimension", "score", "max_score", "evidence"]
+      "required_columns": ["id", "run_id", "dimension_key", "score", "evidence"]
     },
     {
-      "table_name": "academic_semantic_findings",
+      "name": "academic_semantic_findings",
       "purpose": "Per-run strengths/weaknesses/recommendations",
-      "required_columns": ["id", "run_id", "kind", "content"]
+      "required_columns": ["id", "run_id", "finding_type", "text"]
     },
     {
-      "table_name": "academic_plagiarism_findings",
+      "name": "academic_plagiarism_findings",
       "purpose": "Per (paper, domain, run, pass_type, check_kind): PASS/FAIL + flagged spans",
       "required_columns": ["id", "paper_id", "domain_id", "run_number", "pass_type", "check_kind", "verdict"]
     },
     {
-      "table_name": "academic_humanize_passes",
+      "name": "academic_humanize_passes",
       "purpose": "Per (paper, domain, iteration, pass_kind): change summary + risk flags",
       "required_columns": ["id", "paper_id", "domain_id", "iteration", "pass_kind", "change_summary"]
     },
     {
-      "table_name": "academic_templates",
+      "name": "academic_templates",
       "purpose": "Catalog of report/generation templates on disk",
       "required_columns": ["id", "template_kind", "scope", "name", "file_path"]
     },
     {
-      "table_name": "academic_score_history",
+      "name": "academic_score_history",
       "purpose": "One row per calculate.py run (trend tracking)",
-      "required_columns": ["id", "paper_id", "final_score", "rating", "calculated_at"]
+      "required_columns": ["id", "paper_id", "final_score", "score_band", "calculated_at"]
     },
     {
-      "table_name": "academic_deterministic_findings",
+      "name": "academic_deterministic_findings",
       "purpose": "Per (paper, domain, scope, run): deterministic audit verdict + findings",
       "required_columns": ["id", "paper_id", "domain_id", "scope", "run_number", "verdict"]
     },
     {
-      "table_name": "academic_visualization_types",
+      "name": "academic_visualization_types",
       "purpose": "Chart type catalog",
-      "required_columns": ["id", "type_key", "scope", "description"]
+      "required_columns": ["id", "chart_key", "scope", "description"]
     },
     {
-      "table_name": "academic_visualizations",
+      "name": "academic_visualizations",
       "purpose": "One row per rendered chart image",
-      "required_columns": ["id", "paper_id", "type_id", "file_path", "commit_sha"]
+      "required_columns": ["id", "paper_id", "chart_type_id", "file_path", "created_at"]
     },
     {
-      "table_name": "academic_report_history",
+      "name": "academic_report_history",
       "purpose": "One row per render run (paper or audit track)",
-      "required_columns": ["id", "paper_id", "report_kind", "file_path", "rendered_at"]
+      "required_columns": ["id", "paper_id", "report_kind", "file_path", "created_at"]
     },
     {
-      "table_name": "academic_proposal_review",
+      "name": "academic_proposal_review",
       "purpose": "Human approval/rejection decision per generic proposal row",
-      "required_columns": ["id", "proposal_id", "paper_id", "phase", "decision", "decided_at"]
+      "required_columns": ["id", "proposal_id", "paper_id", "phase", "review_status", "decided_at"]
     },
     {
-      "table_name": "academic_proposal_scope",
+      "name": "academic_proposal_scope",
       "purpose": "Per-domain scope rows linked to a generic proposal",
-      "required_columns": ["id", "proposal_id", "domain_id", "phase", "phase_number", "usecase_name"]
+      "required_columns": ["id", "proposal_id", "domain_id", "usecase_id", "step_id"]
     },
     {
-      "table_name": "academic_proposal_analysis_ref",
+      "name": "academic_proposal_analysis_ref",
       "purpose": "Generation-phase analysis row links (which analyses a proposal's generation phase covers)",
-      "required_columns": ["id", "proposal_id", "analysis_kind", "analysis_id"]
+      "required_columns": ["id", "proposal_id", "cross_module_analysis_id"]
     },
     {
-      "table_name": "academic_calculation_dependencies",
+      "name": "academic_calculation_dependencies",
       "purpose": "Per calc file: declared dependency edges and whether each file is consumed at runtime",
       "required_columns": ["id", "calc_path", "depends_on_kind", "depends_on", "consumed_by"]
     }

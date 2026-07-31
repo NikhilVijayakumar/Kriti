@@ -1,0 +1,77 @@
+# Paper metadata — edit and confirm before running commit-input.
+# Short-title/venue/keywords are optional; validator only gates
+# paper.id, paper.title, and authors.authors[].full_name, modules.primary.
+schema:
+  id: ""
+  name: ""
+  version: "1.0.0"
+  description: ""
+
+paper:
+  id: ""
+  slug: ""
+  title: ""
+  short_title: ""
+  language: English
+  document_type: Research Paper
+
+publication:
+  profile: ""
+  venue_full_name: ""
+  page_limit: 0
+  word_limit: 0
+  link: ""
+  call_for_paper: ""
+  guideline: ""
+  submission_type: ""
+
+authors:
+  corresponding_author: 1
+  authors:
+    - id: 1
+      order: 1
+      title: ""
+      first_name: ""
+      middle_name: ""
+      last_name: ""
+      full_name: ""
+      role: []
+      email: ""
+      affiliation: 1
+      orcid: ""
+      google_scholar: ""
+      linkedin: ""
+
+affiliations:
+  - id: 1
+    institution: ""
+    department: ""
+    city: ""
+    state: ""
+    country: ""
+
+classification:
+  language: English
+  domain: ""
+  research_area: []
+  keywords: []
+
+modules:
+  primary:
+    name: ""
+    path: ""
+    interest_weight: 1.0
+    existing_draft:
+      publisher: ""
+      status: draft
+      draft: ""
+  dependent: []
+  cross_library: ""
+
+status:
+  stage: Draft
+  version: "0.1.0"
+  created: ""
+  updated: ""
+
+custom: {}

@@ -1,0 +1,78 @@
+schema:
+  id: bodha.step0.extraction-map
+  name: Step 0 Extraction Map Schema
+  version: 1.0.0
+
+description: >
+  Step 0's own extraction taxonomy — novelty, gaps, and structured data
+  (mathematics, figures, tables, algorithms, references). Purely
+  organizational for what gets extracted; has no concept of manuscript
+  sections. The analysis-kind-to-manuscript-section reference used to
+  live here as `analysis_kind_sections` — relocated to
+  step1-draft-for-completeness/section/analysis-section-map.yaml since
+  deciding where an extracted item lands in the drafted paper is a
+  Step 1 (drafting) decision, not a Step 0 (extraction) one.
+
+sections:
+  - id: novelty
+    title: Novelty
+    parent_id: root
+    level: 1
+    order: 1
+    required: true
+    purpose: Identify falsifiable differentiation claims per module.
+
+  - id: gaps
+    title: Gaps
+    parent_id: root
+    level: 1
+    order: 2
+    required: true
+    purpose: Identify field-level gaps per module.
+
+  - id: data
+    title: Data
+    parent_id: root
+    level: 1
+    order: 3
+    required: true
+    purpose: Structured extraction — mathematics, figures, tables, algorithms, references.
+
+  - id: mathematics
+    parent_id: data
+    level: 2
+    order: 1
+    required: true
+    purpose: All extractable mathematics, per module.
+
+  - id: figures
+    parent_id: data
+    level: 2
+    order: 2
+    required: true
+    purpose: Figure candidates — mermaid diagrams + chart-generation scripts, evidence-based.
+
+  - id: tables
+    parent_id: data
+    level: 2
+    order: 3
+    required: true
+    purpose: Table candidates, evidence-based against existing documentation.
+
+  - id: algorithms
+    parent_id: data
+    level: 2
+    order: 4
+    required: false
+    purpose: Any algorithm identified in the module.
+
+  - id: references
+    parent_id: data
+    level: 2
+    order: 5
+    required: true
+    purpose: In-depth reference list and literature review.
+
+validation:
+  hierarchy: { max_level: 2, require_valid_parent: true, root_parent_id: root }
+  required: { enforce_required_sections: true, enforce_required_subsections: true }
