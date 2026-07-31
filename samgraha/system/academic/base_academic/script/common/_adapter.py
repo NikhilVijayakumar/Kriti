@@ -20,11 +20,12 @@ def parse_step_args():
     p.add_argument("--repo-root", required=True)
     p.add_argument("--in", dest="in_path", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--out-dir", required=False, default=None)
     args = p.parse_args()
 
     repo_root = Path(args.repo_root)
     in_file = Path(args.in_path)
-    payload = json.loads(in_file.read_text()) if in_file.stat().st_size else {}
+    payload = json.loads(in_file.read_text(encoding="utf-8")) if in_file.stat().st_size else {}
     db_path = str(repo_root / ".samgraha" / "knowledge.db")
     return repo_root, db_path, payload, Path(args.out)
 
@@ -61,13 +62,13 @@ def run_driver(argv, out_path, repo_root=None):
         "message": (result.stdout or "")[-4000:] if ok else ((result.stderr or result.stdout or "")[-4000:]),
         "written": [],
     }
-    out_path.write_text(json.dumps(envelope))
+    out_path.write_text(json.dumps(envelope), encoding="utf-8")
     return envelope
 
 
 def write_envelope(out_path, status="ok", message="", **extra):
     envelope = {"status": status, "message": message, "written": [], **extra}
-    out_path.write_text(json.dumps(envelope))
+    out_path.write_text(json.dumps(envelope), encoding="utf-8")
     return envelope
 
 
