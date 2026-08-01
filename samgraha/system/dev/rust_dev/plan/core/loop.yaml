@@ -3,7 +3,14 @@ source: proposal.md §3 + §5 decisions
 note: >
   The per-domain procedure the tier loop executes. Reads tiers.yaml for
   domain→tier assignments and relationship_types for gating logic. This file
-  is data, not code — the engine interprets it, same pattern as calculation/.
+  is data, not code — the engine interprets it, same pattern as
+  common/calculation/.
+
+  Path templates below use {domain} as a runtime variable. Every such path
+  resolves {domain} → tier{t} via tiers.yaml first, then substitutes
+  tier{t}/audit/... / tier{t}/templates/... — see proposal §5.1. A bare
+  {domain} no longer resolves on its own: per-domain files live inside their
+  tier folder.
 
 threshold:
   score: acceptable_minimum  # resolved at runtime from score_bands — not a hardcoded number
@@ -29,7 +36,7 @@ within_tier_ordering:
 path_selection:
   # Path A: no existing documentation → generate from scratch
   generate:
-    template: templates/generation/document/{domain}.md
+    template: tier{t}/templates/generation/document/{domain}.md
     context: all already-completed upstream domains (from tiers.yaml relationships)
     note: >
       A domain's generation call includes its upstream tiers' completed output
@@ -38,26 +45,26 @@ path_selection:
 
   # Path B: documentation exists but doesn't conform → audit → fix
   audit:
-    deterministic_document: audit/deterministic/document/{domain}.yaml
-    deterministic_section: audit/deterministic/section/{domain}/*.yaml
-    semantic_document: audit/semantic/document/{domain}.md
-    semantic_section: audit/semantic/section/{domain}/*.md
+    deterministic_document: tier{t}/audit/deterministic/document/{domain}.yaml
+    deterministic_section: tier{t}/audit/deterministic/section/{domain}/*.yaml
+    semantic_document: tier{t}/audit/semantic/document/{domain}.md
+    semantic_section: tier{t}/audit/semantic/section/{domain}/*.md
     report_templates:
-      - templates/audit/deterministic/document/{domain}-report.md
-      - templates/audit/deterministic/section/{domain}-report.md
-      - templates/audit/semantic/document/{domain}-report.md
-      - templates/audit/semantic/section/{domain}-report.md
-      - templates/audit/summary/{domain}-report.md
+      - tier{t}/templates/audit/deterministic/document/{domain}-report.md
+      - tier{t}/templates/audit/deterministic/section/{domain}-report.md
+      - tier{t}/templates/audit/semantic/document/{domain}-report.md
+      - tier{t}/templates/audit/semantic/section/{domain}-report.md
+      - tier{t}/templates/audit/summary/{domain}-report.md
 
 scoring:
-  final_score: calculation/summary/final_score.yaml
-  score_bands: calculation/summary/score_bands.yaml
+  final_score: common/calculation/summary/final_score.yaml
+  score_bands: common/calculation/summary/score_bands.yaml
 
 fix_loop:
   trigger: Path B AND final_score < threshold.score
   mechanism: >
     For each failing section, feed the finding into
-    templates/generation/section/{domain}/{section}.md's ## Audit Fix slot,
+    tier{t}/templates/generation/section/{domain}/{section}.md's ## Audit Fix slot,
     regenerate, re-audit that section.
   max_iterations: 5
   fallback: human_review

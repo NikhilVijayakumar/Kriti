@@ -21,7 +21,7 @@ Orchestration layer for tier-by-tier documentation generation, audit, and fix. T
 
 ## Scoring
 
-Uses the same `calculation/summary/` formulas and bands as every other layer. Tier gate threshold: **the Acceptable band minimum** (resolved at runtime from `score_bands`). No per-bucket sub-gate.
+Uses the same `common/calculation/summary/` formulas and bands as every other layer. Tier gate threshold: **the Acceptable band minimum** (resolved at runtime from `score_bands`). No per-bucket sub-gate.
 
 ## Iterations
 

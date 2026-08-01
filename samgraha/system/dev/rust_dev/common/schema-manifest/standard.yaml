@@ -1,0 +1,935 @@
+# rust_dev — samgraha standard manifest.
+#
+# Rust systems-engineering documentation system: 13 domains across 7 tiers
+# (tier 4 intentionally absent — see 00-domain-relationships.md and
+# docs/proposal/archive/rust_dev-proposal.md §10 for why).
+# Deterministic + semantic audit layer, 25/25/25/25 four-bucket weight
+# split (common/calculation/summary/final_score.yaml — see proposal 1 §3
+# for why calculation/ lives under common/ rather than per-tier).
+#
+# Fully self-contained — every scripts:/prompts: location: (once populated)
+# points inside rust_dev's own tree (tierN/, common/). No cross-standard
+# references. Paths are relative to this file's location
+# (common/schema-manifest/).
+#
+# Status: proposal 2 of 7 (docs/proposal/2-rust_dev-standard-manifest-
+# registration-proposal.md), corrected by proposal 6
+# (docs/proposal/6-rust_dev-samgraha-schema-alignment-proposal.md).
+# `domains:` is real — matches samgraha's generic `domain` table, resolved
+# straight from plan/core/tiers.yaml, no script dependency.
+#
+# `usecases:` (proposal 3, docs/proposal/3-rust_dev-calculation-audit-
+# usecase-wiring-proposal.md) declares all 53 usecases the calculation/
+# audit layer needs (4 per domain — generate-document/deterministic-audit/
+# semantic-audit/fix — + 1 cross-tier calculate), each with `steps: []`,
+# matching pcems_2026's own "declared but not yet wired" pattern (proposal
+# 2 §2) — a valid, load-bearing state. §6's 3 open questions are resolved
+# as each usecase's own recommendation stood: gather-tier-context branches
+# internally on product-guide's all_domains case rather than forking into a
+# separate usecase; deterministic-audit-{domain} covers both document- and
+# section-scope rule files in its one step 2, not split into two usecases.
+# `scripts:`/`prompts:`/`custom_tables:` stay empty — writing any script or
+# prompt content is explicitly proposal 3 §7's out-of-scope list (wrapping
+# tierN/script/{ubuntu,windows}/*.{sh,ps1} into samgraha's
+# --repo-root/--in/--out envelope contract, §4's run-domain-checks family
+# most of all). No `smoke_test:` declared yet — nothing to verify-gate
+# until real scripts exist. `seeder_script:` IS declared (see below).
+#
+# `usecases:` also carries proposal 5's propose pipeline (docs/proposal/
+# 5-rust_dev-propose-pipeline-proposal.md) — 21 tier-scoped
+# `propose-tier{N}-{generation,audit,fix}` usecases, one triad per real
+# tier (1,2,3,5,6,7,8 — no tier4, same absence as everywhere else), no
+# `domain:` field (spans every domain in the tier, same reasoning as
+# `calculate` having none). `steps: []` for the same reason as proposal
+# 3's: none of gather-tier-usecase-map/gather-tier-proposal-context/
+# persist-proposal/link-proposal-phase-scope/render-proposal exist yet.
+# Proposal 5 §4's `dev_proposal_usecase_scope` is superseded by proposal 6
+# §6's `dev_proposal_phase_scope` (links real domain/usecase/step ids, not
+# proposal 4's dropped `dev_tier_usecase_map`) — neither table exists yet;
+# creating them is a seeder.py/proposal 7 concern, same blocker as
+# proposal 4's remaining piece.
+#
+# `usecases:` also carries proposal 7's repo-state-aware propose-then-
+# execute lifecycle (docs/proposal/7-rust_dev-repo-state-propose-then-
+# execute-proposal.md) — one `propose-tier{N}-assess` usecase per tier (not
+# two; §3's diagram names a distinct `propose-tierN-create` for new repos,
+# but §3's own prose says no such special-casing exists — "the propose
+# step still runs... same review/approve gate" — so this manifest declares
+# only `propose-tierN-assess`, matching the prose over the diagram) + one
+# `migrate-document-{domain}` per domain (§6, all 13). None of these carry
+# `data: {tier: N}` the way proposal 7's own YAML examples show — proposal
+# 6 §2, which proposal 7 depends on, already found `register_standard.rs`'s
+# `UsecaseDecl` has no generic `data:` passthrough; an unrecognized `data:`
+# key is silently dropped by serde, not stored. `tier` is computed by
+# `../script/seeder.py` (see `seeder_script:` below), same as every other
+# usecase here.
+# `custom_tables:` now has one real entry, `dev_repo_domain_state`
+# (proposal 6 §5's design, proposal 7's to build) — the first genuinely
+# new table across this whole series.
+#
+# `custom_tables:` also carries `dev_proposal_phase_scope` (proposal 6 §6
+# — designed alongside proposal 5's implementation but never actually
+# added to the manifest until now) and 8 findings/score/report tables
+# (proposal 6 §7 — a gap the whole series left open: `persist-
+# deterministic-findings`/`persist-semantic-score`/`calculate` had no
+# table to write to until this pass). Two new cross-tier usecases,
+# `render-report`/`render-charts`, mirror pcems's `render-audit-report`/
+# `render-charts` pair. Owner decision: proposals stay markdown-only
+# (proposal 5 §6 Q3), but findings/scores are DB-backed from the start —
+# `render-report`'s markdown output is generated from `dev_*` table data,
+# not hand-authored, so a later HTML/PDF/DOCX conversion step (explicitly
+# out of scope, proposal 6 §9) has structured data to work from instead of
+# re-deriving it from rendered text.
+#
+# `seeder_script: ../script/seeder.py` now declared, and `../script/
+# seeder.py` exists — ported from pcems_2026's own seeder.py (proposal 6
+# §1's reference), verified end-to-end against a real knowledge.db
+# bootstrapped from samgraha's actual core schema (E:\Python\samgraha\
+# schema\knowledge\*.sql), not just eyeballed: creates all 10 `dev_*`
+# tables (common/schema/*.sql, via the new common/script/dev_schema.py),
+# seeds 13 domains + 96 usecases, correctly resolves `tier` per usecase
+# (e.g. `deterministic-audit-security` -> tier 2, `calculate` -> no tier
+# key), and is idempotent on re-run (same row counts). Declaring
+# `seeder_script:` means this standard's activation now bypasses the
+# generic struct-parsing path entirely (proposal 6 §1) — confirmed
+# empirically this pass, reading `activate_standard` in
+# `register_standard.rs` directly: the struct-parsing `register_standard`
+# function it superseded is dead code, not called by the live activation
+# path at all, for ANY standard, seeder_script or not. `custom_data_tables`
+# rows get populated automatically post-seeder by `activate_standard`
+# itself, via `standard.metadata.json` + `PRAGMA table_info` introspection
+# — `seeder.py` does not (and must not) insert into `custom_data_tables`.
+
+name: rust_dev
+version: "1.0.0"
+description: "Rust systems-engineering documentation standard — 13 domains, 7 tiers, deterministic + semantic audit, 25/25/25/25 four-bucket weight split"
+seeder_script: ../script/seeder.py
+
+domains:
+  - key: vision
+    sort_order: 1
+    description: "Tier 1 — product vision, problem/solution framing, target audience, platform pillars"
+  - key: philosophy
+    sort_order: 2
+    description: "Tier 1 — guiding principles, values, trade-offs the system is built on"
+  - key: security
+    sort_order: 3
+    description: "Tier 2 — threat model, data classification, security principles, compliance"
+  - key: feature
+    sort_order: 4
+    description: "Tier 2 — functional requirements, business rules, acceptance criteria"
+  - key: architecture
+    sort_order: 5
+    description: "Tier 2 — crate architecture, trait design, system overview, data flow"
+  - key: engineering
+    sort_order: 6
+    description: "Tier 2 — ownership/async/unsafe patterns, build/test/code standards"
+  - key: external-context
+    sort_order: 7
+    description: "Tier 2 — external technology categories, integration contracts, constraints"
+  - key: feature-technical
+    sort_order: 8
+    description: "Tier 3 — participating components, component interactions, data ownership per feature"
+  - key: implementation
+    sort_order: 9
+    description: "Tier 5 — generation/refactor/change-request/enhancement plans, as-built record"
+  - key: qa
+    sort_order: 10
+    description: "Tier 6 — test strategy, unit/integration/E2E/load/security testing"
+  - key: build
+    sort_order: 11
+    description: "Tier 7 — crate publishing, versioning, documentation quality"
+  - key: readme
+    sort_order: 12
+    description: "Tier 8 — project overview, capabilities, repository structure"
+  - key: product-guide
+    sort_order: 13
+    description: "Tier 8 — finished-product usage guide, not part of the derivation graph"
+
+scripts: []
+
+prompts: []
+
+custom_tables:
+  # dev_repo_domain_state (proposal 6 §5, built by proposal 7) — one row
+  # per (repo_root, domain_key, scan) of propose-tier{N}-assess's repo
+  # scan. owner_script names scan-tier-repo-state even though that script
+  # doesn't exist yet (§4 step 1) — safe: register_standard.rs resolves
+  # owner_script via a HashMap lookup into scripts: (empty here), missing
+  # names just resolve to no owner_script_id, not an error.
+  - table_name: dev_repo_domain_state
+    purpose: "one row per (repo_root, domain_key, scan) — doc_exists/conforms/gap_notes from propose-tierN-assess's structural scan, append-only"
+    owner_script: scan-tier-repo-state
+
+  # dev_proposal_phase_scope (proposal 6 §6) — durable link from a
+  # proposal row to the real domain/usecase/step ids it was drafted
+  # against, since proposal.usecase_id is a singular FK and doesn't fit a
+  # propose-tierN-* usecase spanning every domain in a tier.
+  - table_name: dev_proposal_phase_scope
+    purpose: "per (proposal, phase): domain/usecase/step ids the proposal's phase covers, durable even if the source usecase later changes"
+    owner_script: link-proposal-phase-scope
+
+  # --- findings/score/report persistence (proposal 6 §7) — mirrors
+  # pcems's academic_deterministic_findings/academic_semantic_*/
+  # academic_score_history/academic_visualizations/academic_report_history
+  # family, dev_*-prefixed, keyed on repo_root instead of paper_id. ---
+  - table_name: dev_deterministic_findings
+    purpose: "per (repo_root, domain, scope, run): deterministic audit verdict + findings, from persist-deterministic-findings (proposal 3)"
+    owner_script: persist-deterministic-findings
+  - table_name: dev_semantic_runs
+    purpose: "per (repo_root, domain, scope, model, run): semantic evaluation, from persist-semantic-score (proposal 3)"
+    owner_script: persist-semantic-score
+  - table_name: dev_semantic_dimension_scores
+    purpose: "per-dimension score + evidence for a dev_semantic_runs row"
+    owner_script: persist-semantic-score
+  - table_name: dev_semantic_findings
+    purpose: "per-run strengths/weaknesses/recommendations for a dev_semantic_runs row"
+    owner_script: persist-semantic-score
+  - table_name: dev_score_history
+    purpose: "one row per calculate run (repo_root, domain, final_score, score_band) — trend tracking"
+    owner_script: calculate
+  - table_name: dev_visualization_types
+    purpose: "chart type catalog"
+    owner_script: render-charts
+  - table_name: dev_visualizations
+    purpose: "one row per rendered chart image"
+    owner_script: render-charts
+  - table_name: dev_report_history
+    purpose: "one row per render-report run (repo_root, report_kind, file_path) — markdown output, DB-backed so a later HTML/PDF/DOCX conversion doesn't need to re-derive anything"
+    owner_script: render-report
+
+usecases:
+  # --- tier1: vision, philosophy ---
+  - name: generate-document-vision
+    description: "generate vision's document from its domain/vision.md template"
+    domain: vision
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-vision prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-vision
+    description: "run vision's deterministic checks — rule file + script-sourced ground truth"
+    domain: vision
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-vision
+    description: "score vision against audit/semantic/{document,section}/vision.md rubric"
+    domain: vision
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-vision
+    description: "regenerate vision content for sections that failed deterministic or semantic audit"
+    domain: vision
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-vision prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-philosophy
+    description: "generate philosophy's document from its domain/philosophy.md template"
+    domain: philosophy
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-philosophy prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-philosophy
+    description: "run philosophy's deterministic checks — rule file + script-sourced ground truth"
+    domain: philosophy
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-philosophy
+    description: "score philosophy against audit/semantic/{document,section}/philosophy.md rubric"
+    domain: philosophy
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-philosophy
+    description: "regenerate philosophy content for sections that failed deterministic or semantic audit"
+    domain: philosophy
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-philosophy prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier2: security, feature, architecture, engineering, external-context ---
+  - name: generate-document-security
+    description: "generate security's document from its domain/security.md template"
+    domain: security
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-security prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-security
+    description: "run security's deterministic checks — rule file + script-sourced ground truth"
+    domain: security
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-security
+    description: "score security against audit/semantic/{document,section}/security.md rubric"
+    domain: security
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-security
+    description: "regenerate security content for sections that failed deterministic or semantic audit"
+    domain: security
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-security prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-feature
+    description: "generate feature's document from its domain/feature.md template"
+    domain: feature
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-feature prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-feature
+    description: "run feature's deterministic checks — rule file + script-sourced ground truth"
+    domain: feature
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-feature
+    description: "score feature against audit/semantic/{document,section}/feature.md rubric"
+    domain: feature
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-feature
+    description: "regenerate feature content for sections that failed deterministic or semantic audit"
+    domain: feature
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-feature prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-architecture
+    description: "generate architecture's document from its domain/architecture.md template"
+    domain: architecture
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-architecture prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-architecture
+    description: "run architecture's deterministic checks — rule file + script-sourced ground truth"
+    domain: architecture
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-architecture
+    description: "score architecture against audit/semantic/{document,section}/architecture.md rubric"
+    domain: architecture
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-architecture
+    description: "regenerate architecture content for sections that failed deterministic or semantic audit"
+    domain: architecture
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-architecture prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-engineering
+    description: "generate engineering's document from its domain/engineering.md template"
+    domain: engineering
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-engineering prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-engineering
+    description: "run engineering's deterministic checks — rule file + script-sourced ground truth"
+    domain: engineering
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-engineering
+    description: "score engineering against audit/semantic/{document,section}/engineering.md rubric"
+    domain: engineering
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-engineering
+    description: "regenerate engineering content for sections that failed deterministic or semantic audit"
+    domain: engineering
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-engineering prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-external-context
+    description: "generate external-context's document from its domain/external-context.md template"
+    domain: external-context
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-external-context prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-external-context
+    description: "run external-context's deterministic checks — rule file + script-sourced ground truth"
+    domain: external-context
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-external-context
+    description: "score external-context against audit/semantic/{document,section}/external-context.md rubric"
+    domain: external-context
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-external-context
+    description: "regenerate external-context content for sections that failed deterministic or semantic audit"
+    domain: external-context
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-external-context prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier3: feature-technical ---
+  - name: generate-document-feature-technical
+    description: "generate feature-technical's document from its domain/feature-technical.md template"
+    domain: feature-technical
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-feature-technical prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-feature-technical
+    description: "run feature-technical's deterministic checks — rule file + script-sourced ground truth"
+    domain: feature-technical
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-feature-technical
+    description: "score feature-technical against audit/semantic/{document,section}/feature-technical.md rubric"
+    domain: feature-technical
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-feature-technical
+    description: "regenerate feature-technical content for sections that failed deterministic or semantic audit"
+    domain: feature-technical
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-feature-technical prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier5: implementation ---
+  - name: generate-document-implementation
+    description: "generate implementation's document from its domain/implementation.md template"
+    domain: implementation
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-implementation prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-implementation
+    description: "run implementation's deterministic checks — rule file + script-sourced ground truth"
+    domain: implementation
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-implementation
+    description: "score implementation against audit/semantic/{document,section}/implementation.md rubric"
+    domain: implementation
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-implementation
+    description: "regenerate implementation content for sections that failed deterministic or semantic audit"
+    domain: implementation
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-implementation prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier6: qa ---
+  - name: generate-document-qa
+    description: "generate qa's document from its domain/qa.md template"
+    domain: qa
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-qa prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-qa
+    description: "run qa's deterministic checks — rule file + script-sourced ground truth"
+    domain: qa
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-qa
+    description: "score qa against audit/semantic/{document,section}/qa.md rubric"
+    domain: qa
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-qa
+    description: "regenerate qa content for sections that failed deterministic or semantic audit"
+    domain: qa
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-qa prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier7: build ---
+  - name: generate-document-build
+    description: "generate build's document from its domain/build.md template"
+    domain: build
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-build prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-build
+    description: "run build's deterministic checks — rule file + script-sourced ground truth"
+    domain: build
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-build
+    description: "score build against audit/semantic/{document,section}/build.md rubric"
+    domain: build
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-build
+    description: "regenerate build content for sections that failed deterministic or semantic audit"
+    domain: build
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-build prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- tier8: readme, product-guide ---
+  - name: generate-document-readme
+    description: "generate readme's document from its domain/readme.md template"
+    domain: readme
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-readme prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-readme
+    description: "run readme's deterministic checks — rule file + script-sourced ground truth"
+    domain: readme
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-readme
+    description: "score readme against audit/semantic/{document,section}/readme.md rubric"
+    domain: readme
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-readme
+    description: "regenerate readme content for sections that failed deterministic or semantic audit"
+    domain: readme
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-readme prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  - name: generate-document-product-guide
+    description: "generate product-guide's document from its domain/product-guide.md template"
+    domain: product-guide
+    steps: []
+    # order 1 deterministic (gather-tier-context) + order 2 semantic
+    # (generate-product-guide prompt) — see proposal 3 §3, not yet wired (§7 out of scope)
+
+  - name: deterministic-audit-product-guide
+    description: "run product-guide's deterministic checks — rule file + script-sourced ground truth"
+    domain: product-guide
+    steps: []
+    # order 1 (run-domain-checks) + order 2 (deterministic-audit) + order 3
+    # (persist-deterministic-findings) — see proposal 3 §3, not yet wired
+
+  - name: semantic-audit-product-guide
+    description: "score product-guide against audit/semantic/{document,section}/product-guide.md rubric"
+    domain: product-guide
+    steps: []
+    # order 1 semantic (semantic-audit prompt) + order 2 (persist-semantic-score)
+    # — see proposal 3 §3, not yet wired
+
+  - name: fix-product-guide
+    description: "regenerate product-guide content for sections that failed deterministic or semantic audit"
+    domain: product-guide
+    steps: []
+    # order 1 (gather-fix-context) + order 2 semantic (fix-product-guide prompt) + order 3
+    # (persist-fix) — see proposal 3 §3, not yet wired
+
+  # --- cross-tier, not per-domain (proposal 3 §3, proposal 1 §3) ---
+  - name: calculate
+    description: "read persisted findings across every tier/domain, apply common/calculation/summary/final_score.yaml's weighted_sum, track trend"
+    steps: []
+    # single step, not yet wired
+
+  # --- propose pipeline (proposal 5, .samgraha/proposal/tierN/*) ---
+  # tier-scoped, not per-domain — no domain: field, same as calculate
+  # --- tier1 ---
+  - name: propose-tier1-generation
+    description: "draft a tier1 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier1-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier1-audit
+    description: "draft a tier1 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier1-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier1-fix
+    description: "draft a tier1 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier1-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier2 ---
+  - name: propose-tier2-generation
+    description: "draft a tier2 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier2-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier2-audit
+    description: "draft a tier2 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier2-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier2-fix
+    description: "draft a tier2 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier2-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier3 ---
+  - name: propose-tier3-generation
+    description: "draft a tier3 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier3-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier3-audit
+    description: "draft a tier3 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier3-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier3-fix
+    description: "draft a tier3 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier3-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier5 ---
+  - name: propose-tier5-generation
+    description: "draft a tier5 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier5-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier5-audit
+    description: "draft a tier5 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier5-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier5-fix
+    description: "draft a tier5 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier5-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier6 ---
+  - name: propose-tier6-generation
+    description: "draft a tier6 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier6-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier6-audit
+    description: "draft a tier6 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier6-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier6-fix
+    description: "draft a tier6 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier6-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier7 ---
+  - name: propose-tier7-generation
+    description: "draft a tier7 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier7-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier7-audit
+    description: "draft a tier7 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier7-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier7-fix
+    description: "draft a tier7 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier7-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- tier8 ---
+  - name: propose-tier8-generation
+    description: "draft a tier8 generation proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier8-generation-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier8-audit
+    description: "draft a tier8 audit proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier8-audit-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  - name: propose-tier8-fix
+    description: "draft a tier8 fix proposal, scoped by this tier's usecase map (proposal 4) — hard-fails if the map is missing/stale rather than proceeding without it"
+    steps: []
+    # order 1 (gather-tier-usecase-map) + order 2 (gather-tier-proposal-context)
+    # + order 3 semantic (tier8-fix-proposal prompt) + order 4 (persist-proposal)
+    # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
+    # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
+
+  # --- repo-state-aware propose-then-execute (proposal 7) ---
+  # single usecase per tier, covers both repo_new and repo_existing (§3:
+  # "no special-cased new-repos-skip-proposing shortcut") — no domain:
+  # field (spans every domain in the tier, same as propose-tierN-*/calculate).
+  # No data: {tier: N} block — register_standard.rs's UsecaseDecl has no
+  # generic data: passthrough (proposal 6 §2), it would be silently
+  # dropped by serde, not stored; tier stays a seeder.py-computed field.
+  - name: propose-tier1-assess
+    description: "scan tier1's repo state (vision, philosophy), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier1-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier2-assess
+    description: "scan tier2's repo state (security, feature, architecture, engineering, external-context), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier2-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier3-assess
+    description: "scan tier3's repo state (feature-technical), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier3-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier5-assess
+    description: "scan tier5's repo state (implementation), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier5-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier6-assess
+    description: "scan tier6's repo state (qa), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier6-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier7-assess
+    description: "scan tier7's repo state (build), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier7-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  - name: propose-tier8-assess
+    description: "scan tier8's repo state (readme, product-guide), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+    steps: []
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (tier8-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 7 §4, not yet wired
+
+  # --- migrate-document-{domain}, one per domain (proposal 7 §6) ---
+  - name: migrate-document-vision
+    description: "restructure existing non-conforming vision documentation into the domain/vision.md template shape, preserving original content"
+    domain: vision
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-vision prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-vision) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-philosophy
+    description: "restructure existing non-conforming philosophy documentation into the domain/philosophy.md template shape, preserving original content"
+    domain: philosophy
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-philosophy prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-philosophy) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-security
+    description: "restructure existing non-conforming security documentation into the domain/security.md template shape, preserving original content"
+    domain: security
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-security prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-security) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-feature
+    description: "restructure existing non-conforming feature documentation into the domain/feature.md template shape, preserving original content"
+    domain: feature
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-feature prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-feature) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-architecture
+    description: "restructure existing non-conforming architecture documentation into the domain/architecture.md template shape, preserving original content"
+    domain: architecture
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-architecture prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-architecture) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-engineering
+    description: "restructure existing non-conforming engineering documentation into the domain/engineering.md template shape, preserving original content"
+    domain: engineering
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-engineering prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-engineering) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-external-context
+    description: "restructure existing non-conforming external-context documentation into the domain/external-context.md template shape, preserving original content"
+    domain: external-context
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-external-context prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-external-context) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-feature-technical
+    description: "restructure existing non-conforming feature-technical documentation into the domain/feature-technical.md template shape, preserving original content"
+    domain: feature-technical
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-feature-technical prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-feature-technical) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-implementation
+    description: "restructure existing non-conforming implementation documentation into the domain/implementation.md template shape, preserving original content"
+    domain: implementation
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-implementation prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-implementation) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-qa
+    description: "restructure existing non-conforming qa documentation into the domain/qa.md template shape, preserving original content"
+    domain: qa
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-qa prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-qa) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-build
+    description: "restructure existing non-conforming build documentation into the domain/build.md template shape, preserving original content"
+    domain: build
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-build prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-build) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-readme
+    description: "restructure existing non-conforming readme documentation into the domain/readme.md template shape, preserving original content"
+    domain: readme
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-readme prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-readme) — see
+    # proposal 7 §6, not yet wired
+
+  - name: migrate-document-product-guide
+    description: "restructure existing non-conforming product-guide documentation into the domain/product-guide.md template shape, preserving original content"
+    domain: product-guide
+    steps: []
+    # order 1 (gather-existing-doc) + order 2 semantic (migrate-product-guide prompt) +
+    # order 3 (persist-fix, same landing spot as generate-document-product-guide) — see
+    # proposal 7 §6, not yet wired
+
+  # --- DB-backed report pipeline (proposal 6 §7) — cross-tier, no domain: ---
+  - name: render-report
+    description: "assemble a markdown report from dev_deterministic_findings/dev_semantic_*/dev_score_history via template, persist a dev_report_history row — markdown-only for now, DB-backed so HTML/PDF/DOCX conversion is a later, separate step"
+    steps: []
+    # depends on render-charts having already populated dev_visualizations
+    # for this run (mirrors pcems's render-charts -> generate-audit-report
+    # order) — not yet wired
+
+  - name: render-charts
+    description: "generate chart images from dev_deterministic_findings/dev_semantic_*/dev_score_history, persist to dev_visualizations"
+    steps: []
+    # single step, not yet wired

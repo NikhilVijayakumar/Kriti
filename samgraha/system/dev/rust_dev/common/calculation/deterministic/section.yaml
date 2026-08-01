@@ -1,0 +1,19 @@
+id: deterministic_section_v1
+calculation: weighted_pass_rate
+scope: section
+inputs:
+  from: tier{t}/audit/deterministic/section/{domain}/*.yaml
+  fields: [id, weight, mandatory, passed, section_type]
+formula: |
+  section_score = 100 * (sum(weight) where passed=true) / (sum(weight), all rules in section)
+rollup:
+  method: average
+  over: section scores, sections actually present only
+  note: >
+    Unweighted average across sections present in the document.
+    A section absent from the document (among optional ones) is excluded,
+    not scored as zero — presence is a deterministic concern, not a scoring one.
+    Each section's own weighted_pass_rate already reflects its rules' weights;
+    the rollup does not re-weight sections against each other.
+    {domain} resolves to tier{t} via tiers.yaml before substitution (§5.1 of the
+    tier restructure proposal) — per-domain audit files live inside their tier folder.

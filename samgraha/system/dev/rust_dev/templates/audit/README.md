@@ -5,22 +5,24 @@ Generic, domain-parameterized report templates for the four-report model
 
 ## Structure
 
+Report templates live per-tier, next to the audit rules they render. Each
+domain's tier is resolved via `plan/core/tiers.yaml` (`tier{t}` below — see
+proposal §5.1):
+
 ```
-templates/audit/
+tier{t}/templates/audit/
 ├── deterministic/
-│   ├── document/         # Whole-document deterministic findings
-│   │   └── report-template.md
-│   └── section/          # Per-section deterministic findings
-│       └── report-template.md
+│   ├── document/{domain}-report.md    # Whole-document deterministic findings
+│   └── section/{domain}-report.md     # Per-section deterministic findings
 ├── semantic/
-│   ├── document/         # Whole-document LLM judgment findings
-│   │   └── report-template.md
-│   └── section/          # Per-section LLM judgment findings
-│       └── report-template.md
-├── summary/              # Aggregates all four with scoring formula
-│   └── report-template.md
-└── archive/              # Superseded flat report templates (reference only)
+│   ├── document/{domain}-report.md    # Whole-document LLM judgment findings
+│   └── section/{domain}-report.md     # Per-section LLM judgment findings
+└── summary/{domain}-report.md         # Aggregates all four with scoring formula
 ```
+
+This README sits at `templates/audit/` on the system root as the single
+documentation point for the pattern; the templates themselves live in each
+`tier{t}/`.
 
 ## Template variables
 
@@ -47,8 +49,3 @@ final_score = (deterministic_whole/100 × 25)
 
 Each report contributes equal weight (25 points). Severity is handled inside
 each report's own scoring criteria, not at aggregation.
-
-## Archive
-
-`archive/` contains the old flat report templates (pre-five-model). Kept for
-reference on tone, formatting, and section structure. Do not use for new audits.

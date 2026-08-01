@@ -76,59 +76,59 @@ Filenames in this directory carry a `NN-` prefix showing the order docs get writ
 | # | File | Derived From |
 |---|------|--------------|
 | 00 | `00-domain-relationships.md` | meta — not an authored artifact |
-| 01 | `01-vision-standards.md` | initial idea (no standard — see below) |
-| 02 | `02-philosophy-standards.md` | vision |
+| 01 | `domain/vision.md` | initial idea (no standard — see below) |
+| 02 | `domain/philosophy.md` | vision |
 
 **Tier 2 — Independent.** Each derives only from Tier 1, not from each other, with two exceptions: External Context informs Engineering directly, and Architecture/Engineering have a soft, non-mandatory best-practice relationship (most frameworks expect an architecture to follow, but nothing requires one to exist first).
 
 | # | File | Derived From |
 |---|------|--------------|
-| 03 | `03-security-standards.md` | vision + philosophy (**draft**, not yet registered) — guides Architecture(05) and Engineering(07) downstream as a constraint, not a peer |
-| 04 | `04-feature-standards.md` | vision + philosophy |
-| 05 | `05-architecture-standards.md` | philosophy; soft/non-mandatory relationship with Engineering(07) |
-| 07 | `07-engineering-standards.md` | philosophy; soft/non-mandatory relationship with Architecture(05); informed by External Context(08) |
-| 08 | `08-external-context-standards.md` | independent — informs Engineering(07) directly, and informs Feature Technical(10) downstream |
+| 03 | `domain/security.md` | vision + philosophy (**draft**, not yet registered) — guides Architecture(05) and Engineering(07) downstream as a constraint, not a peer |
+| 04 | `domain/feature.md` | vision + philosophy |
+| 05 | `domain/architecture.md` | philosophy; soft/non-mandatory relationship with Engineering(07) |
+| 07 | `domain/engineering.md` | philosophy; soft/non-mandatory relationship with Architecture(05); informed by External Context(08) |
+| 08 | `domain/external-context.md` | independent — informs Engineering(07) directly, and informs Feature Technical(10) downstream |
 
 **Tier 3 — Derived.**
 
 | # | File | Derived From |
 |---|------|--------------|
-| 10 | `10-feature-technical-standards.md` | feature(04) + engineering(07) + architecture(05) + external-context(08) if any |
+| 10 | `domain/feature-technical.md` | feature(04) + engineering(07) + architecture(05) + external-context(08) if any |
 
 **Tier 5 — Realization (draft, not yet registered).**
 
 | # | File | Derived From |
 |---|------|--------------|
-| 12 | `13-implementation-standards.md` | feature-technical(10) + engineering(07) |
+| 12 | `domain/implementation.md` | feature-technical(10) + engineering(07) |
 
 **Tier 6 — Validation of the built artifact.** Tests what Implementation(13) actually produced.
 
 | # | File | Derived From |
 |---|------|--------------|
-| 13 | `12-qa-standards.md` | implementation(13) — validates, doesn't derive; also references engineering(07) testing standards, architecture(05), and security(03) threat model per-section |
+| 13 | `domain/qa.md` | implementation(13) — validates, doesn't derive; also references engineering(07) testing standards, architecture(05), and security(03) threat model per-section |
 
 **Tier 7 — Packaging (draft, not yet registered).**
 
 | # | File | Derived From |
 |---|------|--------------|
-| 14 | `14-build-standards.md` | Implementation(13); informed by QA(12) — packaging shouldn't proceed on a build QA hasn't validated |
+| 14 | `domain/build.md` | Implementation(13); informed by QA(12) — packaging shouldn't proceed on a build QA hasn't validated |
 
 **Tier 8 — Final overview.** Written last, after everything above has settled.
 
 | # | File | Derived From |
 |---|------|--------------|
-| 15 | `15-readme-standards.md` | vision (final refactor pass — see below); needs Build(14) to exist for install/run instructions |
-| 16 | `16-product-guide-standards.md` | the finished product itself — needs everything else, including README, to be accurate |
+| 15 | `domain/readme.md` | vision (final refactor pass — see below); needs Build(14) to exist for install/run instructions |
+| 16 | `domain/product-guide.md` | the finished product itself — needs everything else, including README, to be accurate |
 
 **Initial idea has no standard.** It's not a kept artifact — a rough idea gets folded straight into Vision (01) and, downstream, into Feature (04) as one of its derivation inputs. Nothing audits the idea stage itself.
 
-**README plays both ends.** Early on it can hold the initial idea (or a separate idea doc can be used instead) before Vision exists. Once every other standard doc in the chain is complete, README gets refactored into the structure `15-readme-standards.md` defines — including install/run instructions, which is why README sits after Build(14) rather than before Implementation(13): a README that must stay implementation-detail-free could be written earlier, but a conventional README needs build/run instructions, which don't exist until Build(14) does.
+**README plays both ends.** Early on it can hold the initial idea (or a separate idea doc can be used instead) before Vision exists. Once every other standard doc in the chain is complete, README gets refactored into the structure `domain/readme.md` defines — including install/run instructions, which is why README sits after Build(14) rather than before Implementation(13): a README that must stay implementation-detail-free could be written earlier, but a conventional README needs build/run instructions, which don't exist until Build(14) does.
 
 **Security, Implementation, and Build are drafts.** None has a `StandardDefinition` in `crates/standards/src/builtin.rs`, so none is enforced or audited yet.
 
-* **Security** is fully specified: project-wide threat model, data classification, and security principles, once — Architecture's, Engineering's, and Feature Technical's own Security Considerations/Standards sections derive from it rather than duplicate it. See `03-security-standards.md`'s "Relationship to Per-Domain Security Sections" for the exact ownership split.
-* **Implementation** is fully specified: the as-built, one-to-one counterpart to Feature Technical, distinct from Engineering's repo-wide Code Standards by scope (per-feature vs repo-wide). See `13-implementation-standards.md`'s "Relationship to Engineering's Code Standards."
-* **Build** is fully specified: project-wide versioning/packaging/distribution/provenance policy, distinct from Engineering's Build Standards section, which stays scoped to CI/CD mechanics. See `14-build-standards.md`'s "Relationship to Engineering's Build Standards."
+* **Security** is fully specified: project-wide threat model, data classification, and security principles, once — Architecture's, Engineering's, and Feature Technical's own Security Considerations/Standards sections derive from it rather than duplicate it. See `domain/security.md`'s "Relationship to Per-Domain Security Sections" for the exact ownership split.
+* **Implementation** is fully specified: the as-built, one-to-one counterpart to Feature Technical, distinct from Engineering's repo-wide Code Standards by scope (per-feature vs repo-wide). See `domain/implementation.md`'s "Relationship to Engineering's Code Standards."
+* **Build** is fully specified: project-wide versioning/packaging/distribution/provenance policy, distinct from Engineering's Build Standards section, which stays scoped to CI/CD mechanics. See `domain/build.md`'s "Relationship to Engineering's Build Standards."
 
 ### Machine-Readable Format (proposed, not yet implemented)
 

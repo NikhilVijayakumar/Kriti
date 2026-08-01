@@ -10,10 +10,10 @@ methodology = "Systems Engineering"
 ```
 
 [domain_tiers]
-tier_1 = ["01-vision", "02-philosophy"]
-tier_2 = ["03-security", "04-feature", "05-architecture", "07-engineering", "08-external-context"]
-tier_3 = ["10-feature-technical"]
-tier_5 = ["13-implementation"]
-tier_6 = ["12-qa"]
-tier_7 = ["14-build"]
-tier_8 = ["15-readme", "16-product-guide"]
+tier_1 = ["vision", "philosophy"]
+tier_2 = ["security", "feature", "architecture", "engineering", "external-context"]
+tier_3 = ["feature-technical"]
+tier_5 = ["implementation"]
+tier_6 = ["qa"]
+tier_7 = ["build"]
+tier_8 = ["readme", "product-guide"]

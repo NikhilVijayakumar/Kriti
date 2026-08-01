@@ -1,0 +1,55 @@
+{
+  "custom_tables": [
+    {
+      "name": "dev_repo_domain_state",
+      "purpose": "One row per (repo_root, domain_key, scan) — propose-tierN-assess's structural repo scan, append-only",
+      "required_columns": ["id", "repo_root", "domain_key", "tier_number", "doc_exists", "scanned_at"]
+    },
+    {
+      "name": "dev_proposal_phase_scope",
+      "purpose": "Per (proposal, phase): domain/usecase/step ids the proposal's phase covers",
+      "required_columns": ["id", "proposal_id", "phase_number", "domain_id", "usecase_id"]
+    },
+    {
+      "name": "dev_deterministic_findings",
+      "purpose": "Per (repo_root, domain, scope, run): deterministic audit verdict + findings",
+      "required_columns": ["id", "repo_root", "domain_id", "scope", "run_number", "verdict"]
+    },
+    {
+      "name": "dev_semantic_runs",
+      "purpose": "One row per (repo_root, domain, scope, model, run) semantic evaluation",
+      "required_columns": ["id", "repo_root", "domain_id", "scope", "model", "run_number"]
+    },
+    {
+      "name": "dev_semantic_dimension_scores",
+      "purpose": "Per-dimension score + evidence for a semantic run",
+      "required_columns": ["id", "run_id", "dimension_key", "score"]
+    },
+    {
+      "name": "dev_semantic_findings",
+      "purpose": "Per-run strengths/weaknesses/recommendations",
+      "required_columns": ["id", "run_id", "finding_type", "text"]
+    },
+    {
+      "name": "dev_score_history",
+      "purpose": "One row per calculate run (trend tracking)",
+      "required_columns": ["id", "repo_root", "domain_id", "final_score", "score_band", "calculated_at"]
+    },
+    {
+      "name": "dev_visualization_types",
+      "purpose": "Chart type catalog",
+      "required_columns": ["id", "chart_key", "scope"]
+    },
+    {
+      "name": "dev_visualizations",
+      "purpose": "One row per rendered chart image",
+      "required_columns": ["id", "repo_root", "chart_type_id", "file_path", "created_at"]
+    },
+    {
+      "name": "dev_report_history",
+      "purpose": "One row per render-report run — markdown output, DB-backed for later HTML/PDF/DOCX conversion",
+      "required_columns": ["id", "repo_root", "report_kind", "file_path", "created_at"]
+    }
+  ],
+  "templates": []
+}
