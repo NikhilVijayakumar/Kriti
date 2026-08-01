@@ -1,4 +1,4 @@
-"""seeder.py -- rust_dev's seeder for samgraha's MCP activation path.
+﻿"""seeder.py -- rust_dev's seeder for samgraha's MCP activation path.
 
 Reads common/schema-manifest/standard.yaml, creates rust_dev's dev_*
 tables (common/schema/*.sql, via dev_schema.ensure_schema), seeds
@@ -13,7 +13,7 @@ file reads what standard.yaml says and writes exactly that. The one piece
 of logic this file adds that pure struct-parsing (register_standard.rs's
 now-dead per-repo path, per proposal 6 §1's confirmed read of
 activate_standard) never had: resolving `domain:` -> `tier` via
-plan/core/tiers.yaml and folding it into usecase.data as `tier`, proposal
+common/plan/core/tiers.yaml and folding it into usecase.data as `tier`, proposal
 6 §2's mechanism -- register_standard.rs's UsecaseDecl has no generic
 `data:` passthrough, so this is the only place `tier` can be written.
 
@@ -45,8 +45,8 @@ import dev_schema  # noqa: E402
 
 
 def _load_domain_tier_map():
-    """plan/core/tiers.yaml's tiers: list -> {domain_key: tier_number}."""
-    tiers_path = RUST_DEV_ROOT / "plan" / "core" / "tiers.yaml"
+    """common/plan/core/tiers.yaml's tiers: list -> {domain_key: tier_number}."""
+    tiers_path = RUST_DEV_ROOT / "common" / "plan" / "core" / "tiers.yaml"
     with open(tiers_path, "r", encoding="utf-8") as f:
         tiers_doc = yaml.safe_load(f)
     domain_tier = {}

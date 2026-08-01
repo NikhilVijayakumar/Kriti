@@ -1,0 +1,165 @@
+id: script_mapping_v1
+generated_from: common/tier*/audit/**/*.{yaml,md}   # rule_ref / criterion_ref scan, not hand-maintained
+note: |
+  Placeholder version. The rule_ids listed below (qa-doc-014, sec-doc-009, etc.)
+  are illustrative IDs from the proposal's examples, not real audit rules yet.
+  No audit rule currently has a rule_ref pointing into common/tier*/script/schema/ — that
+  wiring happens in Phase 6 (§8 retrofit), which adds script-sourced rules to
+  common/tier*/audit/deterministic/* and common/tier*/audit/semantic/*. Once Phase 6 is done, regenerate
+  this file by scanning all rule_ref values that resolve into common/tier*/script/schema/**.
+  The structure and check/domain entries below are correct; only the rule_ids
+  are placeholders awaiting real audit rules.
+mappings:
+  # Category C: generic cross-document checks (all 13 active domains)
+  - check: traceability-refs-exist
+    domain: _generic
+    category: C
+    consumed_by:
+      - { audit_type: deterministic, domain: vision, rule_id: vis-doc-006 }
+      - { audit_type: deterministic, domain: philosophy, rule_id: phi-doc-003 }
+      - { audit_type: deterministic, domain: security, rule_id: sec-doc-009 }
+      - { audit_type: deterministic, domain: feature, rule_id: feat-doc-007 }
+      - { audit_type: deterministic, domain: architecture, rule_id: arch-doc-008 }
+      - { audit_type: deterministic, domain: engineering, rule_id: eng-doc-007 }
+      - { audit_type: deterministic, domain: external-context, rule_id: ext-doc-005 }
+      - { audit_type: deterministic, domain: feature-technical, rule_id: ft-doc-007 }
+      - { audit_type: deterministic, domain: qa, rule_id: qa-doc-008 }
+      - { audit_type: deterministic, domain: implementation, rule_id: impl-doc-009 }
+      - { audit_type: deterministic, domain: build, rule_id: build-doc-006 }
+      - { audit_type: deterministic, domain: readme, rule_id: readme-doc-005 }
+      - { audit_type: deterministic, domain: product-guide, rule_id: pg-doc-006 }
+
+  - check: feature-family-mapping
+    domain: _generic
+    category: C
+    consumed_by:
+      - { audit_type: deterministic, domain: feature, rule_id: feat-doc-010 }
+      - { audit_type: deterministic, domain: feature-technical, rule_id: ft-doc-010 }
+
+  # Category A: QA
+  - check: unit-test-coverage
+    domain: qa
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: qa, rule_id: qa-doc-014 }
+      - { audit_type: semantic, domain: qa, criterion_id: qa-sem-007 }
+
+  # Category A: Build
+  - check: build-succeeds
+    domain: build
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: build, rule_id: build-doc-012 }
+      - { audit_type: semantic, domain: build, criterion_id: build-sem-005 }
+
+  - check: artifact-exists
+    domain: build
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: build, rule_id: build-doc-013 }
+
+  # Category A: Implementation
+  - check: folder-structure
+    domain: implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: implementation, rule_id: impl-doc-015 }
+      - { audit_type: semantic, domain: implementation, criterion_id: impl-sem-008 }
+
+  - check: lint-pass
+    domain: implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: implementation, rule_id: impl-doc-016 }
+
+  - check: dependency-manifest
+    domain: implementation
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: implementation, rule_id: impl-doc-017 }
+
+  # Category A: Security
+  - check: secret-scan
+    domain: security
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: security, rule_id: sec-doc-015 }
+      - { audit_type: semantic, domain: security, criterion_id: sec-sem-009 }
+
+  - check: dependency-vuln-scan
+    domain: security
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: security, rule_id: sec-doc-016 }
+
+  # Category A: Architecture
+  - check: module-boundary-diff
+    domain: architecture
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: architecture, rule_id: arch-doc-014 }
+      - { audit_type: semantic, domain: architecture, criterion_id: arch-sem-010 }
+
+  # Category A: Engineering
+  - check: lint-standards
+    domain: engineering
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: engineering, rule_id: eng-doc-013 }
+
+  # Category A: External-Context
+  - check: dependency-reachable
+    domain: external-context
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: external-context, rule_id: ext-doc-011 }
+      - { audit_type: semantic, domain: external-context, criterion_id: ext-sem-006 }
+
+  # Category A: Prototype
+
+  - check: public-contract-diff
+    domain: product-guide
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: product-guide, rule_id: pg-doc-012 }
+      - { audit_type: semantic, domain: product-guide, criterion_id: pg-sem-007 }
+
+  # Category B: Cross-domain
+
+  - check: integration-points-exist
+    domain: feature-technical
+    category: B
+    consumed_by:
+      - { audit_type: deterministic, domain: feature-technical, rule_id: ft-doc-015 }
+      - { audit_type: semantic, domain: feature-technical, criterion_id: ft-sem-009 }
+
+  - check: mitigation-present-at-boundary
+    domain: security
+    category: B
+    consumed_by:
+      - { audit_type: deterministic, domain: security, rule_id: sec-doc-017 }
+      - { audit_type: semantic, domain: security, criterion_id: sec-sem-010 }
+
+  - check: cargo-audit
+    domain: security
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: security, rule_id: sec-doc-rust-001 }
+
+  - check: unsafe-code-scan
+    domain: engineering
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: engineering, rule_id: eng-doc-rust-001 }
+
+  - check: crate-dependency-graph
+    domain: architecture
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: architecture, rule_id: arch-doc-rust-001 }
+
+  - check: cargo-fmt
+    domain: engineering
+    category: A
+    consumed_by:
+      - { audit_type: deterministic, domain: engineering, rule_id: eng-doc-rust-002 }

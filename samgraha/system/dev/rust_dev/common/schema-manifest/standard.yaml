@@ -1,4 +1,4 @@
-# rust_dev — samgraha standard manifest.
+﻿# rust_dev — samgraha standard manifest.
 #
 # Rust systems-engineering documentation system: 13 domains across 7 tiers
 # (tier 4 intentionally absent — see 00-domain-relationships.md and
@@ -16,7 +16,7 @@
 # registration-proposal.md), corrected by proposal 6
 # (docs/proposal/6-rust_dev-samgraha-schema-alignment-proposal.md).
 # `domains:` is real — matches samgraha's generic `domain` table, resolved
-# straight from plan/core/tiers.yaml, no script dependency.
+# straight from common/plan/core/tiers.yaml, no script dependency.
 #
 # `usecases:` (proposal 3, docs/proposal/3-rust_dev-calculation-audit-
 # usecase-wiring-proposal.md) declares all 53 usecases the calculation/
@@ -30,7 +30,7 @@
 # section-scope rule files in its one step 2, not split into two usecases.
 # `scripts:`/`prompts:`/`custom_tables:` stay empty — writing any script or
 # prompt content is explicitly proposal 3 §7's out-of-scope list (wrapping
-# tierN/script/{ubuntu,windows}/*.{sh,ps1} into samgraha's
+# common/tierN/script/{ubuntu,windows}/*.{sh,ps1} into samgraha's
 # --repo-root/--in/--out envelope contract, §4's run-domain-checks family
 # most of all). No `smoke_test:` declared yet — nothing to verify-gate
 # until real scripts exist. `seeder_script:` IS declared (see below).
@@ -49,14 +49,18 @@
 # creating them is a seeder.py/proposal 7 concern, same blocker as
 # proposal 4's remaining piece.
 #
-# `usecases:` also carries proposal 7's repo-state-aware propose-then-
-# execute lifecycle (docs/proposal/7-rust_dev-repo-state-propose-then-
-# execute-proposal.md) — one `propose-tier{N}-assess` usecase per tier (not
-# two; §3's diagram names a distinct `propose-tierN-create` for new repos,
-# but §3's own prose says no such special-casing exists — "the propose
-# step still runs... same review/approve gate" — so this manifest declares
-# only `propose-tierN-assess`, matching the prose over the diagram) + one
-# `migrate-document-{domain}` per domain (§6, all 13). None of these carry
+# `usecases:` also carries the repo-state-scoped propose-then-execute
+# lifecycle (docs/proposal/8-rust_dev-repo-state-scoped-workflow-
+# restructure-proposal.md, superseding proposal 7) — a 3-way repo-state
+# split (§4) replaces proposal 7's single branching `propose-tierN-assess`:
+# `propose-repo-new-tier{N}` and `propose-repo-existing-tier{N}` per tier
+# (§5; `repo_existing_no_doc` reuses `propose-repo-existing-tier{N}`
+# unchanged after its one-time cross-tier `bootstrap-readme` usecase) +
+# one `bootstrap-readme` (Q1: singular, not tier-structured — an in-depth
+# README is one artifact). `migrate-document-{domain}` is dropped entirely
+# (§6: a non-conforming existing doc just fails audit and runs the
+# ordinary fix-{domain} loop, content-preserving restructuring included).
+# None of these carry
 # `data: {tier: N}` the way proposal 7's own YAML examples show — proposal
 # 6 §2, which proposal 7 depends on, already found `register_standard.rs`'s
 # `UsecaseDecl` has no generic `data:` passthrough; an unrecognized `data:`
@@ -87,7 +91,7 @@
 # bootstrapped from samgraha's actual core schema (E:\Python\samgraha\
 # schema\knowledge\*.sql), not just eyeballed: creates all 10 `dev_*`
 # tables (common/schema/*.sql, via the new common/script/dev_schema.py),
-# seeds 13 domains + 96 usecases, correctly resolves `tier` per usecase
+# seeds 13 domains + 91 usecases, correctly resolves `tier` per usecase
 # (e.g. `deterministic-audit-security` -> tier 2, `calculate` -> no tier
 # key), and is idempotent on re-run (same row counts). Declaring
 # `seeder_script:` means this standard's activation now bypasses the
@@ -151,14 +155,14 @@ scripts: []
 prompts: []
 
 custom_tables:
-  # dev_repo_domain_state (proposal 6 §5, built by proposal 7) — one row
-  # per (repo_root, domain_key, scan) of propose-tier{N}-assess's repo
-  # scan. owner_script names scan-tier-repo-state even though that script
-  # doesn't exist yet (§4 step 1) — safe: register_standard.rs resolves
-  # owner_script via a HashMap lookup into scripts: (empty here), missing
-  # names just resolve to no owner_script_id, not an error.
+  # dev_repo_domain_state (proposal 6 §5, built by proposal 8) — one row
+  # per (repo_root, domain_key, scan) of the repo-state propose usecases'
+  # repo scan. owner_script names scan-tier-repo-state even though that
+  # script doesn't exist yet (§4 step 1) — safe: register_standard.rs
+  # resolves owner_script via a HashMap lookup into scripts: (empty here),
+  # missing names just resolve to no owner_script_id, not an error.
   - table_name: dev_repo_domain_state
-    purpose: "one row per (repo_root, domain_key, scan) — doc_exists/conforms/gap_notes from propose-tierN-assess's structural scan, append-only"
+    purpose: "one row per (repo_root, domain_key, scan) — doc_exists/conforms/gap_notes from the repo-state propose usecases' structural scan, append-only"
     owner_script: scan-tier-repo-state
 
   # dev_proposal_phase_scope (proposal 6 §6) — durable link from a
@@ -201,7 +205,7 @@ custom_tables:
 usecases:
   # --- tier1: vision, philosophy ---
   - name: generate-document-vision
-    description: "generate vision's document from its domain/vision.md template"
+    description: "generate vision's document from its domain/01-vision.md template"
     domain: vision
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -229,7 +233,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-philosophy
-    description: "generate philosophy's document from its domain/philosophy.md template"
+    description: "generate philosophy's document from its domain/02-philosophy.md template"
     domain: philosophy
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -258,7 +262,7 @@ usecases:
 
   # --- tier2: security, feature, architecture, engineering, external-context ---
   - name: generate-document-security
-    description: "generate security's document from its domain/security.md template"
+    description: "generate security's document from its domain/03-security.md template"
     domain: security
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -286,7 +290,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-feature
-    description: "generate feature's document from its domain/feature.md template"
+    description: "generate feature's document from its domain/04-feature.md template"
     domain: feature
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -314,7 +318,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-architecture
-    description: "generate architecture's document from its domain/architecture.md template"
+    description: "generate architecture's document from its domain/05-architecture.md template"
     domain: architecture
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -342,7 +346,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-engineering
-    description: "generate engineering's document from its domain/engineering.md template"
+    description: "generate engineering's document from its domain/07-engineering.md template"
     domain: engineering
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -370,7 +374,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-external-context
-    description: "generate external-context's document from its domain/external-context.md template"
+    description: "generate external-context's document from its domain/08-external-context.md template"
     domain: external-context
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -399,7 +403,7 @@ usecases:
 
   # --- tier3: feature-technical ---
   - name: generate-document-feature-technical
-    description: "generate feature-technical's document from its domain/feature-technical.md template"
+    description: "generate feature-technical's document from its domain/10-feature-technical.md template"
     domain: feature-technical
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -428,7 +432,7 @@ usecases:
 
   # --- tier5: implementation ---
   - name: generate-document-implementation
-    description: "generate implementation's document from its domain/implementation.md template"
+    description: "generate implementation's document from its domain/13-implementation.md template"
     domain: implementation
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -457,7 +461,7 @@ usecases:
 
   # --- tier6: qa ---
   - name: generate-document-qa
-    description: "generate qa's document from its domain/qa.md template"
+    description: "generate qa's document from its domain/12-qa.md template"
     domain: qa
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -486,7 +490,7 @@ usecases:
 
   # --- tier7: build ---
   - name: generate-document-build
-    description: "generate build's document from its domain/build.md template"
+    description: "generate build's document from its domain/14-build.md template"
     domain: build
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -515,7 +519,7 @@ usecases:
 
   # --- tier8: readme, product-guide ---
   - name: generate-document-readme
-    description: "generate readme's document from its domain/readme.md template"
+    description: "generate readme's document from its domain/15-readme.md template"
     domain: readme
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -543,7 +547,7 @@ usecases:
     # (persist-fix) — see proposal 3 §3, not yet wired
 
   - name: generate-document-product-guide
-    description: "generate product-guide's document from its domain/product-guide.md template"
+    description: "generate product-guide's document from its domain/16-product-guide.md template"
     domain: product-guide
     steps: []
     # order 1 deterministic (gather-tier-context) + order 2 semantic
@@ -753,173 +757,137 @@ usecases:
     # + order 5 (link-proposal-phase-scope, dev_proposal_phase_scope per proposal
     # 6 §6) + order 6 (render-proposal) — see proposal 5 §3, not yet wired
 
-  # --- repo-state-aware propose-then-execute (proposal 7) ---
-  # single usecase per tier, covers both repo_new and repo_existing (§3:
-  # "no special-cased new-repos-skip-proposing shortcut") — no domain:
+  # --- repo-state-scoped propose-then-execute (proposal 8, supersedes
+  # proposal 7's single branching propose-tierN-assess) ---
+  # two propose usecases per tier, one per repo state (§5) — no domain:
   # field (spans every domain in the tier, same as propose-tierN-*/calculate).
-  # No data: {tier: N} block — register_standard.rs's UsecaseDecl has no
-  # generic data: passthrough (proposal 6 §2), it would be silently
-  # dropped by serde, not stored; tier stays a seeder.py-computed field.
-  - name: propose-tier1-assess
-    description: "scan tier1's repo state (vision, philosophy), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  # repo_existing_no_doc reuses propose-repo-existing-tier{N} unchanged
+  # after its one-time bootstrap-readme usecase completes (not a third
+  # propose variant). No data: {tier: N} block — register_standard.rs's
+  # UsecaseDecl has no generic data: passthrough (proposal 6 §2), it would
+  # be silently dropped by serde, not stored; tier stays a
+  # seeder.py-computed field.
+  - name: propose-repo-new-tier1
+    description: "scan repo_new's tier1 repo state (vision, philosophy), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier1-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier1-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier2-assess
-    description: "scan tier2's repo state (security, feature, architecture, engineering, external-context), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-existing-tier1
+    description: "scan repo_existing's tier1 repo state (vision, philosophy), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier2-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier1-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier3-assess
-    description: "scan tier3's repo state (feature-technical), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-new-tier2
+    description: "scan repo_new's tier2 repo state (security, feature, architecture, engineering, external-context), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier3-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier2-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier5-assess
-    description: "scan tier5's repo state (implementation), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-existing-tier2
+    description: "scan repo_existing's tier2 repo state (security, feature, architecture, engineering, external-context), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier5-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier2-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier6-assess
-    description: "scan tier6's repo state (qa), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-new-tier3
+    description: "scan repo_new's tier3 repo state (feature-technical), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier6-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier3-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier7-assess
-    description: "scan tier7's repo state (build), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-existing-tier3
+    description: "scan repo_existing's tier3 repo state (feature-technical), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier7-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier3-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: propose-tier8-assess
-    description: "scan tier8's repo state (readme, product-guide), draft a per-domain create/migrate/skip-to-audit proposal via chain-of-thought"
+  - name: propose-repo-new-tier5
+    description: "scan repo_new's tier5 repo state (implementation), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
     # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
-    # (gather-tier-usecase-map) + order 3 semantic (tier8-assess-proposal prompt)
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier5-assess-proposal prompt)
     # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
-    # (render-proposal) — see proposal 7 §4, not yet wired
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  # --- migrate-document-{domain}, one per domain (proposal 7 §6) ---
-  - name: migrate-document-vision
-    description: "restructure existing non-conforming vision documentation into the domain/vision.md template shape, preserving original content"
-    domain: vision
+  - name: propose-repo-existing-tier5
+    description: "scan repo_existing's tier5 repo state (implementation), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-vision prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-vision) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier5-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-philosophy
-    description: "restructure existing non-conforming philosophy documentation into the domain/philosophy.md template shape, preserving original content"
-    domain: philosophy
+  - name: propose-repo-new-tier6
+    description: "scan repo_new's tier6 repo state (qa), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-philosophy prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-philosophy) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier6-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-security
-    description: "restructure existing non-conforming security documentation into the domain/security.md template shape, preserving original content"
-    domain: security
+  - name: propose-repo-existing-tier6
+    description: "scan repo_existing's tier6 repo state (qa), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-security prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-security) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier6-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-feature
-    description: "restructure existing non-conforming feature documentation into the domain/feature.md template shape, preserving original content"
-    domain: feature
+  - name: propose-repo-new-tier7
+    description: "scan repo_new's tier7 repo state (build), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-feature prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-feature) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier7-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-architecture
-    description: "restructure existing non-conforming architecture documentation into the domain/architecture.md template shape, preserving original content"
-    domain: architecture
+  - name: propose-repo-existing-tier7
+    description: "scan repo_existing's tier7 repo state (build), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-architecture prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-architecture) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier7-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-engineering
-    description: "restructure existing non-conforming engineering documentation into the domain/engineering.md template shape, preserving original content"
-    domain: engineering
+  - name: propose-repo-new-tier8
+    description: "scan repo_new's tier8 repo state (readme, product-guide), draft a per-domain create/skip-to-audit proposal via chain-of-thought — every domain is trivially create (no docs, no code), but the scan still runs"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-engineering prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-engineering) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-new-tier8-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-external-context
-    description: "restructure existing non-conforming external-context documentation into the domain/external-context.md template shape, preserving original content"
-    domain: external-context
+  - name: propose-repo-existing-tier8
+    description: "scan repo_existing's tier8 repo state (readme, product-guide), draft a per-domain audit-first proposal via chain-of-thought — fix below-threshold docs or create where none exist, no separate migrate step"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-external-context prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-external-context) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-tier-repo-state, persists to dev_repo_domain_state) + order 2
+    # (gather-tier-usecase-map) + order 3 semantic (repo-existing-tier8-assess-proposal prompt)
+    # + order 4 (persist-proposal) + order 5 (link-proposal-phase-scope) + order 6
+    # (render-proposal) — see proposal 8 §5, not yet wired
 
-  - name: migrate-document-feature-technical
-    description: "restructure existing non-conforming feature-technical documentation into the domain/feature-technical.md template shape, preserving original content"
-    domain: feature-technical
+  # --- bootstrap-readme (proposal 8 §4/Q1) — cross-tier, runs once before
+  # tier1 for repo_existing_no_doc only — no domain: field (drafts one
+  # in-depth README from the existing codebase, not a per-domain artifact).
+  - name: bootstrap-readme
+    description: "draft an in-depth README for a repo_existing_no_doc repo from the existing codebase — the one cross-tier, before-tier-1 step; its README is the same artifact tier 8's readme domain eventually audits/finalizes, not a throwaway scaffold"
     steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-feature-technical prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-feature-technical) — see
-    # proposal 7 §6, not yet wired
-
-  - name: migrate-document-implementation
-    description: "restructure existing non-conforming implementation documentation into the domain/implementation.md template shape, preserving original content"
-    domain: implementation
-    steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-implementation prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-implementation) — see
-    # proposal 7 §6, not yet wired
-
-  - name: migrate-document-qa
-    description: "restructure existing non-conforming qa documentation into the domain/qa.md template shape, preserving original content"
-    domain: qa
-    steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-qa prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-qa) — see
-    # proposal 7 §6, not yet wired
-
-  - name: migrate-document-build
-    description: "restructure existing non-conforming build documentation into the domain/build.md template shape, preserving original content"
-    domain: build
-    steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-build prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-build) — see
-    # proposal 7 §6, not yet wired
-
-  - name: migrate-document-readme
-    description: "restructure existing non-conforming readme documentation into the domain/readme.md template shape, preserving original content"
-    domain: readme
-    steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-readme prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-readme) — see
-    # proposal 7 §6, not yet wired
-
-  - name: migrate-document-product-guide
-    description: "restructure existing non-conforming product-guide documentation into the domain/product-guide.md template shape, preserving original content"
-    domain: product-guide
-    steps: []
-    # order 1 (gather-existing-doc) + order 2 semantic (migrate-product-guide prompt) +
-    # order 3 (persist-fix, same landing spot as generate-document-product-guide) — see
-    # proposal 7 §6, not yet wired
+    # order 1 (scan-repo-structure) + order 2 (gather-existing-doc) + order 3
+    # semantic (bootstrap-readme prompt) + order 4 (persist-readme) — see
+    # proposal 8 §4/Q2 (resolved: same artifact as tier-8 readme), not yet wired
 
   # --- DB-backed report pipeline (proposal 6 §7) — cross-tier, no domain: ---
   - name: render-report

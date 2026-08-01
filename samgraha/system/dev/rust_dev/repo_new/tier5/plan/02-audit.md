@@ -1,0 +1,31 @@
+﻿# Stage 2 — Audit
+
+**Use case:** `repo_new/tier5`
+**Tier:** 5
+**Domains:** implementation
+
+## Input
+
+Document produced by stage 1 (`01-create.md`): `implementation.md`.
+
+## Procedure
+
+0. **Run applicable scripts:** for domains with scripts (Scripts column below), run each per its manifest's `depends_on` order, reusing a cached result where `common/script/policy.yaml`'s policy allows, else executing fresh. Capture JSON per check-name.
+
+Run the real audit files unmodified against the generated document.
+
+### Per-Domain Audit Files
+
+| Domain | Scripts (check-name) | Deterministic doc | Deterministic section | Semantic doc | Semantic section |
+|---|---|---|---|---|---|
+| implementation | `folder-structure`, `dependency-manifest`, `lint-pass` | `common/tier5/audit/deterministic/document/implementation.yaml` | `common/tier5/audit/deterministic/section/implementation/*.yaml` | `common/tier5/audit/semantic/document/implementation.md` | `common/tier5/audit/semantic/section/implementation/*.md` |
+
+Score via `common/calculation/summary/final_score.yaml` — 4 equal buckets (25% each).
+
+## Output
+
+A report. This stage never fixes anything.
+
+## Differs From Other Use Cases
+
+No difference across the 3-way split (repo_new/tier5, repo_existing/tier5, repo_existing_no_doc/tier5) - same audit files, same procedure.

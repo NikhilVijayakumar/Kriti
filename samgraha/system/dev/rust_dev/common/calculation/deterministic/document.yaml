@@ -1,8 +1,8 @@
-id: deterministic_document_v1
+﻿id: deterministic_document_v1
 calculation: weighted_pass_rate
 scope: document
 inputs:
-  from: tier{t}/audit/deterministic/document/{domain}.yaml
+  from: common/tier{t}/audit/deterministic/document/{domain}.yaml
   fields: [id, weight, mandatory, passed]
 formula: |
   score = 100 * (sum(weight) where passed=true) / (sum(weight), all rules)
@@ -12,5 +12,5 @@ note: >
   "mandatory" is a severity-level concern (error vs. warning), not a scoring-mode
   concern. A mandatory rule that fails hits the score exactly as hard as its weight
   dictates — no extra penalty, no double-counting.
-  {domain} resolves to tier{t} via tiers.yaml before substitution (§5.1 of the
+  {domain} resolves to common/tier{t} via tiers.yaml before substitution (§5.1 of the
   tier restructure proposal) — per-domain audit files live inside their tier folder.

@@ -1,7 +1,7 @@
 """
 _adapter.py -- shared glue for samgraha's fixed capability-script contract
 (--repo-root --in --out, JSON envelope out). Every deterministic script
-under tierN/script/ or common/script/ uses this to interact with samgraha.
+under common/tierN/script/ or common/script/ uses this to interact with samgraha.
 Ported from pcems_2026/common/script/_adapter.py -- generic infrastructure,
 not academic-specific -- forked into rust_dev's own tree per proposal 1's
 "fully self-contained, no cross-standard references" rule. Dropped

@@ -1,4 +1,4 @@
-# Calculation Layer
+﻿# Calculation Layer
 
 Authoritative source for audit scoring formulas. The engine reads these files to compute scores; templates reference them by ID for documentation only.
 
@@ -39,16 +39,16 @@ common/calculation/
 ## Scoring Flow
 
 ```
-tier{t}/audit/deterministic/document/{domain}.yaml  →  deterministic/document.yaml  ─┐
-tier{t}/audit/deterministic/section/{domain}/*.yaml →  deterministic/section.yaml   ─┤
-tier{t}/audit/semantic/document/{domain}.md         →  semantic/document.yaml        ─┤→ final_score.yaml → score_bands.yaml
-tier{t}/audit/semantic/section/{domain}/*.md        →  semantic/section.yaml         ─┘                  ↓
+common/tier{t}/audit/deterministic/document/{domain}.yaml  →  deterministic/document.yaml  ─┐
+common/tier{t}/audit/deterministic/section/{domain}/*.yaml →  deterministic/section.yaml   ─┤
+common/tier{t}/audit/semantic/document/{domain}.md         →  semantic/document.yaml        ─┤→ final_score.yaml → score_bands.yaml
+common/tier{t}/audit/semantic/section/{domain}/*.md        →  semantic/section.yaml         ─┘                  ↓
                                                                                               trend.yaml
 ```
 
 ## Key Design Decisions
 
-- **Generic, not per-domain**: One formula per bucket type; domain-specific inputs come from `tier{t}/audit/` YAML/MD files, not from calculation files.
+- **Generic, not per-domain**: One formula per bucket type; domain-specific inputs come from `common/tier{t}/audit/` YAML/MD files, not from calculation files.
 - **Mandatory = severity, not scoring mode**: A mandatory rule that fails scores 0 for that rule, same as any failed rule. No extra penalty.
 - **Unweighted section rollup**: Each section's weighted_pass_rate / sum_capped_at_100 already reflects its own rule weights. The rollup averages across sections present, excluding absent optional sections.
 - **Trend tolerance = 0.1 per score**: Prevents float-noise flip-flopping. Applied independently to each of the 5 scored entities (4 buckets + final score).

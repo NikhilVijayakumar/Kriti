@@ -1,8 +1,8 @@
-id: semantic_document_v1
+﻿id: semantic_document_v1
 calculation: sum_capped_at_100
 scope: document
 inputs:
-  from: tier{t}/audit/semantic/document/{domain}.md
+  from: common/tier{t}/audit/semantic/document/{domain}.md
   fields: [criterion_id, points, mandatory, passed]
 formula: |
   score = min(100, sum(points) where passed=true)
@@ -11,5 +11,5 @@ note: >
   Mandatory criterion failure = full criterion points forfeited (0 for that criterion).
   There is no partial credit. The cap at 100 prevents over-scoring when total
   possible points exceed 100 (which happens when many criteria pass).
-  {domain} resolves to tier{t} via tiers.yaml before substitution (§5.1 of the
+  {domain} resolves to common/tier{t} via tiers.yaml before substitution (§5.1 of the
   tier restructure proposal) — per-domain audit files live inside their tier folder.
