@@ -1,0 +1,43 @@
+schema:
+  id: rust_dev.codegen.build.profile.lint-stage
+  name: Lint Stage Profile
+  version: 1.0.0
+inherits:
+  - lint-stage
+unit:
+  id: lint-stage
+  generation:
+    mode: transcribe
+    trigger: before_any_other_ci_stage
+  build_objective: >
+    Run formatting and lint checks against the generated crate before any
+    test or packaging stage runs, per build.md's CI/CD Validation gate
+    sequence and Documentation Quality's "mandatory, gates all downstream
+    stages" rule.
+  required_inputs:
+    - build.cicd_validation
+    - build.documentation_quality
+    - engineering.build_standards
+  expected_content:
+    required:
+      - "cargo fmt --check step"
+      - "cargo clippy --all-targets --all-features -- -D warnings step"
+      - "pipeline halts on either step's non-zero exit code"
+    prohibited:
+      - "continue-on-error on either step"
+      - "running this stage in parallel with a stage it must gate"
+  generation_sequence:
+    - "Emit the fmt-check step first"
+    - "Emit the clippy step second, with -D warnings"
+    - "Wire both as blocking preconditions for every downstream stage"
+  completion:
+    checklist:
+      - "Both commands present and both marked blocking"
+      - "No downstream stage can start before this stage reports success"
+  review:
+    questions:
+      - "If clippy finds one warning, does the pipeline actually stop?"
+  validation:
+    rules:
+      - "stage_is_first_in_sequence: true"
+      - "stage_blocking: true"

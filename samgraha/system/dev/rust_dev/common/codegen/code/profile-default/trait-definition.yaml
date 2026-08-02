@@ -1,0 +1,43 @@
+schema:
+  id: rust_dev.codegen.code.profile.defaults.trait-definition
+  name: Trait Definition Code Defaults
+  version: 1.0.0
+description: >
+  Base profile for trait code units. Transcribes feature-technical.md's
+  Crate-Level Implementation Guidance ("Trait Definitions: Define the
+  abstract capabilities first") and Crate Implementation section.
+  Stub category — no profile/*.yaml instantiates it yet (see code-map.yaml
+  trait-definition entry).
+profile:
+  category: trait-definition
+  extends: null
+  applies_to:
+    - trait-definition
+  source: >
+    feature-technical.md > Crate-Level Implementation Guidance > Trait
+    Definitions; Crate Implementation > Trait Definitions subsection
+  coding:
+    default: "name and method signatures must match the capability named in Feature-Technical(10)'s Trait Definitions subsection exactly"
+    define_before_implement: true
+  constraints:
+    - "a trait must exist in Feature-Technical(10) by name before it is generated here — this profile does not invent capabilities"
+  quality:
+    - "method signatures use owned/borrowed parameters per the ownership-pattern default, not decided ad hoc"
+  review:
+    questions:
+      - "Does this trait name and its methods match Feature-Technical(10) wording exactly, or has it drifted?"
+  validation:
+    rules:
+      - "trait name present verbatim in feature-technical.md's Trait Definitions subsection for this feature"
+  inheritance:
+    allow_override:
+      - coding
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

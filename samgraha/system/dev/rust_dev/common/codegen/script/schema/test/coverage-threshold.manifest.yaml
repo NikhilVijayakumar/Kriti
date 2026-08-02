@@ -1,0 +1,10 @@
+check: coverage-threshold
+depends_on: []
+timeout_seconds: 600
+requires_network: false
+requires_tools:
+  - cargo
+  - cargo-tarpaulin
+runs:
+  - script/ubuntu/test/coverage-threshold.sh
+  - script/windows/test/coverage-threshold.ps1

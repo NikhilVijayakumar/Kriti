@@ -1,0 +1,52 @@
+schema:
+  id: rust_dev.codegen.code.profile.defaults.error-handling
+  name: Error Handling Code Defaults
+  version: 1.0.0
+description: >
+  Base profile inherited by code units that define or propagate errors.
+  Transcribes engineering.md's Rust Engineering Practices > Error
+  Handling / Unsafe Code policy into an enforceable generation rule. No
+  policy invented beyond what engineering.md already states.
+profile:
+  category: error-handling
+  extends: null
+  applies_to:
+    - error-enum
+  source: >
+    engineering.md > Rust Engineering Practices > Error Handling / Unsafe
+    Code
+  coding:
+    library_error_crate: thiserror
+    application_error_crate: anyhow
+    prohibited:
+      - "unwrap() or expect() in production code"
+      - "unsafe blocks without a // SAFETY: comment proving the invariants"
+    required:
+      - "one enum variant per failure mode"
+      - "#[from] conversions where a variant wraps exactly one upstream error type"
+      - "Display message that is actionable, not just the wrapped error's message"
+  constraints:
+    - "unsafe is prohibited by default per engineering.md; if required for FFI, must carry a // SAFETY: comment"
+  quality:
+    - "every public fallible function returns Result<T, ThisCrateError>"
+  review:
+    questions:
+      - "Does every variant map to a failure mode actually named in Feature-Technical(10)'s Error Implementation section?"
+      - "Is thiserror used (library) or anyhow used (application) per engineering.md, not mixed arbitrarily?"
+  validation:
+    rules:
+      - "no unwrap()/expect() outside #[cfg(test)]"
+      - "no unsafe block lacking a // SAFETY: comment"
+      - "error enum derives thiserror::Error"
+  inheritance:
+    allow_override:
+      - coding
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

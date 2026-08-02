@@ -1,0 +1,25 @@
+schema:
+  id: rust_dev.codegen.audit.deterministic.test.unit-test
+  name: Unit Test Deterministic Audit
+  version: 1.0.0
+domain: codegen.test
+unit: unit-test
+checks:
+  - id: codegen-test-unit-test-001
+    rule: "test function name matches test_<unit>_<scenario>_<expected>"
+    severity: error
+    mandatory: true
+  - id: codegen-test-unit-test-002
+    rule: "no network/filesystem/database call present in test body"
+    severity: critical
+    mandatory: true
+  - id: codegen-test-unit-test-003
+    rule: "line coverage meets the crate's configured threshold"
+    severity: warning
+    mandatory: false
+  - id: codegen-test-unit-test-004
+    rule: "every required/prohibited item in the code unit's own profile has at least one corresponding test"
+    severity: error
+    mandatory: true
+script:
+  - script/schema/test/coverage-threshold.manifest.yaml

@@ -1,0 +1,46 @@
+schema:
+  id: rust_dev.codegen.test.profile.unit-test
+  name: Unit Test Profile
+  version: 1.0.0
+inherits:
+  - unit
+unit:
+  id: unit-test
+  generation:
+    mode: derive
+    trigger: after_code_unit_exists
+  testing_objective: >
+    Verify one function/component in isolation, per qa.md's Unit Testing
+    section, against the behavior contract implied by Feature(04) and
+    this code unit's own profile (e.g. error-enum.yaml's
+    expected_content).
+  required_inputs:
+    - qa.unit_testing            # coverage targets, naming, AAA pattern
+    - engineering.testing_standards
+    - "the code unit under test's own profile (e.g. error-enum.yaml)"
+  expected_content:
+    required:
+      - "one #[test] function per behavior, named test_<unit>_<scenario>_<expected>"
+      - "Arrange-Act-Assert structure, one assertion block per behavior"
+    optional:
+      - "a table-driven case list when the same behavior is checked across many inputs"
+    prohibited:
+      - "asserting on private implementation details instead of the public contract"
+      - "network, filesystem, or database access"
+  generation_sequence:
+    - "Read the code unit's own profile expected_content to know what to verify"
+    - "Enumerate scenarios: one happy path, one per prohibited/edge case named in that profile"
+    - "Write test_<unit>_<scenario>_<expected> for each"
+    - "Confirm the coverage target from the concrete crate's profile is met"
+  completion:
+    checklist:
+      - "Every prohibited/required item in the code unit's profile has a corresponding test"
+      - "No test reaches outside the unit under test (isolation preserved)"
+  review:
+    questions:
+      - "If this test fails, does the name alone tell you which behavior broke?"
+  validation:
+    rules:
+      - "naming_pattern_matches: test_<unit>_<scenario>_<expected>"
+      - "aaa_structure_present: true"
+      - "no_io_in_unit_test: true"

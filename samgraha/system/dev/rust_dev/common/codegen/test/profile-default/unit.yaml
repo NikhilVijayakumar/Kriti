@@ -1,0 +1,50 @@
+schema:
+  id: rust_dev.codegen.test.profile.defaults.unit
+  name: Unit Test Defaults
+  version: 1.0.0
+description: >
+  Base profile inherited by unit test generation. Transcribes qa.md's
+  Unit Testing section (Coverage Targets table, naming convention,
+  Arrange-Act-Assert pattern) into an enforceable generation rule.
+profile:
+  category: unit
+  extends: null
+  applies_to:
+    - unit-test
+  source: >
+    qa.md > Unit Testing (coverage targets, naming convention, AAA
+    pattern)
+  testing:
+    naming_pattern: "test_<unit>_<scenario>_<expected>"
+    pattern: arrange-act-assert
+    one_assertion_per_behavior: true
+    coverage_targets:
+      line: null          # set per-crate in the concrete profile; qa.md leaves this project-specific
+      branch: null
+      function: null
+      measurement_tool: "[Tool]"    # per-crate slot; qa.md leaves the concrete tool project-specific
+  constraints:
+    - "tests individual components/functions in isolation (qa.md scope) — no integration, no I/O"
+  quality:
+    - "one behavior per test function"
+  review:
+    questions:
+      - "Does the test name state unit, scenario, and expected outcome per the naming pattern?"
+      - "Is this actually testing one unit in isolation, or has it drifted into integration territory?"
+  validation:
+    rules:
+      - "test function name matches test_<unit>_<scenario>_<expected>"
+      - "test body follows Arrange-Act-Assert ordering"
+      - "no network/filesystem/database calls in a unit test"
+  inheritance:
+    allow_override:
+      - testing
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

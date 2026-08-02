@@ -1,0 +1,46 @@
+schema:
+  id: rust_dev.codegen.build.profile.defaults.test-stage
+  name: Test Stage Defaults
+  version: 1.0.0
+description: >
+  Base profile for the second CI/CD gate. Transcribes build.md's CI/CD
+  Validation gate sequence and qa.md's Test Strategy priority levels
+  (Mandatory/Conditional). Stub category — no profile/*.yaml instantiates
+  it yet.
+profile:
+  category: test-stage
+  extends: null
+  applies_to:
+    - test-stage
+  source: >
+    build.md > CI/CD Validation; qa.md > Test Strategy
+  execution:
+    commands:
+      - "cargo test --all-features"
+    runs_after: [lint-stage]
+    blocking: true
+    gates: [security-stage, package-stage]
+  constraints:
+    - "runs only after lint-stage passes, per build.md's gate sequence"
+    - "mandatory test types from qa.md's Test Strategy (Unit, Security) must run every time; conditional types run per their applicability condition"
+  quality:
+    - "test failures block the security-stage and package-stage gates"
+  review:
+    questions:
+      - "Are conditional test types (load, scalability) actually being skipped when their applicability condition is false, or run unconditionally?"
+  validation:
+    rules:
+      - "cargo_test_exit_code == 0"
+      - "stage_runs_after_lint_stage: true"
+  inheritance:
+    allow_override:
+      - execution
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

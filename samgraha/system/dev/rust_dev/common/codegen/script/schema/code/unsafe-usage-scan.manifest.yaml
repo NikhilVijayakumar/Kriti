@@ -1,0 +1,8 @@
+check: unsafe-usage-scan
+depends_on: []
+timeout_seconds: 120
+requires_network: false
+requires_tools: []
+runs:
+  - script/ubuntu/code/unsafe-usage-scan.sh
+  - script/windows/code/unsafe-usage-scan.ps1

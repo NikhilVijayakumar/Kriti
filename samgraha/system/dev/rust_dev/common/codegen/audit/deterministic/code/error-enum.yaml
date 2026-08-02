@@ -1,0 +1,29 @@
+schema:
+  id: rust_dev.codegen.audit.deterministic.code.error-enum
+  name: Error Enum Deterministic Audit
+  version: 1.0.0
+domain: codegen.code
+unit: error-enum
+checks:
+  - id: codegen-code-error-enum-001
+    rule: "enum derives thiserror::Error"
+    severity: critical
+    mandatory: true
+  - id: codegen-code-error-enum-002
+    rule: "no unwrap() or expect() outside #[cfg(test)]"
+    severity: critical
+    mandatory: true
+  - id: codegen-code-error-enum-003
+    rule: "no variant named Other/Unknown/Generic used as a catch-all"
+    severity: error
+    mandatory: true
+  - id: codegen-code-error-enum-004
+    rule: "every variant carries an #[error(\"...\")] message"
+    severity: error
+    mandatory: true
+  - id: codegen-code-error-enum-005
+    rule: "variant count >= count of failure modes named in this feature's Feature-Technical(10) Error Implementation subsection"
+    severity: warning
+    mandatory: false
+script:
+  - script/schema/code/unsafe-usage-scan.manifest.yaml

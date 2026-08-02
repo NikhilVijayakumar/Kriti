@@ -1,0 +1,100 @@
+schema:
+  id: rust_dev.codegen.code-map
+  name: Code Unit Map
+  version: 1.0.0
+description: >
+  Defines the logical units of generated Rust source code for a feature
+  crate/module. Each entry specifies its hierarchy, whether it is built out
+  yet, the profile that governs how it is written, and which upstream
+  documentation section it is generated from. Coding rules, patterns, and
+  validation are defined separately in the corresponding code profile
+  (profile-default/*.yaml, profile/*.yaml) — not in this file.
+
+units:
+  - id: error-enum
+    title: Error Enum
+    parent_id: root
+    level: 1
+    order: 1
+    required: false
+    generated: true
+    profile: error-enum
+    upstream:
+      - feature-technical.error_implementation
+      - engineering.rust_engineering_practices
+    purpose: >
+      A per-crate error type implemented with thiserror, one variant per
+      failure mode named in Feature-Technical(10)'s Error Implementation
+      section.
+
+  - id: trait-definition
+    title: Trait Definition
+    parent_id: root
+    level: 1
+    order: 2
+    required: false
+    generated: false
+    profile: trait-definition
+    upstream:
+      - feature-technical.crate_implementation
+    purpose: >
+      Abstract capability contract named in Feature-Technical(10)'s Crate
+      Implementation > Trait Definitions subsection. TODO: profile/*.yaml
+      not yet written — only profile-default exists so far.
+
+  - id: struct-impl
+    title: Struct Implementation
+    parent_id: root
+    level: 1
+    order: 3
+    required: false
+    generated: false
+    profile: struct-impl
+    upstream:
+      - feature-technical.crate_implementation
+    purpose: >
+      Concrete type named in Feature-Technical(10)'s Crate Implementation >
+      Core Structs subsection. TODO: profile/*.yaml not yet written.
+
+  - id: service-impl
+    title: Service Implementation
+    parent_id: root
+    level: 1
+    order: 4
+    required: false
+    generated: false
+    profile: service-impl
+    upstream:
+      - feature-technical.crate_implementation
+      - feature-technical.runtime_behavior
+    purpose: >
+      Concrete trait implementation wiring Feature-Technical(10)'s runtime
+      behavior to a struct. TODO: profile/*.yaml not yet written — only
+      the shared pattern defaults (ownership-pattern, async-pattern) apply
+      to service-impl today; no service-impl-specific default exists yet.
+
+  - id: module
+    title: Module
+    parent_id: root
+    level: 1
+    order: 5
+    required: false
+    generated: false
+    profile: module
+    upstream:
+      - feature-technical.crate_implementation
+      - implementation.generation_plan
+    purpose: >
+      A file/mod.rs boundary matching Feature-Technical(10)'s Crate
+      Implementation > Module Structure subsection. TODO: profile/*.yaml
+      not yet written, and no profile-default category exists for it either.
+
+validation:
+  structure:
+    max_level: 1
+    unique_order_per_parent: true
+    no_duplicate_ids: true
+    no_orphan_ids: true
+    no_circular_parents: true
+  required:
+    enforce_required_units: true

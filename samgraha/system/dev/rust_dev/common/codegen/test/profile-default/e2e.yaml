@@ -1,0 +1,42 @@
+schema:
+  id: rust_dev.codegen.test.profile.defaults.e2e
+  name: End-to-End Test Defaults
+  version: 1.0.0
+description: >
+  Base profile for e2e test generation. Transcribes qa.md's End-to-End
+  Testing section (Critical Runtime Workflows table referencing
+  Feature-Technical(10) runtime_behavior). Stub category — no
+  profile/*.yaml instantiates it yet.
+profile:
+  category: e2e
+  extends: null
+  applies_to:
+    - e2e-test
+  source: >
+    qa.md > End-to-End Testing (Critical Runtime Workflows table)
+  testing:
+    required_table_columns: [workflow, runtime_behavior_reference, expected_outcome, pass_fail_criteria]
+    scope: "entry point to final output, per feature-technical.runtime_behavior"
+  constraints:
+    - "every workflow tested must cite a specific Feature-Technical(10) runtime_behavior section, not a generic 'the binary runs'"
+  quality:
+    - "pass/fail criteria are automated assertions, not manual observation"
+  review:
+    questions:
+      - "Does this workflow's pass/fail criteria trace to an observable system state, not a subjective judgment?"
+  validation:
+    rules:
+      - "workflow cites a feature-technical.runtime_behavior section"
+      - "pass/fail criteria is an automatable assertion"
+  inheritance:
+    allow_override:
+      - testing
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

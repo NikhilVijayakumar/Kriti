@@ -1,0 +1,42 @@
+schema:
+  id: rust_dev.codegen.test.profile.defaults.benchmark
+  name: Benchmark Test Defaults
+  version: 1.0.0
+description: >
+  Base profile for benchmark test generation. Transcribes qa.md's
+  Benchmark Testing section (criterion, regression threshold). Stub
+  category — no profile/*.yaml instantiates it yet.
+profile:
+  category: benchmark
+  extends: null
+  applies_to:
+    - benchmark-test
+  source: >
+    qa.md > Benchmark Testing
+  testing:
+    tool: criterion
+    regression_threshold_pct: 5    # qa.md's own worked example threshold
+    scope: "performance-critical paths only, not every function"
+  constraints:
+    - "a regression beyond the threshold fails CI, per qa.md's Benchmark Testing statement"
+  quality:
+    - "measures latency/throughput/allocations statistically, not a single wall-clock sample"
+  review:
+    questions:
+      - "Is this path actually performance-critical, or is a benchmark being added speculatively?"
+  validation:
+    rules:
+      - "uses criterion"
+      - "regression threshold defined numerically"
+  inheritance:
+    allow_override:
+      - testing
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

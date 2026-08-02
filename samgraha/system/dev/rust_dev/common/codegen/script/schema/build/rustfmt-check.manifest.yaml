@@ -1,0 +1,9 @@
+check: rustfmt-check
+depends_on: []
+timeout_seconds: 120
+requires_network: false
+requires_tools:
+  - cargo
+runs:
+  - script/ubuntu/build/rustfmt-check.sh
+  - script/windows/build/rustfmt-check.ps1

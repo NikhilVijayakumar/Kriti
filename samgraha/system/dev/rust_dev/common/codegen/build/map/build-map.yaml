@@ -1,0 +1,102 @@
+schema:
+  id: rust_dev.codegen.build-map
+  name: Build Stage Map
+  version: 1.0.0
+description: >
+  Defines the logical stages of generated CI/CD execution for a feature
+  crate/module. Mirrors code-map.yaml's shape. `upstream` points at the
+  Build(14) section that already defines the stage's rules in prose; this
+  map tracks which stages are machine-actionable so far. `order` here is
+  also gate order per build.md's CI/CD Validation sequence — a failure at
+  a lower order blocks every higher-order stage.
+
+units:
+  - id: lint-stage
+    title: Lint Stage
+    parent_id: root
+    level: 1
+    order: 1
+    required: true
+    generated: true
+    profile: lint-stage
+    upstream:
+      - build.cicd_validation
+      - build.documentation_quality
+    purpose: >
+      First gate: cargo fmt --check + cargo clippy -D warnings. Mandatory,
+      blocks every downstream stage per build.md.
+
+  - id: test-stage
+    title: Test Stage
+    parent_id: root
+    level: 1
+    order: 2
+    required: true
+    generated: false
+    profile: test-stage
+    upstream:
+      - build.cicd_validation
+      - qa.test_strategy
+    purpose: >
+      Runs the unit/integration/e2e test suite gated by lint-stage. TODO:
+      profile/*.yaml not yet written.
+
+  - id: security-stage
+    title: Security Stage
+    parent_id: root
+    level: 1
+    order: 3
+    required: true
+    generated: false
+    profile: security-stage
+    upstream:
+      - build.security_checks
+      - security.threat_model
+    purpose: >
+      Dependency scan + SAST + secrets detection per build.md's Security
+      Checks section severity thresholds. TODO: profile/*.yaml not yet
+      written.
+
+  - id: package-stage
+    title: Package Stage
+    parent_id: root
+    level: 1
+    order: 4
+    required: true
+    generated: false
+    profile: package-stage
+    upstream:
+      - build.versioning_naming
+      - build.size_checks
+    purpose: >
+      Builds and names the final artifact per build.md's Versioning &
+      Naming and Size Checks sections. TODO: profile/*.yaml not yet
+      written.
+
+  - id: versioning-stage
+    title: Versioning Stage
+    parent_id: root
+    level: 1
+    order: 5
+    required: false
+    generated: false
+    profile: versioning-stage
+    upstream:
+      - build.versioning_naming
+    purpose: >
+      Applies the semver scheme and artifact naming template per build.md.
+      TODO: profile/*.yaml not yet written; folded into package-stage
+      until it earns its own profile.
+
+validation:
+  structure:
+    max_level: 1
+    unique_order_per_parent: true
+    no_duplicate_ids: true
+    no_orphan_ids: true
+    no_circular_parents: true
+  required:
+    enforce_required_units: true
+  gate_sequence:
+    strict_order: true
+    failure_blocks_downstream: true

@@ -1,0 +1,43 @@
+schema:
+  id: rust_dev.codegen.code.profile.defaults.ownership-pattern
+  name: Ownership Pattern Code Defaults
+  version: 1.0.0
+description: >
+  Base profile inherited by code units that own, borrow, or share state.
+  Transcribes engineering.md's Ownership Patterns section (the "Shared
+  Ownership Limitations" subsection constraining Rc/Arc/RefCell/Mutex
+  usage) into an enforceable generation rule.
+profile:
+  category: ownership-pattern
+  extends: null
+  applies_to:
+    - struct-impl
+    - service-impl
+  source: >
+    engineering.md > Ownership Patterns > Shared Ownership Limitations
+  coding:
+    default: "owned or borrowed values; Rc/Arc/RefCell/Mutex are the exception, not the default"
+    shared_ownership_requires_justification: true
+  constraints:
+    - "Rc/RefCell usage must state why single ownership or borrowing was insufficient"
+    - "Arc/Mutex usage must state the concurrency reason, not be a default choice for shared state"
+  quality:
+    - "struct fields are typed as owned or a reference with an explicit lifetime before Rc/Arc is reached for"
+  review:
+    questions:
+      - "Could this field be an owned value or a borrow instead of Rc/Arc/RefCell/Mutex?"
+  validation:
+    rules:
+      - "every Rc/Arc/RefCell/Mutex field has an adjacent comment stating why shared ownership is required"
+  inheritance:
+    allow_override:
+      - coding
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

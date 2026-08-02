@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "rustfmt-check result",
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "error"]
+    },
+    "diff_excerpt": {
+      "type": "string"
+    }
+  }
+}

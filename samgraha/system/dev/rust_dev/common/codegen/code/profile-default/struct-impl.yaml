@@ -1,0 +1,41 @@
+schema:
+  id: rust_dev.codegen.code.profile.defaults.struct-impl
+  name: Struct Implementation Code Defaults
+  version: 1.0.0
+description: >
+  Base profile for struct code units. Transcribes feature-technical.md's
+  Crate Implementation > Core Structs subsection. Stub category — no
+  profile/*.yaml instantiates it yet (see code-map.yaml struct-impl
+  entry).
+profile:
+  category: struct-impl
+  extends: null
+  applies_to:
+    - struct-impl
+  source: >
+    feature-technical.md > Crate Implementation > Core Structs subsection
+  coding:
+    default: "struct name and field ownership must match Feature-Technical(10)'s Core Structs wording"
+    derive_minimum_necessary: true
+  constraints:
+    - "field ownership (owned vs Rc/Arc/RefCell) follows the ownership-pattern default, not this profile"
+  quality:
+    - "derives only the traits actually used (no speculative Clone/Default/Serialize)"
+  review:
+    questions:
+      - "Does every field exist because Feature-Technical(10) named it, or was one added speculatively?"
+  validation:
+    rules:
+      - "struct name present verbatim in feature-technical.md's Core Structs subsection for this feature"
+  inheritance:
+    allow_override:
+      - coding
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

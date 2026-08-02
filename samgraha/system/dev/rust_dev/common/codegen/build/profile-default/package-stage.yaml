@@ -1,0 +1,45 @@
+schema:
+  id: rust_dev.codegen.build.profile.defaults.package-stage
+  name: Package Stage Defaults
+  version: 1.0.0
+description: >
+  Base profile for the final CI/CD gate. Transcribes build.md's Size
+  Checks and Versioning & Naming sections. Stub category — no
+  profile/*.yaml instantiates it yet.
+profile:
+  category: package-stage
+  extends: null
+  applies_to:
+    - package-stage
+  source: >
+    build.md > Size Checks; Versioning & Naming
+  execution:
+    commands:
+      - "cargo build --release"
+    runs_after: [security-stage]
+    blocking: true
+    gates: []
+  constraints:
+    - "size limits, if the project profile has any, are enforced here per build.md's Size Checks (conditional stage)"
+    - "artifact name follows the versioning-stage naming template"
+  quality:
+    - "size measurement method (compressed vs. uncompressed) is stated, not assumed"
+  review:
+    questions:
+      - "If this project has a size constraint, does this stage actually enforce a numeric limit, or just report a number?"
+  validation:
+    rules:
+      - "cargo_build_release_exit_code == 0"
+      - "stage_runs_after_security_stage: true"
+  inheritance:
+    allow_override:
+      - execution
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

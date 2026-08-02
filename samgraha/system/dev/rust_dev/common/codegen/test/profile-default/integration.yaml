@@ -1,0 +1,42 @@
+schema:
+  id: rust_dev.codegen.test.profile.defaults.integration
+  name: Integration Test Defaults
+  version: 1.0.0
+description: >
+  Base profile for integration test generation. Transcribes qa.md's
+  Integration Testing section (Integration Boundaries table: Boundary /
+  Components / Contract / Verification Method). Stub category — no
+  profile/*.yaml instantiates it yet.
+profile:
+  category: integration
+  extends: null
+  applies_to:
+    - integration-test
+  source: >
+    qa.md > Integration Testing (Integration Boundaries table)
+  testing:
+    required_table_columns: [boundary, components, contract, verification_method]
+    scope: "component pairs from architecture.crate_architecture, not internals of either side"
+  constraints:
+    - "every boundary tested must map to a specific component pair named in Architecture(05), not a vague 'services talk to each other'"
+  quality:
+    - "each boundary states its contract type (API schema, message format, protocol)"
+  review:
+    questions:
+      - "Does this test verify a named boundary's contract, or has it drifted into testing one side's internals?"
+  validation:
+    rules:
+      - "boundary maps to an Architecture(05) component pair"
+      - "contract type stated"
+  inheritance:
+    allow_override:
+      - testing
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

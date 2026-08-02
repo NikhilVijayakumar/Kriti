@@ -1,0 +1,46 @@
+schema:
+  id: rust_dev.codegen.build.profile.defaults.security-stage
+  name: Security Stage Defaults
+  version: 1.0.0
+description: >
+  Base profile for the third CI/CD gate. Transcribes build.md's Security
+  Checks section (mandatory, severity thresholds mapped to Security(03)
+  threat categories). Stub category — no profile/*.yaml instantiates it
+  yet.
+profile:
+  category: security-stage
+  extends: null
+  applies_to:
+    - security-stage
+  source: >
+    build.md > Security Checks
+  execution:
+    commands:
+      - "cargo audit"
+    runs_after: [test-stage]
+    blocking: true
+    gates: [package-stage]
+  constraints:
+    - "critical and high severity findings block the build; medium/low log without blocking, per build.md"
+    - "every check maps to a Security(03) threat category — no unmapped scan tool added"
+  quality:
+    - "scan frequency and severity thresholds are explicit, not left as tool defaults"
+  review:
+    questions:
+      - "Does a critical finding actually stop package-stage, or does the pipeline continue anyway?"
+  validation:
+    rules:
+      - "cargo_audit_exit_code == 0 OR only medium/low findings present"
+      - "stage_runs_after_test_stage: true"
+  inheritance:
+    allow_override:
+      - execution
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

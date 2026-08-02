@@ -1,0 +1,41 @@
+schema:
+  id: rust_dev.codegen.test.profile.defaults.property
+  name: Property Test Defaults
+  version: 1.0.0
+description: >
+  Base profile for property test generation. Transcribes qa.md's Property
+  Testing section (proptest/quickcheck over arbitrary inputs). Stub
+  category — no profile/*.yaml instantiates it yet.
+profile:
+  category: property
+  extends: null
+  applies_to:
+    - property-test
+  source: >
+    qa.md > Property Testing
+  testing:
+    tool: "proptest or quickcheck"
+    scope: "invariants that hold across all generated inputs, not example-based cases"
+  constraints:
+    - "must assert an invariant (e.g. no panic, round-trip equality), not just re-check a single fixed example"
+  quality:
+    - "input generation covers the arbitrary domain the function actually accepts, not a narrow hand-picked subset"
+  review:
+    questions:
+      - "Does this test hold for any arbitrary input in the declared domain, or only the specific inputs chosen?"
+  validation:
+    rules:
+      - "uses proptest or quickcheck macro/harness"
+      - "asserts an invariant, not a single expected value"
+  inheritance:
+    allow_override:
+      - testing
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

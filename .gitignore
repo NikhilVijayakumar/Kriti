@@ -9,6 +9,13 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+# rust_dev codegen "build" branch is real source, not python build output
+!samgraha/system/dev/rust_dev/common/codegen/build/
+!samgraha/system/dev/rust_dev/common/codegen/audit/deterministic/build/
+!samgraha/system/dev/rust_dev/common/codegen/audit/semantic/build/
+!samgraha/system/dev/rust_dev/common/codegen/script/schema/build/
+!samgraha/system/dev/rust_dev/common/codegen/script/ubuntu/build/
+!samgraha/system/dev/rust_dev/common/codegen/script/windows/build/
 develop-eggs/
 dist/
 downloads/

@@ -1,0 +1,95 @@
+schema:
+  id: rust_dev.codegen.test-map
+  name: Test Unit Map
+  version: 1.0.0
+description: >
+  Defines the logical units of generated test code for a feature
+  crate/module. Mirrors code-map.yaml's shape. Each entry's `upstream`
+  points at the QA(12) section that already defines its strategy in prose
+  — this map only tracks which units are machine-actionable so far.
+
+units:
+  - id: unit-test
+    title: Unit Test
+    parent_id: root
+    level: 1
+    order: 1
+    required: true
+    generated: true
+    profile: unit-test
+    upstream:
+      - qa.unit_testing
+      - engineering.testing_standards
+    purpose: >
+      Verifies one function/component in isolation per qa.md's Unit
+      Testing section (coverage targets, naming convention, AAA pattern).
+
+  - id: integration-test
+    title: Integration Test
+    parent_id: root
+    level: 1
+    order: 2
+    required: false
+    generated: false
+    profile: integration-test
+    upstream:
+      - qa.integration_testing
+      - architecture.crate_architecture
+    purpose: >
+      Verifies component boundaries per qa.md's Integration Boundaries
+      table. TODO: profile/*.yaml not yet written.
+
+  - id: e2e-test
+    title: End-to-End Test
+    parent_id: root
+    level: 1
+    order: 3
+    required: false
+    generated: false
+    profile: e2e-test
+    upstream:
+      - qa.e2e_testing
+      - feature-technical.runtime_behavior
+    purpose: >
+      Verifies a critical runtime workflow per qa.md's Critical Runtime
+      Workflows table. TODO: profile/*.yaml not yet written.
+
+  - id: property-test
+    title: Property Test
+    parent_id: root
+    level: 1
+    order: 4
+    required: false
+    generated: false
+    profile: property-test
+    upstream:
+      - qa.property_testing
+    purpose: >
+      Fuzzes inputs to assert an invariant holds, per qa.md's Property
+      Testing section (proptest/quickcheck). TODO: profile/*.yaml not yet
+      written.
+
+  - id: benchmark-test
+    title: Benchmark Test
+    parent_id: root
+    level: 1
+    order: 5
+    required: false
+    generated: false
+    profile: benchmark-test
+    upstream:
+      - qa.benchmark_testing
+    purpose: >
+      Measures a performance-critical path per qa.md's Benchmark Testing
+      section (criterion, regression threshold). TODO: profile/*.yaml not
+      yet written.
+
+validation:
+  structure:
+    max_level: 1
+    unique_order_per_parent: true
+    no_duplicate_ids: true
+    no_orphan_ids: true
+    no_circular_parents: true
+  required:
+    enforce_required_units: true

@@ -1,0 +1,45 @@
+schema:
+  id: rust_dev.codegen.build.profile.defaults.lint-stage
+  name: Lint Stage Defaults
+  version: 1.0.0
+description: >
+  Base profile for the first gate in the CI/CD sequence build.md defines
+  (lint -> unit tests -> integration tests -> security scan -> build ->
+  package). A failure here blocks every downstream gate.
+profile:
+  category: lint-stage
+  extends: null
+  applies_to:
+    - lint-stage
+  source: >
+    build.md > CI/CD Validation (gate sequence) + Documentation Quality
+    (mandatory, gates all downstream stages)
+  execution:
+    commands:
+      - "cargo fmt --check"
+      - "cargo clippy --all-targets --all-features -- -D warnings"
+    blocking: true
+    gates: [test-stage, security-stage, package-stage]
+  constraints:
+    - "gate sequence is ordered; parallel execution of dependent gates is prohibited per build.md"
+  quality:
+    - "zero clippy warnings, not just zero errors (-D warnings)"
+  review:
+    questions:
+      - "Does a failure here actually stop the pipeline, or just log a warning?"
+  validation:
+    rules:
+      - "cargo_fmt_check_exit_code == 0"
+      - "cargo_clippy_exit_code == 0"
+  inheritance:
+    allow_override:
+      - execution
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

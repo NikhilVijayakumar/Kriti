@@ -1,0 +1,25 @@
+schema:
+  id: rust_dev.codegen.audit.deterministic.build.lint-stage
+  name: Lint Stage Deterministic Audit
+  version: 1.0.0
+domain: codegen.build
+unit: lint-stage
+checks:
+  - id: codegen-build-lint-stage-001
+    rule: "cargo fmt --check exits 0"
+    severity: critical
+    mandatory: true
+  - id: codegen-build-lint-stage-002
+    rule: "cargo clippy --all-targets --all-features -- -D warnings exits 0"
+    severity: critical
+    mandatory: true
+  - id: codegen-build-lint-stage-003
+    rule: "stage is ordered before test-stage, security-stage, and package-stage"
+    severity: error
+    mandatory: true
+  - id: codegen-build-lint-stage-004
+    rule: "neither step is marked continue-on-error / allow-failure"
+    severity: critical
+    mandatory: true
+script:
+  - script/schema/build/rustfmt-check.manifest.yaml

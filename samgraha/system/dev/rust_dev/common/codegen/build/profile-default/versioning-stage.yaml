@@ -1,0 +1,42 @@
+schema:
+  id: rust_dev.codegen.build.profile.defaults.versioning-stage
+  name: Versioning Defaults
+  version: 1.0.0
+description: >
+  Base profile for the versioning-stage code unit. Transcribes build.md's
+  Versioning & Naming section (semver scheme, naming template,
+  compatibility rules). Stub category — no profile/*.yaml instantiates it
+  yet; folded into package-stage until it earns its own profile.
+profile:
+  category: versioning-stage
+  extends: null
+  applies_to:
+    - versioning-stage
+  source: >
+    build.md > Versioning & Naming
+  execution:
+    scheme: semver
+    naming_template: "{name}-{version}.{ext}"
+  constraints:
+    - "MAJOR bumps require a migration guide; MINOR bumps must be backward-compatible, per build.md's worked example"
+  quality:
+    - "compatibility rules are documented per version component (MAJOR/MINOR/PATCH), not left implicit"
+  review:
+    questions:
+      - "Does this version bump match the actual scope of the change (breaking vs. additive)?"
+  validation:
+    rules:
+      - "version string matches MAJOR.MINOR.PATCH"
+      - "artifact name matches {name}-{version}.{ext}"
+  inheritance:
+    allow_override:
+      - execution
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source

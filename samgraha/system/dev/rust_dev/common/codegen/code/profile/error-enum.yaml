@@ -1,0 +1,51 @@
+schema:
+  id: rust_dev.codegen.code.profile.error-enum
+  name: Error Enum Code Profile
+  version: 1.0.0
+inherits:
+  - error-handling
+unit:
+  id: error-enum
+  generation:
+    mode: transcribe
+    trigger: after_feature_technical_error_implementation_section_exists
+  coding_objective: >
+    Produce a single per-crate error enum that gives every failure mode
+    named in Feature-Technical(10)'s Error Implementation section a
+    variant, using thiserror, matching engineering.md's Error Handling
+    policy exactly.
+  required_inputs:
+    - feature-technical.error_implementation   # names which failure modes exist
+    - engineering.rust_engineering_practices    # thiserror vs anyhow, unwrap ban
+  expected_content:
+    required:
+      - "#[derive(thiserror::Error, Debug)] on the enum"
+      - "one variant per failure mode named upstream"
+      - "#[error(\"...\")] message per variant, worded for the caller, not the implementor"
+    optional:
+      - "#[from] on variants that wrap exactly one upstream error type"
+    prohibited:
+      - "a catch-all Other(String) variant used as a substitute for naming real failure modes"
+      - "unwrap()/expect() anywhere in non-test code"
+  generation_sequence:
+    - "Read Feature-Technical(10)'s Error Implementation subsection for this feature"
+    - "List every named failure mode as a candidate variant"
+    - "For each variant, decide #[from] vs constructed-with-context based on whether exactly one upstream error type maps to it"
+    - "Write #[error(\"...\")] messages that are actionable to a caller"
+    - "Confirm the crate is a library (thiserror) not an application (anyhow) before proceeding"
+  completion:
+    checklist:
+      - "Every Feature-Technical(10) failure mode has exactly one variant"
+      - "No variant exists that Feature-Technical(10) does not name"
+      - "Enum derives thiserror::Error"
+      - "No unwrap()/expect() introduced by this generation step"
+  review:
+    questions:
+      - "Would a caller matching on this enum know what to do differently per variant?"
+      - "Does any variant duplicate another under a different name?"
+  validation:
+    rules:
+      - "enum_derives_thiserror: true"
+      - "variant_count >= failure_modes_named_in_feature_technical"
+      - "no_catch_all_string_variant: true"
+      - "no_unwrap_outside_test: true"

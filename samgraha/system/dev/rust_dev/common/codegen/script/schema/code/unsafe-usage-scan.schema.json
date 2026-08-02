@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "unsafe-usage-scan result",
+  "type": "object",
+  "required": ["status", "violations"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "error", "not_applicable"]
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "line", "reason"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

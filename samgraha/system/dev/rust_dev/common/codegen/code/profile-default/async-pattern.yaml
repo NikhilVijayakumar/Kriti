@@ -1,0 +1,42 @@
+schema:
+  id: rust_dev.codegen.code.profile.defaults.async-pattern
+  name: Async Pattern Code Defaults
+  version: 1.0.0
+description: >
+  Base profile inherited by code units with async execution paths.
+  Transcribes engineering.md's Async Patterns section (the "Blocking Task
+  Offloading" subsection requiring tokio::task::spawn_blocking) into an
+  enforceable generation rule.
+profile:
+  category: async-pattern
+  extends: null
+  applies_to:
+    - service-impl
+  source: >
+    engineering.md > Async Patterns > Blocking Task Offloading
+  coding:
+    blocking_work_offload: "tokio::task::spawn_blocking"
+    prohibited:
+      - "CPU-bound or blocking I/O executed directly inside an async fn without spawn_blocking"
+  constraints:
+    - "any call known to block (sync file I/O, CPU-heavy computation, sync DB driver) must be wrapped in tokio::task::spawn_blocking"
+  quality:
+    - "async fn bodies stay non-blocking end to end"
+  review:
+    questions:
+      - "Does any await point in this function actually block the executor thread underneath?"
+  validation:
+    rules:
+      - "no known-blocking call inside an async fn without spawn_blocking"
+  inheritance:
+    allow_override:
+      - coding
+      - constraints
+      - quality
+      - review
+      - validation
+    prohibit_override:
+      - schema
+      - profile.category
+      - profile.extends
+      - profile.source
