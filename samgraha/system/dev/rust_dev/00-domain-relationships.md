@@ -188,7 +188,25 @@ relationship_types:   # closed set — no custom types without updating this fil
 
 ## Usage
 
-Check this before adding a new relationship to a domain — if the relationship isn't in the table above, add it here too, otherwise this document drifts out of sync with itself the same way it drifted out of sync with code before this rewrite. When `security`, `implementation`, and `build` get registered as real `StandardDefinition`s in `crates/standards/src/builtin.rs`, that code should be written to match this file, not the other way around. If the "Machine-Readable Format" section above is ever turned into a real `common/plan/tiers.yaml`, this file's prose/table version stays authoritative — that file would be a transcription of this one, not a second independently-maintained copy.
+Check this before adding a new relationship to a domain — if the relationship isn't in the table above, add it here too, otherwise this document drifts out of sync with itself the same way it drifted out of sync with code before this rewrite. When `security`, `implementation`, and `build` get registered as real `StandardDefinition`s in `crates/standards/src/builtin.rs`, that code should be written to match this file, not the other way around. If the "Machine-Readable Format" section above is ever turned into a real `common/plan/core/tiers.yaml`, this file's prose/table version stays authoritative — that file would be a transcription of this one, not a second independently-maintained copy.
+
+## Code/Test/Build Generation Layer
+
+`common/codegen/` is not a numbered tier — it produces no document, so it
+doesn't fit the `domain/NN-*.md` + `tierN` pattern above. It sits
+downstream of Implementation(13)/QA(12)/Build(14) and defines how their
+planning-document content becomes real output: `codegen/code/` governs
+`.rs` source generation, `codegen/test/` governs test-file generation,
+`codegen/build/` governs CI/CD execution. Each mirrors the
+map/profile-default/profile shape `domain/` sections use, but the "map"
+units are code/test/build artifacts instead of document sections, and
+`upstream:` points at the specific Implementation/QA/Build/Engineering/
+Feature-Technical section that names what to generate — it does not
+invent policy Feature-Technical.md and engineering.md don't already
+state. Only one worked profile exists per branch so far (`error-enum`,
+`unit-test`, `lint-stage`); the rest of each `map.yaml` is stubbed with
+`generated: false` pending the same build-out pattern that took `domain/`
+from tier1 to tier7.
 
 ## Rust-Specific Cross-Domain Relationships
 
