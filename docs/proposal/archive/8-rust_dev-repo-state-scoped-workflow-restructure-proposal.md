@@ -3,7 +3,7 @@
 ## 0. Series
 
 Part of the same set — see
-[`archive/1-rust_dev-tier-directory-restructure-proposal.md`](archive/1-rust_dev-tier-directory-restructure-proposal.md) §0.
+[`archive/1-rust_dev-tier-directory-restructure-proposal.md`](1-rust_dev-tier-directory-restructure-proposal.md) §0.
 Proposals 1-7 executed and are archived
 (`docs/proposal/archive/{1..7}-rust_dev-*.md`, commit `5780be1`) — this
 proposal is new work on top of that landed state, not a design pass
