@@ -1,0 +1,42 @@
+input:
+  profile:
+    id: vision-overview
+    writing_objective: capture the vision
+    knowledge_goal: reader understands the vision
+    reader_goal: reader can recall the vision statement
+    required_inputs: []
+    expected_outputs: []
+    subsections: []
+    validation:
+      rules:
+      - id: r7
+        condition: sections cover the vision statement
+        message: vision statement must appear
+        severity: error
+        weight: 1.0
+        mandatory: true
+  map:
+    id: vision-map
+    sections:
+    - id: vision-overview
+      level: 1
+      parent_id: root
+      order: 1
+output:
+  verdict: fail
+  findings:
+  - id: PROFILE-RULE-001
+    condition: every validation rule carries id/condition/message/severity/weight/mandatory/evidence
+    message: rule 'r7' of profile 'vision-overview' is missing the 'evidence' field
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence: profile.validation.rules[0] lacks the evidence field
+    kind: defect
+dos:
+- check every rule field explicitly, including evidence
+- resolve rule targets against the owning map
+- tag malformed declarations as defect
+donts:
+- judge the quality of documents produced from the profile
+- report a rule that carries all seven fields

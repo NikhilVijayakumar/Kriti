@@ -1,0 +1,45 @@
+name: verify-epic-usecase-task
+responsibility: |-
+  Check one Epic's subtree — epic to usecases to tasks to task steps: parent
+  chain, at least one Task per Usecase, contract and task-step completeness,
+  and required-capability resolution — producing a verdict, findings, and the
+  gaps the provisioning scenario consumes.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    epic:
+      type: object
+      description: One Epic with its full usecase/task/task-step subtree.
+  required:
+  - epic
+invocation_output_json:
+  type: object
+  properties:
+    verdict:
+      type: string
+      enum: [pass, fail]
+    findings:
+      type: array
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          condition: { type: string }
+          message: { type: string }
+          severity: { type: string, enum: [error, warning, info] }
+          weight: { type: number }
+          mandatory: { type: boolean }
+          evidence: { type: string }
+          kind: { type: string, enum: [defect, gap] }
+    gaps:
+      type: array
+      description: Unresolved capabilities and uncovered work for Scenario B.
+      items:
+        type: object
+  required:
+  - verdict
+  - findings
+  - gaps
+prompt_ref: prompt.md
+examples_ref: examples

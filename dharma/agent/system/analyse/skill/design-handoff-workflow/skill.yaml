@@ -1,0 +1,46 @@
+name: design-handoff-workflow
+responsibility: |-
+  Emit a Task's workflow: the ordered skill invocations the owning agent makes,
+  the per-step handoff conditions naming candidate roles (never specific agent
+  instances), and the verification path that certifies task, usecase, and epic
+  completion — the verifier is never the worker.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    task:
+      type: object
+      description: The Task whose workflow is designed.
+    assignment:
+      type: object
+      description: The Task's proposed assignment.
+    epics_context:
+      type: object
+      description: The epic/usecase context the Task sits in, for chaining.
+  required:
+  - task
+  - assignment
+  - epics_context
+invocation_output_json:
+  type: object
+  properties:
+    workflow:
+      type: object
+      properties:
+        task: { type: string }
+        owning_agent: { type: string }
+        steps:
+          type: array
+          items:
+            type: object
+        handoffs:
+          type: array
+          items:
+            type: object
+        verified_by:
+          type: object
+          description: The verifier role per level — never the worker.
+  required:
+  - workflow
+prompt_ref: prompt.md
+examples_ref: examples

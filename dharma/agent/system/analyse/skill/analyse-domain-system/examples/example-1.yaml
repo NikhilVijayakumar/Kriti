@@ -1,0 +1,47 @@
+input:
+  domain_system:
+    domains:
+    - id: vision
+      map_id: vision-map
+      profile_ids: [vision-profile]
+    epics:
+    - id: kickoff
+      usecases: []
+    usecases:
+    - id: draft-vision
+      epic_id: kickoff
+      tasks: []
+output:
+  elements:
+    domains:
+    - id: vision
+      map_id: vision-map
+      profile_ids: [vision-profile]
+    section_maps:
+    - id: vision-map
+      domain_id: vision
+    section_profiles:
+    - id: vision-profile
+      domain_id: vision
+    epics:
+    - id: kickoff
+    usecases:
+    - id: draft-vision
+      epic_id: kickoff
+    tasks: []
+    task_steps: []
+  counts:
+    domains: 1
+    section_maps: 1
+    section_profiles: 1
+    epics: 1
+    usecases: 1
+    tasks: 0
+    task_steps: 0
+dos:
+- preserve parent links on every element
+- emit an empty list for kinds with no rows instead of omitting the key
+- normalize ids to a stable string form without renaming
+donts:
+- drop an element because it looks redundant
+- invent ids or merge rows that the tree keeps separate

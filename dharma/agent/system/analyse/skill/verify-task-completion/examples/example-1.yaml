@@ -1,0 +1,33 @@
+input:
+  task:
+    id: write-vision
+    task_steps:
+    - id: s1
+      description: draft the vision statement
+    - id: s2
+      description: reconcile against upstream documents
+    output_contract:
+      type: object
+      required: [document]
+    acceptance_criteria:
+      happy_path: [document covers the vision statement]
+      corner_case: []
+      edge_case: []
+  evidence:
+    steps:
+      s1: verified-complete
+      s2: verified-complete
+    output:
+      document: vision statement drafted and reconciled
+output:
+  verdict: pass
+  evidence: >-
+    step 's1' and step 's2' are verified complete by their verifier, and the
+    output 'document' satisfies the output contract and the happy-path
+    acceptance criterion.
+dos:
+- confirm every task step has an independent verifier verdict before passing
+- check the output against the contract and all non-empty acceptance tiers
+donts:
+- certify the task on the worker's own report alone
+- pass when any step is unverified

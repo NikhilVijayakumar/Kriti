@@ -1,0 +1,39 @@
+name: verify-section-map
+responsibility: |-
+  Check a domain's Section Map against the map invariants — unique section
+  ids, non-decreasing order, a single root link, resolvable profile
+  references, and validation-block agreement — producing a verdict and
+  findings with evidence.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    map:
+      type: object
+      description: The domain's Section Map to check.
+  required:
+  - map
+invocation_output_json:
+  type: object
+  properties:
+    verdict:
+      type: string
+      enum: [pass, fail]
+    findings:
+      type: array
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          condition: { type: string }
+          message: { type: string }
+          severity: { type: string, enum: [error, warning, info] }
+          weight: { type: number }
+          mandatory: { type: boolean }
+          evidence: { type: string }
+          kind: { type: string, enum: [defect, gap] }
+  required:
+  - verdict
+  - findings
+prompt_ref: prompt.md
+examples_ref: examples

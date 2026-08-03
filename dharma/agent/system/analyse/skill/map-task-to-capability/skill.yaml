@@ -1,0 +1,39 @@
+name: map-task-to-capability
+responsibility: |-
+  Derive the capability set a Task requires from its input/output contract and
+  its task-step sequence — for each step the concern plus the skill
+  responsibilities that could execute it — so assignment can match against
+  registered Agent Systems and their agents' Skill Bindings.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    task:
+      type: object
+      description: The Task whose capabilities are derived.
+    task_steps:
+      type: array
+      description: The Task's task-step sequence.
+      items:
+        type: object
+  required:
+  - task
+  - task_steps
+invocation_output_json:
+  type: object
+  properties:
+    capabilities:
+      type: array
+      description: Per-step capability set.
+      items:
+        type: object
+        properties:
+          step: { type: string }
+          concern: { type: string }
+          skill_responsibilities:
+            type: array
+            items: { type: string }
+  required:
+  - capabilities
+prompt_ref: prompt.md
+examples_ref: examples

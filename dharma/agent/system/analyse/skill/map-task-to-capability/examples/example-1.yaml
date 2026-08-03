@@ -1,0 +1,33 @@
+input:
+  task:
+    id: reconcile-vision
+    input_contract:
+      type: object
+      properties:
+        draft: { type: string }
+    output_contract:
+      type: object
+      required: [final_document]
+  task_steps:
+  - id: s1
+    description: read the draft against the upstream documents
+    required_capability: rust-development
+  - id: s2
+    description: apply the required corrections
+    required_capability: rust-development
+output:
+  capabilities:
+  - step: s1
+    concern: rust-development
+    skill_responsibilities:
+    - read a draft document against its upstream source
+  - step: s2
+    concern: rust-development
+    skill_responsibilities:
+    - apply required corrections to a document
+dos:
+- derive capabilities per step, never per Task alone
+- flag steps with an empty or unresolvable required capability
+donts:
+- skip steps whose capability is unclear
+- name a specific repository or Domain System

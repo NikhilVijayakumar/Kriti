@@ -1,0 +1,21 @@
+input:
+  usecase:
+    id: draft-vision
+    description: deliver the vision document such that a reader can state the vision
+  task_verdicts:
+  - task: write-vision
+    verdict: pass
+  - task: reconcile-vision
+    verdict: pass
+output:
+  verdict: fail
+  evidence: >-
+    both tasks passed, but the usecase's capability check failed: no evidence
+    that the vision document was delivered to the reader-facing location, so
+    the user-facing capability is not actually delivered.
+dos:
+- check for a capability beyond the sum of the tasks, not just task verdicts
+- require every task verdict to come from an independent task-level verifier
+donts:
+- mark the usecase complete when tasks pass but the capability is undelivered
+- self-certify the usecase's completion

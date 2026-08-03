@@ -1,0 +1,34 @@
+input:
+  task:
+    id: reconcile-vision
+  assignment:
+    task: reconcile-vision
+    agent_role: editor
+    agent_system: writing-sys
+    matched_skills: [revise]
+  epics_context:
+    epic: kickoff
+    usecase: draft-vision
+    sibling_tasks: [write-vision]
+output:
+  workflow:
+    task: reconcile-vision
+    owning_agent: editor
+    steps:
+    - skill: revise
+      consumes: draft
+      produces: corrected-draft
+    handoffs:
+    - trigger: when the corrected draft needs review against the upstream
+      candidate_role: reviewer
+    verified_by:
+      task_verifier: reviewer
+      usecase_verifier: usecase-verifier
+      epic_verifier: epic-verifier
+dos:
+- name candidate roles in handoffs, never agent instances
+- give every level a verifier distinct from the worker
+- ensure every step maps to a skill the owning agent binds
+donts:
+- let the worker verify its own task
+- emit a step no bound skill covers

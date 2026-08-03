@@ -1,0 +1,33 @@
+name: verify-task-completion
+responsibility: |-
+  Evaluate the recursive leaf of the completion semantics: a task is complete
+  ⟺ every task_step is complete AND the task's output meets its Output
+  Contract / Acceptance Criteria (verified). The worker that performed the
+  task does not certify it — this verifier does.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    task:
+      type: object
+      description: The task whose completion is evaluated, with its task steps.
+    evidence:
+      type: object
+      description: Observed evidence about the task's output and step results.
+  required:
+  - task
+  - evidence
+invocation_output_json:
+  type: object
+  properties:
+    verdict:
+      type: string
+      enum: [pass, fail]
+    evidence:
+      type: string
+      description: The evidence the verdict rests on.
+  required:
+  - verdict
+  - evidence
+prompt_ref: prompt.md
+examples_ref: examples

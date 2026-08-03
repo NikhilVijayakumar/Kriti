@@ -1,0 +1,21 @@
+input:
+  epic:
+    id: kickoff
+    objective: stand up the full documentation set for the registering repository
+  usecase_verdicts:
+  - usecase: draft-vision
+    verdict: pass
+  - usecase: draft-qa
+    verdict: fail
+output:
+  verdict: fail
+  evidence: >-
+    usecase 'draft-qa' failed its own completion verification, so the epic
+    cannot be complete; even if every usecase passed, the epic would still
+    need its own objective-level verification.
+dos:
+- require every usecase verdict to come from an independent usecase-level verifier
+- check the objective above the sum of the usecases, not just the usecase verdicts
+donts:
+- mark the epic complete while any usecase is open
+- self-certify the epic's completion

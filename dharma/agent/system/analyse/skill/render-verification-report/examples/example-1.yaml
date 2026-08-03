@@ -1,0 +1,47 @@
+input:
+  verdicts:
+  - level: system
+    verdict: fail
+    counts:
+      section_maps: 13
+      section_profiles: 136
+      epics: 4
+      usecases: 82
+      tasks: 0
+  - level: domain
+    domain: vision
+    verdict: pass
+    findings: []
+  - level: hierarchy
+    verdict: fail
+    findings:
+    - id: EUT-TASK-001
+      condition: every usecase has at least one task
+      message: usecase 'draft-qa' has 0 tasks
+      severity: error
+      weight: 1.0
+      mandatory: true
+      evidence: usecase 'draft-qa' tasks == []
+      kind: defect
+output:
+  report: >-
+    SYSTEM VERDICT: fail
+    checked 13 maps, 136 profiles, 4 epics, 82 usecases, 0 tasks.
+    counts reconcile; 0-task usecases are recorded as gaps.
+
+    DOMAIN vision: pass
+
+    HIERARCHY: fail
+    - EUT-TASK-001 (error, mandatory): every usecase has at least one task —
+      usecase 'draft-qa' has 0 tasks. Evidence: tasks == [].
+      tag: defect
+
+    GAPS: usecase 'draft-qa' (no tasks to assign) —
+    hand-off to the provisioning scenario.
+dos:
+- include counts reconciliation in the system summary
+- keep every finding's evidence and defect/gap tag in the report
+- surface the gap summary as the hand-off to the provisioning scenario
+donts:
+- drop evidence from any finding
+- reclassify a finding's defect/gap tag

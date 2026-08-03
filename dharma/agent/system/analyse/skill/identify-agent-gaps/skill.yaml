@@ -1,0 +1,39 @@
+name: identify-agent-gaps
+responsibility: |-
+  Consolidate unassigned or uncovered items into classified gaps — missing
+  Agent System concerns, missing skills, missing handoff roles, missing
+  verifiers — with closure recommendations ranked by the volume of Tasks
+  blocked.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    assignments:
+      type: array
+      description: The proposed task-to-agent assignments.
+    workflows:
+      type: array
+      description: The designed per-task workflows.
+  required:
+  - assignments
+  - workflows
+invocation_output_json:
+  type: object
+  properties:
+    gaps:
+      type: array
+      items:
+        type: object
+        properties:
+          type: { type: string, enum: [concern, skill, role, verifier] }
+          subject: { type: string }
+          blocked_tasks: { type: integer }
+          recommendation: { type: string }
+    recommendations:
+      type: array
+      items: { type: string }
+  required:
+  - gaps
+  - recommendations
+prompt_ref: prompt.md
+examples_ref: examples

@@ -1,0 +1,33 @@
+input:
+  task:
+    id: reconcile-vision
+  capabilities:
+  - step: s1
+    concern: rust-development
+    skill_responsibilities:
+    - read a draft document against its upstream source
+  - step: s2
+    concern: rust-development
+    skill_responsibilities:
+    - apply required corrections to a document
+  agent_systems:
+  - name: writing-sys
+    concern: writing
+    agents:
+    - role: editor
+      skill_bindings: [draft, revise]
+    - role: reviewer
+      skill_bindings: [review]
+output:
+  assignment:
+    task: reconcile-vision
+    agent_role: editor
+    agent_system: writing-sys
+    matched_skills: [revise]
+dos:
+- match concern first, then the agent's Skill Bindings
+- assign exactly one owning agent per Task
+- include unassignable_reason when no agent can be bound
+donts:
+- assign on a concern match alone, without a binding covering the skill
+- invent agents or systems absent from the input

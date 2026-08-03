@@ -1,0 +1,50 @@
+name: analyse-domain-system
+responsibility: |-
+  Enumerate and parse a Domain System into a normalized element list —
+  domains, section maps, section profiles, epics, usecases, tasks, and task
+  steps — plus per-kind counts, preserving parent links so verifiers can
+  dispatch each element to the right agent.
+is_analysis_only: true
+invocation_input_json:
+  type: object
+  properties:
+    domain_system:
+      type: object
+      description: >-
+        The Domain System's full captured tree — domains, sections, section
+        profiles, epics, usecases, tasks, and task steps — as exposed by the
+        system-info tool.
+  required:
+  - domain_system
+invocation_output_json:
+  type: object
+  properties:
+    elements:
+      type: object
+      description: Normalized element list keyed by artifact kind.
+      properties:
+        domains:
+          type: array
+          description: One entry per domain, each carrying its resolved map.
+        section_maps:
+          type: array
+        section_profiles:
+          type: array
+        epics:
+          type: array
+        usecases:
+          type: array
+        tasks:
+          type: array
+        task_steps:
+          type: array
+    counts:
+      type: object
+      description: Count per artifact kind, for reconciliation.
+      additionalProperties:
+        type: integer
+  required:
+  - elements
+  - counts
+prompt_ref: prompt.md
+examples_ref: examples

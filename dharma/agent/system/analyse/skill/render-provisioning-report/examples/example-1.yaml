@@ -1,0 +1,49 @@
+input:
+  blueprint:
+    summary:
+      total_tasks: 2
+      assigned: 1
+      gapped: 1
+    epics:
+    - epic: kickoff
+      usecases:
+      - usecase: draft-vision
+        tasks:
+        - task: reconcile-vision
+          assigned_agent: editor
+          skills: [revise]
+          handoff:
+            trigger: corrected draft needs review
+            candidate_role: reviewer
+          verified_by: reviewer
+        usecase_verification: usecase-verifier
+      epic_verification: epic-verifier
+    gaps:
+    - type: concern
+      subject: qa-execution
+      blocked_tasks: 1
+      recommendation: register an Agent System whose concern covers qa-execution
+output:
+  report: >-
+    SUMMARY: 2 tasks; 1 assigned, 1 gapped.
+
+    EPIC kickoff
+      USECASE draft-vision
+        TASK reconcile-vision
+          assigned_agent: editor
+          skills: [revise]
+          handoff: when corrected draft needs review -> reviewer
+          verified_by: reviewer
+      usecase_verification: usecase-verifier
+    epic_verification: epic-verifier
+
+    GAPS
+      concern 'qa-execution' blocks 1 task — recommendation: register an
+      Agent System whose concern covers qa-execution.
+dos:
+- keep the verifier role distinct from the assigned agent in every row
+- render the gap summary ranked by blocked tasks
+- show the task/usecase/epic verification path
+donts:
+- print a row whose verifier equals the assigned agent without flagging it
+- author or register anything in the report

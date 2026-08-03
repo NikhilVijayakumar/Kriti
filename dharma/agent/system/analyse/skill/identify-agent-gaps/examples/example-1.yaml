@@ -1,0 +1,30 @@
+input:
+  assignments:
+  - task: reconcile-vision
+    assignment:
+      task: reconcile-vision
+      agent_role: editor
+      agent_system: writing-sys
+    unassignable_reason: null
+  - task: build-qa-report
+    unassignable_reason: no registered concern covers 'qa-execution'
+  workflows:
+  - task: reconcile-vision
+    workflow:
+      verified_by:
+        task_verifier: reviewer
+output:
+  gaps:
+  - type: concern
+    subject: qa-execution
+    blocked_tasks: 1
+    recommendation: register an Agent System whose concern covers qa-execution
+  recommendations:
+  - register an Agent System whose concern covers qa-execution
+dos:
+- classify every unassignable assignment and uncovered workflow
+- rank gaps by the volume of Tasks blocked
+- keep recommendations at the recommendation level, never authoring
+donts:
+- drop a gap because its blocked count is small
+- invent registered systems to close a gap

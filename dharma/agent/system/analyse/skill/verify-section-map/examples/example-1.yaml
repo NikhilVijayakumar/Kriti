@@ -1,0 +1,39 @@
+input:
+  map:
+    id: vision-map
+    sections:
+    - id: s1
+      level: 1
+      parent_id: root
+      order: 1
+      profile: vision-overview
+    - id: s2
+      level: 2
+      parent_id: s1
+      order: 2
+      profile: vision-details
+    - id: s3
+      level: 2
+      parent_id: s1
+      order: 2
+      profile: vision-extras
+    validation:
+      ordering: monotonic
+output:
+  verdict: fail
+  findings:
+  - id: MAP-ORDER-001
+    condition: section order is non-decreasing
+    message: section 's3' has order 2 after section 's2' at order 2; order must be strictly increasing per level
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence: map.sections[2].order == 2; map.sections[1].order == 2
+    kind: defect
+dos:
+- cite the exact map row and field as evidence
+- tag declaration errors as defect
+- check every section's profile reference resolves
+donts:
+- report on the quality of documents produced from the map
+- skip the validation-block agreement check

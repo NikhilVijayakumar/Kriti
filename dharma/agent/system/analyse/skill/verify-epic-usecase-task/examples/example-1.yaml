@@ -1,0 +1,50 @@
+input:
+  epic:
+    id: kickoff
+    objective: stand up the documentation set
+    usecases:
+    - id: draft-vision
+      tasks:
+      - id: write-vision
+        input_contract:
+          type: object
+        output_contract:
+          type: object
+        task_steps:
+        - id: s1
+          required_capability: rust-development
+    - id: draft-qa
+      tasks: []
+output:
+  verdict: fail
+  findings:
+  - id: EUT-TASK-001
+    condition: every usecase has at least one task
+    message: usecase 'draft-qa' has 0 tasks
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence: usecase 'draft-qa' tasks == []
+    kind: defect
+  - id: EUT-CAP-001
+    condition: every task step's required_capability resolves to a registered concern
+    message: task step 's1' names capability 'rust-development', which is not registered
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence: task_step 's1' required_capability == 'rust-development'
+    kind: gap
+  gaps:
+  - item: task step 's1'
+    location: epic 'kickoff' / usecase 'draft-vision' / task 'write-vision'
+    unresolved: required_capability 'rust-development' not registered
+  - item: usecase 'draft-qa'
+    location: epic 'kickoff'
+    unresolved: no tasks to assign
+dos:
+- report zero-task usecases as findings, never silent passes
+- separate gaps (unresolved capabilities) from defects (malformed declarations)
+- emit the full gap list for the provisioning scenario
+donts:
+- skip contract completeness checks
+- name a specific repository or Domain System
