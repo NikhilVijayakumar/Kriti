@@ -1,0 +1,39 @@
+# Provider config for the analyse Agent System — proposal 02,
+# "analyse — Agent System Proposal (Overview & Design)". Lives at this
+# provider repository's root, beside dharma-domain.toml (proposal 00's
+# deliverable). See dharma docs/proposal/04-agent-system-registry.md and
+# 11-provider-config-and-repo-sync.md ("Agent System Provider Config").
+# `is_privileged` here is a REQUEST, not a grant — the Agent-Management Agent
+# System reviews and sets the actual agent_system_registry.is_privileged flag.
+
+[agent_system]
+name = "analyse"
+concern = "analysis"
+description = "Agents and skills that analyse a Domain System: verify it end to end (each domain, section map/profile, epic/usecase/task) and identify the agent/skill capability needed to execute its work, with per-level assignment, workflow, and gap reporting."
+is_privileged_request = false
+
+[agent_system.content]
+# Where this provider's agent/skill source files live — agent YAML
+# definitions, skill prompt/script/example files. Walked by Dharma's capture
+# flow into content_asset. Content is authored by proposals 02/03 (Parts 2/3);
+# this file is proposal 02's deliverable.
+root_dir = "${DHARMA_AGENT_CONTENT_DIR}"
+# Optional dev/test scoping of the analysed domain set, mirroring
+# dharma-domain.toml's `domains`/`domain_exclusion` (proposal 00 §6).
+# Semantics here are "which domains the analyse run considers" — see
+# proposal 02 §7 open question on whether this belongs here or in the
+# orchestrator's invocation input.
+domains = []
+domain_exclusion = []
+
+[agent_system.mcp]
+# Where MCP's own data directory lives, so the capture flow knows where to
+# register this Agent System.
+mcp_dir = "${DHARMA_MCP_DIR}"
+
+[repository.ignore]
+patterns = [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/target/**",
+]
