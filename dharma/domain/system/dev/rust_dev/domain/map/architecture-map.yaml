@@ -1,0 +1,194 @@
+schema:
+  id: rust_dev.dharma.domain.architecture-map
+  name: Architecture Section Map
+  version: 0.1.0
+description: >-
+  Section map for the architecture document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/architecture/).
+sections:
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/01-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Architecture document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/01-purpose.yaml).
+- id: system_overview
+  title: System Overview
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/02-system_overview.yaml
+  profile: system_overview
+  purpose: >-
+    System Overview section of the Architecture document. Required; 5 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/02-system_overview.yaml).
+- id: component_model
+  title: Component Model
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/03-component_model.yaml
+  profile: component_model
+  purpose: >-
+    Component Model section of the Architecture document. Required; 7 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/03-component_model.yaml).
+- id: communication_paths
+  title: Communication
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/04-communication_paths.yaml
+  profile: communication_paths
+  purpose: >-
+    Communication section of the Architecture document. Required; 6 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/04-communication_paths.yaml).
+- id: data_flow
+  title: Data Flow
+  parent_id: root
+  level: 1
+  order: 5
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/05-data_flow.yaml
+  profile: data_flow
+  purpose: >-
+    Data Flow section of the Architecture document. Required; 5 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/05-data_flow.yaml).
+- id: security_considerations
+  title: Security
+  parent_id: root
+  level: 1
+  order: 6
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/06-security_considerations.yaml
+  profile: security_considerations
+  purpose: >-
+    Security section of the Architecture document. Required; 6 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/06-security_considerations.yaml).
+- id: rationale
+  title: Rationale
+  parent_id: root
+  level: 1
+  order: 7
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/07-rationale.yaml
+  profile: rationale
+  purpose: >-
+    Rationale section of the Architecture document. Optional; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/07-rationale.yaml).
+- id: constraints
+  title: Constraints
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/08-constraints.yaml
+  profile: constraints
+  purpose: >-
+    Constraints section of the Architecture document. Optional; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/08-constraints.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 9
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/09-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the Architecture document. Optional; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/09-traceability.yaml).
+- id: operational_readiness
+  title: Operational Readiness
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: true
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/10-operational_readiness.yaml
+  profile: operational_readiness
+  purpose: >-
+    Operational Readiness section of the Architecture document - generated (no authored
+    template section exists in the standard); 2 deterministic audit rule(s) govern
+    validation (source: common/tier2/audit/deterministic/section/architecture/10-operational_readiness.yaml).
+- id: observability
+  title: Observability
+  parent_id: root
+  level: 1
+  order: 11
+  required: false
+  generated: true
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/11-observability.yaml
+  profile: observability
+  purpose: >-
+    Observability section of the Architecture document - generated (no authored template
+    section exists in the standard); 2 deterministic audit rule(s) govern validation
+    (source: common/tier2/audit/deterministic/section/architecture/11-observability.yaml).
+- id: crate_architecture
+  title: Crate Architecture
+  parent_id: root
+  level: 1
+  order: 12
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/12-crate_architecture.yaml
+  profile: crate_architecture
+  purpose: >-
+    Crate Architecture section of the Architecture document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/12-crate_architecture.yaml).
+- id: trait_design
+  title: Trait Design
+  parent_id: root
+  level: 1
+  order: 13
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/architecture/13-trait_design.yaml
+  profile: trait_design
+  purpose: >-
+    Trait Design section of the Architecture document. Optional; 1 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/architecture/13-trait_design.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: true
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

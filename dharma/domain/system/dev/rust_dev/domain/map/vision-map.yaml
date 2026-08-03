@@ -1,0 +1,166 @@
+schema:
+  id: rust_dev.dharma.domain.vision-map
+  name: Vision Section Map
+  version: 0.1.0
+description: >-
+  Section map for the vision document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/vision/).
+sections:
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/01-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Vision document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/01-purpose.yaml).
+- id: vision_statement
+  title: Vision
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/02-vision_statement.yaml
+  profile: vision_statement
+  purpose: >-
+    Vision section of the Vision document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/02-vision_statement.yaml).
+- id: problem
+  title: Problem
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/03-problem.yaml
+  profile: problem
+  purpose: >-
+    Problem section of the Vision document. Required; 5 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/03-problem.yaml).
+- id: solution
+  title: Solution
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/04-solution.yaml
+  profile: solution
+  purpose: >-
+    Solution section of the Vision document. Required; 5 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/04-solution.yaml).
+- id: target_audience
+  title: Target Audience
+  parent_id: root
+  level: 1
+  order: 5
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/05-target_audience.yaml
+  profile: target_audience
+  purpose: >-
+    Target Audience section of the Vision document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/vision/05-target_audience.yaml).
+- id: pillars
+  title: Platform Pillars
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/06-pillars.yaml
+  profile: pillars
+  purpose: >-
+    Platform Pillars section of the Vision document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/vision/06-pillars.yaml).
+- id: philosophy
+  title: Philosophy
+  parent_id: root
+  level: 1
+  order: 7
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/07-philosophy.yaml
+  profile: philosophy
+  purpose: >-
+    Philosophy section of the Vision document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/07-philosophy.yaml).
+- id: guiding_principles
+  title: Guiding Principles
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/08-guiding_principles.yaml
+  profile: guiding_principles
+  purpose: >-
+    Guiding Principles section of the Vision document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/vision/08-guiding_principles.yaml).
+- id: success_criteria
+  title: Success Criteria
+  parent_id: root
+  level: 1
+  order: 9
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/09-success_criteria.yaml
+  profile: success_criteria
+  purpose: >-
+    Success Criteria section of the Vision document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/vision/09-success_criteria.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/10-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the Vision document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/vision/10-traceability.yaml).
+- id: systems_vision
+  title: Systems Engineering Vision
+  parent_id: root
+  level: 1
+  order: 11
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/vision/11-systems_vision.yaml
+  profile: systems_vision
+  purpose: >-
+    Systems Engineering Vision section of the Vision document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier1/audit/deterministic/section/vision/11-systems_vision.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

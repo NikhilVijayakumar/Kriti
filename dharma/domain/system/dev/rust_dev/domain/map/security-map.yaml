@@ -1,0 +1,140 @@
+schema:
+  id: rust_dev.dharma.domain.security-map
+  name: Security Section Map
+  version: 0.1.0
+description: >-
+  Section map for the security document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/security/).
+sections:
+- id: threat_model
+  title: Threat Model
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/01-threat_model.yaml
+  profile: threat_model
+  purpose: >-
+    Threat Model section of the Security document. Required; 6 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/01-threat_model.yaml).
+- id: data_classification
+  title: Data Classification
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/02-data_classification.yaml
+  profile: data_classification
+  purpose: >-
+    Data Classification section of the Security document. Required; 6 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/02-data_classification.yaml).
+- id: security_principles
+  title: Security Principles
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/03-security_principles.yaml
+  profile: security_principles
+  purpose: >-
+    Security Principles section of the Security document. Required; 6 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/03-security_principles.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/04-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Security document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/security/04-purpose.yaml).
+- id: constraints
+  title: Constraints
+  parent_id: root
+  level: 1
+  order: 5
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/05-constraints.yaml
+  profile: constraints
+  purpose: >-
+    Constraints section of the Security document. Required; 5 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/05-constraints.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 6
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/06-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the Security document. Required; 5 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/06-traceability.yaml).
+- id: compliance
+  title: Compliance Requirements
+  parent_id: root
+  level: 1
+  order: 7
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/07-compliance.yaml
+  profile: compliance
+  purpose: >-
+    Compliance Requirements section of the Security document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/07-compliance.yaml).
+- id: incident_response
+  title: Incident Response
+  parent_id: root
+  level: 1
+  order: 8
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/08-incident_response.yaml
+  profile: incident_response
+  purpose: >-
+    Incident Response section of the Security document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/08-incident_response.yaml).
+- id: systems_security
+  title: Systems Security
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/security/10-systems_security.yaml
+  profile: systems_security
+  purpose: >-
+    Systems Security section of the Security document. Optional; 1 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/security/10-systems_security.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

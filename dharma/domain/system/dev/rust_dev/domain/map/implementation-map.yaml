@@ -1,0 +1,114 @@
+schema:
+  id: rust_dev.dharma.domain.implementation-map
+  name: Implementation Section Map
+  version: 0.1.0
+description: >-
+  Section map for the implementation document domain of the rust-dev-domain Dharma
+  Domain System, generated from the rust_dev standard's per-section deterministic
+  audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/implementation/).
+sections:
+- id: generation_plan
+  title: Generation Plan
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/01-generation_plan.yaml
+  profile: generation_plan
+  purpose: >-
+    Generation Plan section of the Implementation document. Required; 5 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/01-generation_plan.yaml).
+- id: security_fix_plan
+  title: Security Fix Plan
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/02-security_fix_plan.yaml
+  profile: security_fix_plan
+  purpose: >-
+    Security Fix Plan section of the Implementation document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/02-security_fix_plan.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 3
+  required: false
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/03-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Implementation document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/03-purpose.yaml).
+- id: refactor_plan
+  title: Refactor Plan
+  parent_id: root
+  level: 1
+  order: 4
+  required: false
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/04-refactor_plan.yaml
+  profile: refactor_plan
+  purpose: >-
+    Refactor Plan section of the Implementation document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/04-refactor_plan.yaml).
+- id: change_request_plan
+  title: Change Request Plan
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/05-change_request_plan.yaml
+  profile: change_request_plan
+  purpose: >-
+    Change Request Plan section of the Implementation document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/05-change_request_plan.yaml).
+- id: enhancement_plan
+  title: Enhancement Plan
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/06-enhancement_plan.yaml
+  profile: enhancement_plan
+  purpose: >-
+    Enhancement Plan section of the Implementation document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/06-enhancement_plan.yaml).
+- id: crate_folder_structure
+  title: Crate Folder Structure
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier5/audit/deterministic/section/implementation/08-crate_folder_structure.yaml
+  profile: crate_folder_structure
+  purpose: >-
+    Crate Folder Structure section of the Implementation document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier5/audit/deterministic/section/implementation/08-crate_folder_structure.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

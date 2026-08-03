@@ -1,0 +1,101 @@
+schema:
+  id: rust_dev.dharma.domain.external-context-map
+  name: External-Context Section Map
+  version: 0.1.0
+description: >-
+  Section map for the external-context document domain of the rust-dev-domain Dharma
+  Domain System, generated from the rust_dev standard's per-section deterministic
+  audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/external-context/).
+sections:
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/01-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the External-Context document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/01-purpose.yaml).
+- id: integration_contract
+  title: Integration Contract
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/02-integration_contract.yaml
+  profile: integration_contract
+  purpose: >-
+    Integration Contract section of the External-Context document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/02-integration_contract.yaml).
+- id: constraints
+  title: Constraints
+  parent_id: root
+  level: 1
+  order: 3
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/03-constraints.yaml
+  profile: constraints
+  purpose: >-
+    Constraints section of the External-Context document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/03-constraints.yaml).
+- id: dependencies
+  title: Dependencies
+  parent_id: root
+  level: 1
+  order: 4
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/04-dependencies.yaml
+  profile: dependencies
+  purpose: >-
+    Dependencies section of the External-Context document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/04-dependencies.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/05-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the External-Context document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/05-traceability.yaml).
+- id: systems_technology
+  title: Technology Categories
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/external-context/06-systems_technology.yaml
+  profile: systems_technology
+  purpose: >-
+    Technology Categories section of the External-Context document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/external-context/06-systems_technology.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

@@ -1,0 +1,114 @@
+schema:
+  id: rust_dev.dharma.domain.product-guide-map
+  name: Product-Guide Section Map
+  version: 0.1.0
+description: >-
+  Section map for the product-guide document domain of the rust-dev-domain Dharma
+  Domain System, generated from the rust_dev standard's per-section deterministic
+  audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/product-guide/).
+sections:
+- id: title
+  title: Title
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/01-title.yaml
+  profile: title
+  purpose: >-
+    Title section of the Product-Guide document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/product-guide/01-title.yaml).
+- id: body
+  title: Content
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/02-body.yaml
+  profile: body
+  purpose: >-
+    Content section of the Product-Guide document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/02-body.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 3
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/03-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Product-Guide document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/03-purpose.yaml).
+- id: related
+  title: Related
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/06-related.yaml
+  profile: related
+  purpose: >-
+    Related section of the Product-Guide document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/06-related.yaml).
+- id: product_context
+  title: Product Context
+  parent_id: root
+  level: 1
+  order: 7
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/07-product_context.yaml
+  profile: product_context
+  purpose: >-
+    Product Context section of the Product-Guide document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/07-product_context.yaml).
+- id: public_contract
+  title: Public Contract
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/08-public_contract.yaml
+  profile: public_contract
+  purpose: >-
+    Public Contract section of the Product-Guide document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/08-public_contract.yaml).
+- id: development_workflow
+  title: Development Workflow
+  parent_id: root
+  level: 1
+  order: 9
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/product-guide/09-development_workflow.yaml
+  profile: development_workflow
+  purpose: >-
+    Development Workflow section of the Product-Guide document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/product-guide/09-development_workflow.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

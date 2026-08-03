@@ -1,0 +1,270 @@
+schema:
+  id: rust_dev.dharma.domain.feature-technical-map
+  name: Feature-Technical Section Map
+  version: 0.1.0
+description: >-
+  Section map for the feature-technical document domain of the rust-dev-domain Dharma
+  Domain System, generated from the rust_dev standard's per-section deterministic
+  audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/feature-technical/).
+sections:
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/01-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Feature-Technical document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/01-purpose.yaml).
+- id: participating_components
+  title: Participating Components
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/02-participating_components.yaml
+  profile: participating_components
+  purpose: >-
+    Participating Components section of the Feature-Technical document. Required;
+    4 deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/02-participating_components.yaml).
+- id: component_interactions
+  title: Component Interactions
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/03-component_interactions.yaml
+  profile: component_interactions
+  purpose: >-
+    Component Interactions section of the Feature-Technical document. Required; 4
+    deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/03-component_interactions.yaml).
+- id: data_ownership
+  title: Data Ownership
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/04-data_ownership.yaml
+  profile: data_ownership
+  purpose: >-
+    Data Ownership section of the Feature-Technical document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/04-data_ownership.yaml).
+- id: feature_specification
+  title: Feature Specification
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/05-feature_specification.yaml
+  profile: feature_specification
+  purpose: >-
+    Feature Specification section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/05-feature_specification.yaml).
+- id: component_responsibilities
+  title: Component Responsibilities
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/06-component_responsibilities.yaml
+  profile: component_responsibilities
+  purpose: >-
+    Component Responsibilities section of the Feature-Technical document. Optional;
+    3 deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/06-component_responsibilities.yaml).
+- id: runtime_behavior
+  title: Runtime Behavior
+  parent_id: root
+  level: 1
+  order: 7
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/07-runtime_behavior.yaml
+  profile: runtime_behavior
+  purpose: >-
+    Runtime Behavior section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/07-runtime_behavior.yaml).
+- id: communication_paths
+  title: Communication Paths
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/08-communication_paths.yaml
+  profile: communication_paths
+  purpose: >-
+    Communication Paths section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/08-communication_paths.yaml).
+- id: integration_points
+  title: Integration Points
+  parent_id: root
+  level: 1
+  order: 9
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/09-integration_points.yaml
+  profile: integration_points
+  purpose: >-
+    Integration Points section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/09-integration_points.yaml).
+- id: external_dependencies
+  title: External Dependency Integration
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/10-external_dependencies.yaml
+  profile: external_dependencies
+  purpose: >-
+    External Dependency Integration section of the Feature-Technical document. Optional;
+    3 deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/10-external_dependencies.yaml).
+- id: runtime_constraints
+  title: Runtime Constraints
+  parent_id: root
+  level: 1
+  order: 11
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/11-runtime_constraints.yaml
+  profile: runtime_constraints
+  purpose: >-
+    Runtime Constraints section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/11-runtime_constraints.yaml).
+- id: architectural_constraints
+  title: Architectural Constraints
+  parent_id: root
+  level: 1
+  order: 12
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/12-architectural_constraints.yaml
+  profile: architectural_constraints
+  purpose: >-
+    Architectural Constraints section of the Feature-Technical document. Optional;
+    3 deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/12-architectural_constraints.yaml).
+- id: security_considerations
+  title: Security Considerations
+  parent_id: root
+  level: 1
+  order: 13
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/13-security_considerations.yaml
+  profile: security_considerations
+  purpose: >-
+    Security Considerations section of the Feature-Technical document. Optional; 3
+    deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/13-security_considerations.yaml).
+- id: performance_considerations
+  title: Performance Considerations
+  parent_id: root
+  level: 1
+  order: 14
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/14-performance_considerations.yaml
+  profile: performance_considerations
+  purpose: >-
+    Performance Considerations section of the Feature-Technical document. Optional;
+    3 deterministic audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/14-performance_considerations.yaml).
+- id: failure_handling
+  title: Failure Handling
+  parent_id: root
+  level: 1
+  order: 15
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/15-failure_handling.yaml
+  profile: failure_handling
+  purpose: >-
+    Failure Handling section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/15-failure_handling.yaml).
+- id: extension_points
+  title: Extension Points
+  parent_id: root
+  level: 1
+  order: 16
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/16-extension_points.yaml
+  profile: extension_points
+  purpose: >-
+    Extension Points section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/16-extension_points.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 17
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/17-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the Feature-Technical document. Optional; 3 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/17-traceability.yaml).
+- id: crate_implementation
+  title: Crate Implementation
+  parent_id: root
+  level: 1
+  order: 18
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/18-crate_implementation.yaml
+  profile: crate_implementation
+  purpose: >-
+    Crate Implementation section of the Feature-Technical document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/18-crate_implementation.yaml).
+- id: error_implementation
+  title: Error Implementation
+  parent_id: root
+  level: 1
+  order: 19
+  required: false
+  generated: false
+  source: >-
+    common/tier3/audit/deterministic/section/feature-technical/19-error_implementation.yaml
+  profile: error_implementation
+  purpose: >-
+    Error Implementation section of the Feature-Technical document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier3/audit/deterministic/section/feature-technical/19-error_implementation.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

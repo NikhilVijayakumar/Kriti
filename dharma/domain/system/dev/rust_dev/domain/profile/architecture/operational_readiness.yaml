@@ -1,0 +1,56 @@
+schema:
+  id: >-
+    rust_dev.dharma.domain.architecture.profile.operational_readiness
+  name: Operational Readiness Section Profile
+  version: 0.1.0
+source: >-
+  common/tier2/audit/deterministic/section/architecture/10-operational_readiness.yaml
+section:
+  id: operational_readiness
+  writing_objective: >-
+    Authored/minimal by construction - no architecture template section exists in
+    domain/05-architecture.md; this section is generated and its profile is validation-only
+    (2 deterministic audit rule(s), see validation.rules).
+  knowledge_goal: >-
+    Authored/minimal by construction - no authored architecture section exists to
+    derive a knowledge goal from; pending human author.
+  reader_goal: >-
+    Authored/minimal by construction - no authored architecture section exists to
+    derive a reader goal from; pending human author.
+  required_inputs: []
+  expected_outputs:
+    primary: []
+  subsections: {}
+  completion:
+    checklist:
+    - Operational Readiness section present
+    - Operational concerns documented
+  review:
+    questions: []
+  validation:
+    rules:
+    - id: arch-sec-or-001
+      description: Operational Readiness section present
+      condition: >-
+        document optionally has a section with semantic_type = 'operational_readiness'
+      message: Operational Readiness section is missing (recommended)
+      severity: warning
+      weight: 0.3
+      mandatory: false
+      evidence:
+        type: section_presence
+        semantic_type: operational_readiness
+    - id: arch-sec-or-002
+      description: Operational concerns documented
+      condition: >-
+        if present, section covers at least: monitoring, alerting, deployment, rollback
+      message: Operational Readiness section is incomplete
+      severity: warning
+      weight: 0.3
+      mandatory: false
+      evidence:
+        type: content_check
+        keywords:
+        - monitoring
+        - deployment
+        - rollback

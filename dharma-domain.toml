@@ -1,0 +1,35 @@
+# Provider config for the rust-dev-domain Domain System — proposal 00,
+# "rust_dev Dharma Domain System". Lives at this provider repository's root.
+# See dharma docs/proposal/05-domain-system-registration.md and
+# 11-provider-config-and-repo-sync.md ("Domain System Provider Config").
+
+[domain_system]
+name = "rust-dev-domain"
+version = "0.1.0"
+description = "Rust systems-engineering documentation domain: 13 domains with deterministic+semantic audit content modeled as ordinary Usecases/Tasks, a greenfield/brownfield propose-then-execute workflow (82 usecases across 4 Epics), projected from Kriti's samgraha rust_dev standard."
+
+[domain_system.content]
+# Where this provider's domain/map, domain/profile, task.yaml, SYSTEM.md
+# source files live — walked by Dharma's capture flow and recorded into
+# content_asset. Relative to this repository's root.
+root_dir = "${DHARMA_DOMAIN_CONTENT_DIR}"
+# One Section Map file per domain under root_dir/domain/map/ (13 total), not a
+# single file per document type — a single section-map.yaml cannot hold 13
+# domains' independent section trees (proposal 00 §4/§6).
+section_map = "domain/map"
+# Empty = every domain under root_dir/domain/map/.
+domains = []            # e.g. ["vision"] to register a subset during dev/testing
+domain_exclusion = []   # e.g. ["readme"] to exclude one during dev/testing, or permanently later
+
+[domain_system.mcp]
+# Where MCP's own data directory lives, so the capture flow knows where to
+# register this Domain System. Same variable a consuming repo's
+# dharma-repo.toml uses to find the same MCP instance.
+mcp_dir = "${DHARMA_MCP_DIR}"
+
+[repository.ignore]
+patterns = [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/target/**",
+]

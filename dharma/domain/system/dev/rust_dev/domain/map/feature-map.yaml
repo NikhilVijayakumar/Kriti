@@ -1,0 +1,179 @@
+schema:
+  id: rust_dev.dharma.domain.feature-map
+  name: Feature Section Map
+  version: 0.1.0
+description: >-
+  Section map for the feature document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/feature/).
+sections:
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/01-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Feature document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/feature/01-purpose.yaml).
+- id: functional_requirements
+  title: Functional Requirements
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/02-functional_requirements.yaml
+  profile: functional_requirements
+  purpose: >-
+    Functional Requirements section of the Feature document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/02-functional_requirements.yaml).
+- id: acceptance_criteria
+  title: Acceptance Criteria
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/03-acceptance_criteria.yaml
+  profile: acceptance_criteria
+  purpose: >-
+    Acceptance Criteria section of the Feature document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/03-acceptance_criteria.yaml).
+- id: business_rules
+  title: Business Rules
+  parent_id: root
+  level: 1
+  order: 4
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/04-business_rules.yaml
+  profile: business_rules
+  purpose: >-
+    Business Rules section of the Feature document. Optional; 4 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/04-business_rules.yaml).
+- id: inputs
+  title: Inputs
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/05-inputs.yaml
+  profile: inputs
+  purpose: >-
+    Inputs section of the Feature document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/feature/05-inputs.yaml).
+- id: outputs
+  title: Outputs
+  parent_id: root
+  level: 1
+  order: 6
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/06-outputs.yaml
+  profile: outputs
+  purpose: >-
+    Outputs section of the Feature document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/feature/06-outputs.yaml).
+- id: constraints
+  title: Constraints
+  parent_id: root
+  level: 1
+  order: 7
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/07-constraints.yaml
+  profile: constraints
+  purpose: >-
+    Constraints section of the Feature document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/feature/07-constraints.yaml).
+- id: dependencies
+  title: Dependencies
+  parent_id: root
+  level: 1
+  order: 8
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/08-dependencies.yaml
+  profile: dependencies
+  purpose: >-
+    Dependencies section of the Feature document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/08-dependencies.yaml).
+- id: non_goals
+  title: Non-Goals
+  parent_id: root
+  level: 1
+  order: 9
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/09-non_goals.yaml
+  profile: non_goals
+  purpose: >-
+    Non-Goals section of the Feature document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier2/audit/deterministic/section/feature/09-non_goals.yaml).
+- id: future_extensions
+  title: Future Extensions
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/10-future_extensions.yaml
+  profile: future_extensions
+  purpose: >-
+    Future Extensions section of the Feature document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/10-future_extensions.yaml).
+- id: traceability
+  title: Traceability
+  parent_id: root
+  level: 1
+  order: 11
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/11-traceability.yaml
+  profile: traceability
+  purpose: >-
+    Traceability section of the Feature document. Optional; 3 deterministic audit
+    rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/11-traceability.yaml).
+- id: systems_feature_definition
+  title: Systems Feature Definition
+  parent_id: root
+  level: 1
+  order: 12
+  required: false
+  generated: false
+  source: >-
+    common/tier2/audit/deterministic/section/feature/12-systems_feature_definition.yaml
+  profile: systems_feature_definition
+  purpose: >-
+    Systems Feature Definition section of the Feature document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier2/audit/deterministic/section/feature/12-systems_feature_definition.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

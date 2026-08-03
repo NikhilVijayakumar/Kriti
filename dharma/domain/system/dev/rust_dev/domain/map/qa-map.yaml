@@ -1,0 +1,164 @@
+schema:
+  id: rust_dev.dharma.domain.qa-map
+  name: Qa Section Map
+  version: 0.1.0
+description: >-
+  Section map for the qa document domain of the rust-dev-domain Dharma Domain System,
+  generated from the rust_dev standard's per-section deterministic audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/qa/).
+sections:
+- id: test_strategy
+  title: Test Strategy
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/01-test_strategy.yaml
+  profile: test_strategy
+  purpose: >-
+    Test Strategy section of the Qa document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/01-test_strategy.yaml).
+- id: unit_testing
+  title: Unit Testing
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/02-unit_testing.yaml
+  profile: unit_testing
+  purpose: >-
+    Unit Testing section of the Qa document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/02-unit_testing.yaml).
+- id: integration_testing
+  title: Integration Testing
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/03-integration_testing.yaml
+  profile: integration_testing
+  purpose: >-
+    Integration Testing section of the Qa document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier6/audit/deterministic/section/qa/03-integration_testing.yaml).
+- id: security_testing
+  title: Security Testing
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/04-security_testing.yaml
+  profile: security_testing
+  purpose: >-
+    Security Testing section of the Qa document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/04-security_testing.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: common/tier6/audit/deterministic/section/qa/05-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Qa document. Optional; 3 deterministic audit rule(s) govern
+    validation (source: common/tier6/audit/deterministic/section/qa/05-purpose.yaml).
+- id: e2e_testing
+  title: End-to-End Testing
+  parent_id: root
+  level: 1
+  order: 6
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/06-e2e_testing.yaml
+  profile: e2e_testing
+  purpose: >-
+    End-to-End Testing section of the Qa document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier6/audit/deterministic/section/qa/06-e2e_testing.yaml).
+- id: smoke_testing
+  title: Smoke Testing
+  parent_id: root
+  level: 1
+  order: 7
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/07-smoke_testing.yaml
+  profile: smoke_testing
+  purpose: >-
+    Smoke Testing section of the Qa document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/07-smoke_testing.yaml).
+- id: load_testing
+  title: Load Testing
+  parent_id: root
+  level: 1
+  order: 8
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/08-load_testing.yaml
+  profile: load_testing
+  purpose: >-
+    Load Testing section of the Qa document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/08-load_testing.yaml).
+- id: scalability_testing
+  title: Scalability Testing
+  parent_id: root
+  level: 1
+  order: 9
+  required: true
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/09-scalability_testing.yaml
+  profile: scalability_testing
+  purpose: >-
+    Scalability Testing section of the Qa document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier6/audit/deterministic/section/qa/09-scalability_testing.yaml).
+- id: property_testing
+  title: Property Testing
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/10-property_testing.yaml
+  profile: property_testing
+  purpose: >-
+    Property Testing section of the Qa document. Optional; 1 deterministic audit rule(s)
+    govern validation (source: common/tier6/audit/deterministic/section/qa/10-property_testing.yaml).
+- id: benchmark_testing
+  title: Benchmark Testing
+  parent_id: root
+  level: 1
+  order: 11
+  required: false
+  generated: false
+  source: >-
+    common/tier6/audit/deterministic/section/qa/11-benchmark_testing.yaml
+  profile: benchmark_testing
+  purpose: >-
+    Benchmark Testing section of the Qa document. Optional; 1 deterministic audit
+    rule(s) govern validation (source: common/tier6/audit/deterministic/section/qa/11-benchmark_testing.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

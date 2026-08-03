@@ -1,0 +1,88 @@
+schema:
+  id: rust_dev.dharma.domain.philosophy-map
+  name: Philosophy Section Map
+  version: 0.1.0
+description: >-
+  Section map for the philosophy document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/philosophy/).
+sections:
+- id: guiding_principles
+  title: Principles
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/philosophy/01-guiding_principles.yaml
+  profile: guiding_principles
+  purpose: >-
+    Principles section of the Philosophy document. Required; 6 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/philosophy/01-guiding_principles.yaml).
+- id: values
+  title: Values
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/philosophy/02-values.yaml
+  profile: values
+  purpose: >-
+    Values section of the Philosophy document. Required; 6 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/philosophy/02-values.yaml).
+- id: tradeoffs
+  title: Trade-offs
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/philosophy/03-tradeoffs.yaml
+  profile: tradeoffs
+  purpose: >-
+    Trade-offs section of the Philosophy document. Required; 6 deterministic audit
+    rule(s) govern validation (source: common/tier1/audit/deterministic/section/philosophy/03-tradeoffs.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/philosophy/04-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Philosophy document. Required; 4 deterministic audit rule(s)
+    govern validation (source: common/tier1/audit/deterministic/section/philosophy/04-purpose.yaml).
+- id: systems_philosophy
+  title: Systems Philosophy Addendum
+  parent_id: root
+  level: 1
+  order: 5
+  required: false
+  generated: false
+  source: >-
+    common/tier1/audit/deterministic/section/philosophy/05-systems_philosophy.yaml
+  profile: systems_philosophy
+  purpose: >-
+    Systems Philosophy Addendum section of the Philosophy document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier1/audit/deterministic/section/philosophy/05-systems_philosophy.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

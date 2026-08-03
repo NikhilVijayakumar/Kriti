@@ -1,0 +1,139 @@
+schema:
+  id: rust_dev.dharma.domain.build-map
+  name: Build Section Map
+  version: 0.1.0
+description: >-
+  Section map for the build document domain of the rust-dev-domain Dharma Domain System,
+  generated from the rust_dev standard's per-section deterministic audit rules (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/build/).
+sections:
+- id: documentation_quality
+  title: Documentation Quality
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/01-documentation_quality.yaml
+  profile: documentation_quality
+  purpose: >-
+    Documentation Quality section of the Build document. Required; 4 deterministic
+    audit rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/01-documentation_quality.yaml).
+- id: security_checks
+  title: Security Checks
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/02-security_checks.yaml
+  profile: security_checks
+  purpose: >-
+    Security Checks section of the Build document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/02-security_checks.yaml).
+- id: versioning_naming
+  title: Versioning & Naming
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/03-versioning_naming.yaml
+  profile: versioning_naming
+  purpose: >-
+    Versioning & Naming section of the Build document. Required; 4 deterministic audit
+    rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/03-versioning_naming.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 4
+  required: false
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/04-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Build document. Optional; 3 deterministic audit rule(s)
+    govern validation (source: common/tier7/audit/deterministic/section/build/04-purpose.yaml).
+- id: size_checks
+  title: Size Checks
+  parent_id: root
+  level: 1
+  order: 5
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/05-size_checks.yaml
+  profile: size_checks
+  purpose: >-
+    Size Checks section of the Build document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier7/audit/deterministic/section/build/05-size_checks.yaml).
+- id: ml_artifact_management
+  title: ML Artifact Management
+  parent_id: root
+  level: 1
+  order: 6
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/06-ml_artifact_management.yaml
+  profile: ml_artifact_management
+  purpose: >-
+    ML Artifact Management section of the Build document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/06-ml_artifact_management.yaml).
+- id: cicd_validation
+  title: CI/CD Validation
+  parent_id: root
+  level: 1
+  order: 7
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/07-cicd_validation.yaml
+  profile: cicd_validation
+  purpose: >-
+    CI/CD Validation section of the Build document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/07-cicd_validation.yaml).
+- id: obfuscation_optimization
+  title: Obfuscation & Optimization
+  parent_id: root
+  level: 1
+  order: 8
+  required: true
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/08-obfuscation_optimization.yaml
+  profile: obfuscation_optimization
+  purpose: >-
+    Obfuscation & Optimization section of the Build document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/08-obfuscation_optimization.yaml).
+- id: crate_publishing
+  title: Crate Publishing
+  parent_id: root
+  level: 1
+  order: 10
+  required: false
+  generated: false
+  source: >-
+    common/tier7/audit/deterministic/section/build/10-crate_publishing.yaml
+  profile: crate_publishing
+  purpose: >-
+    Crate Publishing section of the Build document. Optional; 1 deterministic audit
+    rule(s) govern validation (source: common/tier7/audit/deterministic/section/build/10-crate_publishing.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

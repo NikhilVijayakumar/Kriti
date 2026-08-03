@@ -1,0 +1,231 @@
+schema:
+  id: rust_dev.dharma.domain.readme-map
+  name: Readme Section Map
+  version: 0.1.0
+description: >-
+  Section map for the readme document domain of the rust-dev-domain Dharma Domain
+  System, generated from the rust_dev standard's per-section deterministic audit rules
+  (samgraha/system/dev/rust_dev/common/tier*/audit/deterministic/section/readme/).
+sections:
+- id: project_name
+  title: Project Name
+  parent_id: root
+  level: 1
+  order: 1
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/01-project_name.yaml
+  profile: project_name
+  purpose: >-
+    Project Name section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/01-project_name.yaml).
+- id: short_description
+  title: Short Description
+  parent_id: root
+  level: 1
+  order: 2
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/02-short_description.yaml
+  profile: short_description
+  purpose: >-
+    Short Description section of the Readme document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/02-short_description.yaml).
+- id: overview
+  title: Overview
+  parent_id: root
+  level: 1
+  order: 3
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/03-overview.yaml
+  profile: overview
+  purpose: >-
+    Overview section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/03-overview.yaml).
+- id: purpose
+  title: Purpose
+  parent_id: root
+  level: 1
+  order: 4
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/04-purpose.yaml
+  profile: purpose
+  purpose: >-
+    Purpose section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/04-purpose.yaml).
+- id: key_capabilities
+  title: Key Capabilities
+  parent_id: root
+  level: 1
+  order: 5
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/05-key_capabilities.yaml
+  profile: key_capabilities
+  purpose: >-
+    Key Capabilities section of the Readme document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/05-key_capabilities.yaml).
+- id: repository_structure
+  title: Repository Structure
+  parent_id: root
+  level: 1
+  order: 6
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/06-repository_structure.yaml
+  profile: repository_structure
+  purpose: >-
+    Repository Structure section of the Readme document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/06-repository_structure.yaml).
+- id: documentation_structure
+  title: Documentation Structure
+  parent_id: root
+  level: 1
+  order: 7
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/07-documentation_structure.yaml
+  profile: documentation_structure
+  purpose: >-
+    Documentation Structure section of the Readme document. Required; 3 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/07-documentation_structure.yaml).
+- id: getting_started
+  title: Getting Started
+  parent_id: root
+  level: 1
+  order: 8
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/08-getting_started.yaml
+  profile: getting_started
+  purpose: >-
+    Getting Started section of the Readme document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/08-getting_started.yaml).
+- id: installation
+  title: Installation
+  parent_id: root
+  level: 1
+  order: 9
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/09-installation.yaml
+  profile: installation
+  purpose: >-
+    Installation section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/09-installation.yaml).
+- id: build
+  title: Build
+  parent_id: root
+  level: 1
+  order: 10
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/10-build.yaml
+  profile: build
+  purpose: >-
+    Build section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/10-build.yaml).
+- id: usage
+  title: Usage
+  parent_id: root
+  level: 1
+  order: 11
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/11-usage.yaml
+  profile: usage
+  purpose: >-
+    Usage section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/11-usage.yaml).
+- id: development
+  title: Development
+  parent_id: root
+  level: 1
+  order: 12
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/12-development.yaml
+  profile: development
+  purpose: >-
+    Development section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/12-development.yaml).
+- id: contributing
+  title: Contributing
+  parent_id: root
+  level: 1
+  order: 13
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/13-contributing.yaml
+  profile: contributing
+  purpose: >-
+    Contributing section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/13-contributing.yaml).
+- id: configuration
+  title: Configuration
+  parent_id: root
+  level: 1
+  order: 14
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/14-configuration.yaml
+  profile: configuration
+  purpose: >-
+    Configuration section of the Readme document. Required; 3 deterministic audit
+    rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/14-configuration.yaml).
+- id: license
+  title: License
+  parent_id: root
+  level: 1
+  order: 15
+  required: true
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/15-license.yaml
+  profile: license
+  purpose: >-
+    License section of the Readme document. Required; 3 deterministic audit rule(s)
+    govern validation (source: common/tier8/audit/deterministic/section/readme/15-license.yaml).
+- id: systems_readme
+  title: Systems README Conventions
+  parent_id: root
+  level: 1
+  order: 16
+  required: false
+  generated: false
+  source: >-
+    common/tier8/audit/deterministic/section/readme/16-systems_readme.yaml
+  profile: systems_readme
+  purpose: >-
+    Systems README Conventions section of the Readme document. Optional; 1 deterministic
+    audit rule(s) govern validation (source: common/tier8/audit/deterministic/section/readme/16-systems_readme.yaml).
+validation:
+  hierarchy:
+    max_level: 1
+    require_valid_parent: true
+    root_parent_id: root
+  ordering:
+    unique_order_per_parent: true
+  structure:
+    duplicate_ids: false
+    orphan_sections: false
+    circular_references: false
+  required:
+    enforce_required_sections: true
+    enforce_required_subsections: true

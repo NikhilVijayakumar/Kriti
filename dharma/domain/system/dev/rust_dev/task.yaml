@@ -1,0 +1,556 @@
+epics:
+- name: repo-new
+  objective: >-
+    Stand up the full rust_dev documentation set for a repository at the moment it registers
+    against the rust-dev-domain Domain System, proposing and then executing the generation of
+    each domain document in standard order.
+  sort_order: 1
+  usecases:
+  - name: propose-and-generate-vision
+    description: >-
+      Propose and, on approval, execute the generation of the Vision document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Vision standard.
+    sort_order: 1
+    tasks: []
+  - name: propose-and-generate-philosophy
+    description: >-
+      Propose and, on approval, execute the generation of the Philosophy document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Philosophy standard.
+    sort_order: 2
+    tasks: []
+  - name: propose-and-generate-security
+    description: >-
+      Propose and, on approval, execute the generation of the Security document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Security standard.
+    sort_order: 3
+    tasks: []
+  - name: propose-and-generate-feature
+    description: >-
+      Propose and, on approval, execute the generation of the Feature document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Feature standard.
+    sort_order: 4
+    tasks: []
+  - name: propose-and-generate-architecture
+    description: >-
+      Propose and, on approval, execute the generation of the Architecture document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Architecture standard.
+    sort_order: 5
+    tasks: []
+  - name: propose-and-generate-engineering
+    description: >-
+      Propose and, on approval, execute the generation of the Engineering document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Engineering standard.
+    sort_order: 6
+    tasks: []
+  - name: propose-and-generate-external-context
+    description: >-
+      Propose and, on approval, execute the generation of the External Context document for
+      a repository at the moment it registers against the rust-dev-domain Domain System, per
+      the rust_dev External Context standard.
+    sort_order: 7
+    tasks: []
+  - name: propose-and-generate-feature-technical
+    description: >-
+      Propose and, on approval, execute the generation of the Feature Technical document for
+      a repository at the moment it registers against the rust-dev-domain Domain System, per
+      the rust_dev Feature Technical standard.
+    sort_order: 8
+    tasks: []
+  - name: propose-and-generate-qa
+    description: >-
+      Propose and, on approval, execute the generation of the QA document for a repository at
+      the moment it registers against the rust-dev-domain Domain System, per the rust_dev QA
+      standard.
+    sort_order: 9
+    tasks: []
+  - name: propose-and-generate-implementation
+    description: >-
+      Propose and, on approval, execute the generation of the Implementation document for a
+      repository at the moment it registers against the rust-dev-domain Domain System, per the
+      rust_dev Implementation standard.
+    sort_order: 10
+    tasks: []
+  - name: propose-and-generate-build
+    description: >-
+      Propose and, on approval, execute the generation of the Build document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Build standard.
+    sort_order: 11
+    tasks: []
+  - name: propose-and-generate-readme
+    description: >-
+      Propose and, on approval, execute the generation of the README document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      README standard.
+    sort_order: 12
+    tasks: []
+  - name: propose-and-generate-product-guide
+    description: >-
+      Propose and, on approval, execute the generation of the Product Guide document for a repository
+      at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
+      Product Guide standard.
+    sort_order: 13
+    tasks: []
+- name: repo-existing
+  objective: >-
+    Bring the documentation of an already-existing repository into conformance with the rust_dev
+    standard, generating any missing domain documents and bootstrapping the README when no documentation
+    exists at all.
+  sort_order: 2
+  usecases:
+  - name: reconcile-vision
+    description: >-
+      Reconcile the existing repository's Vision document with the rust_dev Vision standard:
+      generate it if absent, otherwise leave it in place for the document-maintenance flow to
+      act on (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 1
+    tasks: []
+  - name: reconcile-philosophy
+    description: >-
+      Reconcile the existing repository's Philosophy document with the rust_dev Philosophy standard:
+      generate it if absent, otherwise leave it in place for the document-maintenance flow to
+      act on (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 2
+    tasks: []
+  - name: reconcile-security
+    description: >-
+      Reconcile the existing repository's Security document with the rust_dev Security standard:
+      generate it if absent, otherwise leave it in place for the document-maintenance flow to
+      act on (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 3
+    tasks: []
+  - name: reconcile-feature
+    description: >-
+      Reconcile the existing repository's Feature document with the rust_dev Feature standard:
+      generate it if absent, otherwise leave it in place for the document-maintenance flow to
+      act on (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 4
+    tasks: []
+  - name: reconcile-architecture
+    description: >-
+      Reconcile the existing repository's Architecture document with the rust_dev Architecture
+      standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 5
+    tasks: []
+  - name: reconcile-engineering
+    description: >-
+      Reconcile the existing repository's Engineering document with the rust_dev Engineering
+      standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 6
+    tasks: []
+  - name: reconcile-external-context
+    description: >-
+      Reconcile the existing repository's External Context document with the rust_dev External
+      Context standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 7
+    tasks: []
+  - name: reconcile-feature-technical
+    description: >-
+      Reconcile the existing repository's Feature Technical document with the rust_dev Feature
+      Technical standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 8
+    tasks: []
+  - name: reconcile-qa
+    description: >-
+      Reconcile the existing repository's QA document with the rust_dev QA standard: generate
+      it if absent, otherwise leave it in place for the document-maintenance flow to act on
+      (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 9
+    tasks: []
+  - name: reconcile-implementation
+    description: >-
+      Reconcile the existing repository's Implementation document with the rust_dev Implementation
+      standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 10
+    tasks: []
+  - name: reconcile-build
+    description: >-
+      Reconcile the existing repository's Build document with the rust_dev Build standard: generate
+      it if absent, otherwise leave it in place for the document-maintenance flow to act on
+      (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 11
+    tasks: []
+  - name: reconcile-readme
+    description: >-
+      Reconcile the existing repository's README document with the rust_dev README standard:
+      generate it if absent, otherwise leave it in place for the document-maintenance flow to
+      act on (bootstrap-readme runs first when the repository has no documentation at all).
+    sort_order: 12
+    tasks: []
+  - name: reconcile-product-guide
+    description: >-
+      Reconcile the existing repository's Product Guide document with the rust_dev Product Guide
+      standard: generate it if absent, otherwise leave it in place for the document-maintenance
+      flow to act on (bootstrap-readme runs first when the repository has no documentation at
+      all).
+    sort_order: 13
+    tasks: []
+  - name: bootstrap-readme
+    description: >-
+      Bootstrap the initial README document for an existing repository that has no documentation
+      at all, so the per-domain reconcile usecases have a document set to act on.
+    sort_order: 14
+    tasks: []
+- name: document-maintenance
+  objective: >-
+    Maintain any single domain document independent of repository state: generate, deterministically
+    audit, semantically audit, and fix per-domain content under the rust_dev standard.
+  sort_order: 3
+  usecases:
+  - name: generate-document-vision
+    description: >-
+      Generate the Vision document from the rust_dev Vision standard's template and writing
+      guidance.
+    sort_order: 1
+    tasks: []
+  - name: deterministic-audit-vision
+    description: >-
+      Run the rust_dev Vision deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the Vision document and record scored findings.
+    sort_order: 2
+    tasks: []
+  - name: semantic-audit-vision
+    description: >-
+      Run the rust_dev Vision semantic audit against the Vision document and record the ensemble's
+      scored findings.
+    sort_order: 3
+    tasks: []
+  - name: fix-vision
+    description: >-
+      Apply content-preserving fixes that bring the Vision document into conformance with the
+      rust_dev Vision standard without redefining its intent.
+    sort_order: 4
+    tasks: []
+  - name: generate-document-philosophy
+    description: >-
+      Generate the Philosophy document from the rust_dev Philosophy standard's template and
+      writing guidance.
+    sort_order: 5
+    tasks: []
+  - name: deterministic-audit-philosophy
+    description: >-
+      Run the rust_dev Philosophy deterministic audit (section-level structural checks with
+      per-rule severity, weight, and evidence) against the Philosophy document and record scored
+      findings.
+    sort_order: 6
+    tasks: []
+  - name: semantic-audit-philosophy
+    description: >-
+      Run the rust_dev Philosophy semantic audit against the Philosophy document and record
+      the ensemble's scored findings.
+    sort_order: 7
+    tasks: []
+  - name: fix-philosophy
+    description: >-
+      Apply content-preserving fixes that bring the Philosophy document into conformance with
+      the rust_dev Philosophy standard without redefining its intent.
+    sort_order: 8
+    tasks: []
+  - name: generate-document-security
+    description: >-
+      Generate the Security document from the rust_dev Security standard's template and writing
+      guidance.
+    sort_order: 9
+    tasks: []
+  - name: deterministic-audit-security
+    description: >-
+      Run the rust_dev Security deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the Security document and record scored findings.
+    sort_order: 10
+    tasks: []
+  - name: semantic-audit-security
+    description: >-
+      Run the rust_dev Security semantic audit against the Security document and record the
+      ensemble's scored findings.
+    sort_order: 11
+    tasks: []
+  - name: fix-security
+    description: >-
+      Apply content-preserving fixes that bring the Security document into conformance with
+      the rust_dev Security standard without redefining its intent.
+    sort_order: 12
+    tasks: []
+  - name: generate-document-feature
+    description: >-
+      Generate the Feature document from the rust_dev Feature standard's template and writing
+      guidance.
+    sort_order: 13
+    tasks: []
+  - name: deterministic-audit-feature
+    description: >-
+      Run the rust_dev Feature deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the Feature document and record scored findings.
+    sort_order: 14
+    tasks: []
+  - name: semantic-audit-feature
+    description: >-
+      Run the rust_dev Feature semantic audit against the Feature document and record the ensemble's
+      scored findings.
+    sort_order: 15
+    tasks: []
+  - name: fix-feature
+    description: >-
+      Apply content-preserving fixes that bring the Feature document into conformance with the
+      rust_dev Feature standard without redefining its intent.
+    sort_order: 16
+    tasks: []
+  - name: generate-document-architecture
+    description: >-
+      Generate the Architecture document from the rust_dev Architecture standard's template
+      and writing guidance.
+    sort_order: 17
+    tasks: []
+  - name: deterministic-audit-architecture
+    description: >-
+      Run the rust_dev Architecture deterministic audit (section-level structural checks with
+      per-rule severity, weight, and evidence) against the Architecture document and record
+      scored findings.
+    sort_order: 18
+    tasks: []
+  - name: semantic-audit-architecture
+    description: >-
+      Run the rust_dev Architecture semantic audit against the Architecture document and record
+      the ensemble's scored findings.
+    sort_order: 19
+    tasks: []
+  - name: fix-architecture
+    description: >-
+      Apply content-preserving fixes that bring the Architecture document into conformance with
+      the rust_dev Architecture standard without redefining its intent.
+    sort_order: 20
+    tasks: []
+  - name: generate-document-engineering
+    description: >-
+      Generate the Engineering document from the rust_dev Engineering standard's template and
+      writing guidance.
+    sort_order: 21
+    tasks: []
+  - name: deterministic-audit-engineering
+    description: >-
+      Run the rust_dev Engineering deterministic audit (section-level structural checks with
+      per-rule severity, weight, and evidence) against the Engineering document and record scored
+      findings.
+    sort_order: 22
+    tasks: []
+  - name: semantic-audit-engineering
+    description: >-
+      Run the rust_dev Engineering semantic audit against the Engineering document and record
+      the ensemble's scored findings.
+    sort_order: 23
+    tasks: []
+  - name: fix-engineering
+    description: >-
+      Apply content-preserving fixes that bring the Engineering document into conformance with
+      the rust_dev Engineering standard without redefining its intent.
+    sort_order: 24
+    tasks: []
+  - name: generate-document-external-context
+    description: >-
+      Generate the External Context document from the rust_dev External Context standard's template
+      and writing guidance.
+    sort_order: 25
+    tasks: []
+  - name: deterministic-audit-external-context
+    description: >-
+      Run the rust_dev External Context deterministic audit (section-level structural checks
+      with per-rule severity, weight, and evidence) against the External Context document and
+      record scored findings.
+    sort_order: 26
+    tasks: []
+  - name: semantic-audit-external-context
+    description: >-
+      Run the rust_dev External Context semantic audit against the External Context document
+      and record the ensemble's scored findings.
+    sort_order: 27
+    tasks: []
+  - name: fix-external-context
+    description: >-
+      Apply content-preserving fixes that bring the External Context document into conformance
+      with the rust_dev External Context standard without redefining its intent.
+    sort_order: 28
+    tasks: []
+  - name: generate-document-feature-technical
+    description: >-
+      Generate the Feature Technical document from the rust_dev Feature Technical standard's
+      template and writing guidance.
+    sort_order: 29
+    tasks: []
+  - name: deterministic-audit-feature-technical
+    description: >-
+      Run the rust_dev Feature Technical deterministic audit (section-level structural checks
+      with per-rule severity, weight, and evidence) against the Feature Technical document and
+      record scored findings.
+    sort_order: 30
+    tasks: []
+  - name: semantic-audit-feature-technical
+    description: >-
+      Run the rust_dev Feature Technical semantic audit against the Feature Technical document
+      and record the ensemble's scored findings.
+    sort_order: 31
+    tasks: []
+  - name: fix-feature-technical
+    description: >-
+      Apply content-preserving fixes that bring the Feature Technical document into conformance
+      with the rust_dev Feature Technical standard without redefining its intent.
+    sort_order: 32
+    tasks: []
+  - name: generate-document-qa
+    description: >-
+      Generate the QA document from the rust_dev QA standard's template and writing guidance.
+    sort_order: 33
+    tasks: []
+  - name: deterministic-audit-qa
+    description: >-
+      Run the rust_dev QA deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the QA document and record scored findings.
+    sort_order: 34
+    tasks: []
+  - name: semantic-audit-qa
+    description: >-
+      Run the rust_dev QA semantic audit against the QA document and record the ensemble's scored
+      findings.
+    sort_order: 35
+    tasks: []
+  - name: fix-qa
+    description: >-
+      Apply content-preserving fixes that bring the QA document into conformance with the rust_dev
+      QA standard without redefining its intent.
+    sort_order: 36
+    tasks: []
+  - name: generate-document-implementation
+    description: >-
+      Generate the Implementation document from the rust_dev Implementation standard's template
+      and writing guidance.
+    sort_order: 37
+    tasks: []
+  - name: deterministic-audit-implementation
+    description: >-
+      Run the rust_dev Implementation deterministic audit (section-level structural checks with
+      per-rule severity, weight, and evidence) against the Implementation document and record
+      scored findings.
+    sort_order: 38
+    tasks: []
+  - name: semantic-audit-implementation
+    description: >-
+      Run the rust_dev Implementation semantic audit against the Implementation document and
+      record the ensemble's scored findings.
+    sort_order: 39
+    tasks: []
+  - name: fix-implementation
+    description: >-
+      Apply content-preserving fixes that bring the Implementation document into conformance
+      with the rust_dev Implementation standard without redefining its intent.
+    sort_order: 40
+    tasks: []
+  - name: generate-document-build
+    description: >-
+      Generate the Build document from the rust_dev Build standard's template and writing guidance.
+    sort_order: 41
+    tasks: []
+  - name: deterministic-audit-build
+    description: >-
+      Run the rust_dev Build deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the Build document and record scored findings.
+    sort_order: 42
+    tasks: []
+  - name: semantic-audit-build
+    description: >-
+      Run the rust_dev Build semantic audit against the Build document and record the ensemble's
+      scored findings.
+    sort_order: 43
+    tasks: []
+  - name: fix-build
+    description: >-
+      Apply content-preserving fixes that bring the Build document into conformance with the
+      rust_dev Build standard without redefining its intent.
+    sort_order: 44
+    tasks: []
+  - name: generate-document-readme
+    description: >-
+      Generate the README document from the rust_dev README standard's template and writing
+      guidance.
+    sort_order: 45
+    tasks: []
+  - name: deterministic-audit-readme
+    description: >-
+      Run the rust_dev README deterministic audit (section-level structural checks with per-rule
+      severity, weight, and evidence) against the README document and record scored findings.
+    sort_order: 46
+    tasks: []
+  - name: semantic-audit-readme
+    description: >-
+      Run the rust_dev README semantic audit against the README document and record the ensemble's
+      scored findings.
+    sort_order: 47
+    tasks: []
+  - name: fix-readme
+    description: >-
+      Apply content-preserving fixes that bring the README document into conformance with the
+      rust_dev README standard without redefining its intent.
+    sort_order: 48
+    tasks: []
+  - name: generate-document-product-guide
+    description: >-
+      Generate the Product Guide document from the rust_dev Product Guide standard's template
+      and writing guidance.
+    sort_order: 49
+    tasks: []
+  - name: deterministic-audit-product-guide
+    description: >-
+      Run the rust_dev Product Guide deterministic audit (section-level structural checks with
+      per-rule severity, weight, and evidence) against the Product Guide document and record
+      scored findings.
+    sort_order: 50
+    tasks: []
+  - name: semantic-audit-product-guide
+    description: >-
+      Run the rust_dev Product Guide semantic audit against the Product Guide document and record
+      the ensemble's scored findings.
+    sort_order: 51
+    tasks: []
+  - name: fix-product-guide
+    description: >-
+      Apply content-preserving fixes that bring the Product Guide document into conformance
+      with the rust_dev Product Guide standard without redefining its intent.
+    sort_order: 52
+    tasks: []
+- name: cross-domain
+  objective: >-
+    Provide the repository- and domain-agnostic capabilities the other Epics consume: cross-domain
+    audit calculation, report rendering, and chart rendering.
+  sort_order: 4
+  usecases:
+  - name: calculate
+    description: >-
+      Compute the aggregated rust_dev audit scores across all domains of a repository, applying
+      the standard's deterministic/semantic weight and merge formulas.
+    sort_order: 1
+    tasks: []
+  - name: render-report
+    description: >-
+      Render the consolidated rust_dev audit report for a repository from the calculated per-domain
+      scores, per the standard's report templates.
+    sort_order: 2
+    tasks: []
+  - name: render-charts
+    description: >-
+      Render the rust_dev audit visualizations (score history, per-domain comparisons) from
+      the recorded findings for inclusion in the report.
+    sort_order: 3
+    tasks: []
