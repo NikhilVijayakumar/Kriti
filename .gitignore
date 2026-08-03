@@ -592,3 +592,9 @@ __marimo__/
 .agents/
 .claude/
 /samgraha/system/academic/pcems_2026/reference/
+
+# proposal 05 (rust_dev/analyse end-to-end verification): mock-repo fixtures
+# under /test/ are real, tracked test content — only Dharma's own generated
+# per-repo sync artifacts (repo.db, assets/, summaries, per proposal 11) are
+# ignored, wherever a mock repo's registration creates one.
+test/**/.dharma/

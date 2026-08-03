@@ -1,0 +1,7 @@
+[repository]
+id = "mock-repo-new"
+name = "mock-repo-new"
+uuid = "34093f81-b99f-40a9-94b1-6eff7999fed0"
+
+[repository.domain]
+select = "rust-dev-domain"
