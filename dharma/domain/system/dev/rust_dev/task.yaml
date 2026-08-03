@@ -1,3 +1,557 @@
+x_task_templates:
+  pg_input: &pg_input
+    type: object
+    properties:
+      repo_path:
+        type: string
+        description: Filesystem path of the repository being documented.
+      domain:
+        type: string
+        description: The documentation domain to generate (the task name pins it).
+      upstream_documents:
+        type: object
+        additionalProperties:
+          type: string
+        description: Upstream document name -> file path per the domain's derivation chain;
+          empty for the root (vision) domain.
+    required:
+    - repo_path
+    - domain
+    - upstream_documents
+  pg_output: &pg_output
+    type: object
+    properties:
+      document:
+        type: string
+        description: Full generated document text.
+      sections:
+        type: object
+        additionalProperties:
+          type: string
+        description: Section id -> rendered content for every required section of the
+          domain's section map.
+      conformant_to:
+        type: string
+        description: Section-map reference the document was generated against.
+      mandatory_rule_results:
+        type: array
+        description: Pass/fail for every validation rule marked mandatory in the domain's
+          profile.
+        items:
+          type: object
+          properties:
+            rule_id:
+              type: string
+            pass:
+              type: boolean
+          required:
+          - rule_id
+          - pass
+    required:
+    - document
+    - sections
+    - conformant_to
+    - mandatory_rule_results
+  pg_acceptance: &pg_acceptance
+    happy_path:
+    - every required section from the domain's section map is present in the output document
+    - 'every validation rule marked mandatory: true passes against the output document'
+    corner_case:
+    - 'a validation rule marked mandatory: false fails (e.g. severity warning) yet the
+      document still generates successfully'
+    edge_case:
+    - an upstream document the domain derives from is missing or non-conformant; the task
+      fails closed instead of generating against an invalid upstream
+  rc_input: &rc_input
+    type: object
+    properties:
+      repo_path:
+        type: string
+        description: Filesystem path of the existing repository.
+      domain:
+        type: string
+      current_document:
+        type: string
+        description: Existing document text, or null when the repository has none.
+    required:
+    - repo_path
+    - domain
+    - current_document
+  rc_output: &rc_output
+    type: object
+    properties:
+      document:
+        type: string
+        description: Full generated document text.
+      sections:
+        type: object
+        additionalProperties:
+          type: string
+        description: Section id -> rendered content for every required section of the
+          domain's section map.
+      conformant_to:
+        type: string
+        description: Section-map reference the document was generated against.
+      mandatory_rule_results:
+        type: array
+        description: Pass/fail for every validation rule marked mandatory in the domain's
+          profile.
+        items:
+          type: object
+          properties:
+            rule_id:
+              type: string
+            pass:
+              type: boolean
+          required:
+          - rule_id
+          - pass
+    required:
+    - document
+    - sections
+    - conformant_to
+    - mandatory_rule_results
+  rc_acceptance: &rc_acceptance
+    happy_path:
+    - the document already exists and every mandatory validation rule passes; reconcile
+      is a verified no-op
+    corner_case:
+    - the document exists but one or more mandatory rules fail; the task reports the failing
+      rules and routes to the fix archetype instead of rewriting
+    edge_case:
+    - the document does not exist at all; the task generates it from scratch, same as
+      the greenfield archetype
+  gd_input: &gd_input
+    type: object
+    properties:
+      domain:
+        type: string
+      upstream_documents:
+        type: object
+        additionalProperties:
+          type: string
+        description: Upstream document name -> file path required to generate this domain's
+          document.
+    required:
+    - domain
+    - upstream_documents
+  gd_output: &gd_output
+    type: object
+    properties:
+      document:
+        type: string
+        description: Full generated document text.
+      sections:
+        type: object
+        additionalProperties:
+          type: string
+        description: Section id -> rendered content for every required section of the
+          domain's section map.
+      conformant_to:
+        type: string
+        description: Section-map reference the document was generated against.
+      mandatory_rule_results:
+        type: array
+        description: Pass/fail for every validation rule marked mandatory in the domain's
+          profile.
+        items:
+          type: object
+          properties:
+            rule_id:
+              type: string
+            pass:
+              type: boolean
+          required:
+          - rule_id
+          - pass
+    required:
+    - document
+    - sections
+    - conformant_to
+    - mandatory_rule_results
+  gd_acceptance: &gd_acceptance
+    happy_path:
+    - the document is generated with every required section present and every mandatory
+      validation rule passing
+    corner_case:
+    - an upstream document is present but incomplete for one section; that section is
+      generated best-effort and flagged, never fabricated
+    edge_case:
+    - an upstream document is missing or non-conformant; the task fails closed
+  da_input: &da_input
+    type: object
+    properties:
+      document:
+        type: string
+        description: The domain document to audit.
+      section_map:
+        type: object
+        description: The domain's section map the document must conform to.
+    required:
+    - document
+    - section_map
+  da_output: &da_output
+    type: object
+    properties:
+      verdict:
+        type: string
+        enum:
+        - compliant
+        - compliant-with-warnings
+        - non-compliant
+      findings:
+        type: array
+        items:
+          type: object
+          properties:
+            rule_id:
+              type: string
+            condition:
+              type: string
+            message:
+              type: string
+            severity:
+              type: string
+            weight:
+              type: number
+            mandatory:
+              type: boolean
+            evidence:
+              type: string
+            pass:
+              type: boolean
+          required:
+          - rule_id
+          - condition
+          - severity
+          - weight
+          - mandatory
+          - pass
+    required:
+    - verdict
+    - findings
+  da_acceptance: &da_acceptance
+    happy_path:
+    - all mandatory rules pass; verdict is compliant
+    corner_case:
+    - a non-mandatory rule fails; verdict is compliant-with-warnings with the warning-level
+      finding recorded
+    edge_case:
+    - the document is missing or a mandatory rule fails; verdict is non-compliant and
+      the failing rules are returned for the fix archetype
+  sa_input: &sa_input
+    type: object
+    properties:
+      document:
+        type: string
+      writing_objective:
+        type: string
+      knowledge_goal:
+        type: string
+      reader_goal:
+        type: string
+      completion_checklist:
+        type: array
+        items:
+          type: string
+      review_questions:
+        type: array
+        items:
+          type: string
+    required:
+    - document
+    - writing_objective
+    - knowledge_goal
+    - reader_goal
+  sa_output: &sa_output
+    type: object
+    properties:
+      score:
+        type: number
+        minimum: 0
+        maximum: 100
+      findings:
+        type: array
+        items:
+          type: object
+          properties:
+            finding_id:
+              type: string
+            message:
+              type: string
+            severity:
+              type: string
+            weight:
+              type: number
+            evidence:
+              type: string
+          required:
+          - finding_id
+          - message
+          - severity
+          - weight
+      bounded_by:
+        type: string
+        description: When objectives are authored placeholders, the audit is bounded by
+          them.
+    required:
+    - score
+    - findings
+    - bounded_by
+  sa_acceptance: &sa_acceptance
+    happy_path:
+    - the document satisfies the profile's writing objective, knowledge goal, and reader
+      goal; scored with supporting findings
+    corner_case:
+    - a review question is only partially satisfied; flagged as a warning-level finding
+      without failing the audit
+    edge_case:
+    - the document is missing; a non-scorable finding is returned and the placeholder
+      objective dependency is noted when objectives are authored placeholders
+  fx_input: &fx_input
+    type: object
+    properties:
+      document:
+        type: string
+      failing_findings:
+        type: array
+        description: The failing rules from the deterministic/semantic audits that must
+          be resolved.
+        items:
+          type: object
+      max_attempts:
+        type: integer
+        minimum: 1
+        description: Bounded fix attempts before escalation.
+    required:
+    - document
+    - failing_findings
+    - max_attempts
+  fx_output: &fx_output
+    type: object
+    properties:
+      document:
+        type: string
+        description: Corrected document.
+      fixed_rule_ids:
+        type: array
+        items:
+          type: string
+      remaining_findings:
+        type: array
+        items:
+          type: object
+      escalated:
+        type: boolean
+        description: True when the fix could not resolve within max_attempts.
+    required:
+    - document
+    - fixed_rule_ids
+    - remaining_findings
+    - escalated
+  fx_acceptance: &fx_acceptance
+    happy_path:
+    - every previously-failing mandatory rule now passes; corrected document returned
+      with the fixed rule ids
+    corner_case:
+    - the fix resolves the mandatory failures but introduces a new non-mandatory rule
+      failure; flagged, not silently accepted
+    edge_case:
+    - the fix cannot resolve the failures within the bounded attempt count; escalates
+      to a human reviewer instead of looping forever
+  br_input: &br_input
+    type: object
+    properties:
+      repo_path:
+        type: string
+      source_code_scan:
+        type: object
+        additionalProperties: true
+        description: Scan of the repository structure (crates, entry points, public API)
+          used to bootstrap the README.
+    required:
+    - repo_path
+    - source_code_scan
+  br_output: &br_output
+    type: object
+    properties:
+      document:
+        type: string
+      scaffolded_sections:
+        type: array
+        items:
+          type: string
+        description: Sections rendered as TBD notes because no source structure was discoverable
+          for them.
+      escalated:
+        type: boolean
+    required:
+    - document
+    - scaffolded_sections
+    - escalated
+  br_acceptance: &br_acceptance
+    happy_path:
+    - the README meets every required section of the readme section map
+    corner_case:
+    - only partial repository structure is discoverable; affected sections are scaffolded
+      as explicit TBD notes, not fabricated content
+    edge_case:
+    - no repository structure is discoverable at all; the task escalates to a human instead
+      of inventing content
+  calc_input: &calc_input
+    type: object
+    properties:
+      domain_scores:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            deterministic_whole:
+              type: number
+              minimum: 0
+              maximum: 100
+            deterministic_section:
+              type: number
+              minimum: 0
+              maximum: 100
+            semantic_whole:
+              type: number
+              minimum: 0
+              maximum: 100
+            semantic_section:
+              type: number
+              minimum: 0
+              maximum: 100
+          required:
+          - deterministic_whole
+          - deterministic_section
+          - semantic_whole
+          - semantic_section
+      weights:
+        type: object
+        properties:
+          deterministic:
+            type: number
+          semantic:
+            type: number
+        required:
+        - deterministic
+        - semantic
+    required:
+    - domain_scores
+    - weights
+  calc_output: &calc_output
+    type: object
+    properties:
+      final_score:
+        type: number
+        description: Weighted-sum aggregate across available domains.
+      per_domain:
+        type: array
+        items:
+          type: object
+      missing_domains:
+        type: array
+        items:
+          type: string
+        description: Domains excluded from the aggregate, listed explicitly.
+      formula:
+        type: string
+        description: The rust_dev 25/25/25/25 weighted_sum.
+    required:
+    - final_score
+    - per_domain
+    - missing_domains
+    - formula
+  calc_acceptance: &calc_acceptance
+    happy_path:
+    - all 13 domains have deterministic and semantic scores; final_score is computed via
+      the weighted_sum formula
+    corner_case:
+    - one or more domain scores are missing; the aggregate is computed over the available
+      domains and the missing ones are listed as explicit gaps, never silently omitted
+    edge_case:
+    - a score is outside the 0-100 range; rejected as invalid input and no score is computed
+  rr_input: &rr_input
+    type: object
+    properties:
+      final_scores:
+        type: object
+      score_history:
+        type: array
+        items:
+          type: object
+    required:
+    - final_scores
+    - score_history
+  rr_output: &rr_output
+    type: object
+    properties:
+      report:
+        type: string
+        description: Consolidated markdown audit report.
+      gap_notes:
+        type: array
+        items:
+          type: string
+    required:
+    - report
+    - gap_notes
+  rr_acceptance: &rr_acceptance
+    happy_path:
+    - the consolidated audit report renders from the calculated per-domain scores
+    corner_case:
+    - some data is missing (a domain score or a history entry); an explicit gap note is
+      rendered in its place, never a silent omission
+    edge_case:
+    - no score data at all; the report renders a header plus an explicit empty-state gap
+      note
+  chart_input: &chart_input
+    type: object
+    properties:
+      final_scores:
+        type: object
+      score_history:
+        type: array
+        items:
+          type: object
+    required:
+    - final_scores
+    - score_history
+  chart_output: &chart_output
+    type: object
+    properties:
+      charts:
+        type: array
+        items:
+          type: object
+          properties:
+            chart_id:
+              type: string
+            format:
+              type: string
+            data:
+              type: string
+          required:
+          - chart_id
+          - format
+          - data
+      gap_notes:
+        type: array
+        items:
+          type: string
+    required:
+    - charts
+    - gap_notes
+  chart_acceptance: &chart_acceptance
+    happy_path:
+    - score-history and per-domain comparison charts render from the recorded findings
+    corner_case:
+    - a domain has no history entries; it is excluded from the trend chart with an explicit
+      note
+    edge_case:
+    - no chartable data at all; an explicit empty-state placeholder is rendered instead
+      of a blank image
 epics:
 - name: repo-new
   objective: >-
@@ -12,91 +566,169 @@ epics:
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Vision standard.
     sort_order: 1
-    tasks: []
+    tasks:
+    - name: propose-and-generate-vision
+      description: >-
+        Propose the Vision document for a newly-registering repository and, on approval, generate it from the vision section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-philosophy
     description: >-
       Propose and, on approval, execute the generation of the Philosophy document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Philosophy standard.
     sort_order: 2
-    tasks: []
+    tasks:
+    - name: propose-and-generate-philosophy
+      description: >-
+        Propose the Philosophy document for a newly-registering repository and, on approval, generate it from the philosophy section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-security
     description: >-
       Propose and, on approval, execute the generation of the Security document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Security standard.
     sort_order: 3
-    tasks: []
+    tasks:
+    - name: propose-and-generate-security
+      description: >-
+        Propose the Security document for a newly-registering repository and, on approval, generate it from the security section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-feature
     description: >-
       Propose and, on approval, execute the generation of the Feature document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Feature standard.
     sort_order: 4
-    tasks: []
+    tasks:
+    - name: propose-and-generate-feature
+      description: >-
+        Propose the Feature document for a newly-registering repository and, on approval, generate it from the feature section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-architecture
     description: >-
       Propose and, on approval, execute the generation of the Architecture document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Architecture standard.
     sort_order: 5
-    tasks: []
+    tasks:
+    - name: propose-and-generate-architecture
+      description: >-
+        Propose the Architecture document for a newly-registering repository and, on approval, generate it from the architecture section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-engineering
     description: >-
       Propose and, on approval, execute the generation of the Engineering document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Engineering standard.
     sort_order: 6
-    tasks: []
+    tasks:
+    - name: propose-and-generate-engineering
+      description: >-
+        Propose the Engineering document for a newly-registering repository and, on approval, generate it from the engineering section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-external-context
     description: >-
       Propose and, on approval, execute the generation of the External Context document for
       a repository at the moment it registers against the rust-dev-domain Domain System, per
       the rust_dev External Context standard.
     sort_order: 7
-    tasks: []
+    tasks:
+    - name: propose-and-generate-external-context
+      description: >-
+        Propose the External Context document for a newly-registering repository and, on approval, generate it from the external-context section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-feature-technical
     description: >-
       Propose and, on approval, execute the generation of the Feature Technical document for
       a repository at the moment it registers against the rust-dev-domain Domain System, per
       the rust_dev Feature Technical standard.
     sort_order: 8
-    tasks: []
+    tasks:
+    - name: propose-and-generate-feature-technical
+      description: >-
+        Propose the Feature Technical document for a newly-registering repository and, on approval, generate it from the feature-technical section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-qa
     description: >-
       Propose and, on approval, execute the generation of the QA document for a repository at
       the moment it registers against the rust-dev-domain Domain System, per the rust_dev QA
       standard.
     sort_order: 9
-    tasks: []
+    tasks:
+    - name: propose-and-generate-qa
+      description: >-
+        Propose the QA document for a newly-registering repository and, on approval, generate it from the qa section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-implementation
     description: >-
       Propose and, on approval, execute the generation of the Implementation document for a
       repository at the moment it registers against the rust-dev-domain Domain System, per the
       rust_dev Implementation standard.
     sort_order: 10
-    tasks: []
+    tasks:
+    - name: propose-and-generate-implementation
+      description: >-
+        Propose the Implementation document for a newly-registering repository and, on approval, generate it from the implementation section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-build
     description: >-
       Propose and, on approval, execute the generation of the Build document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Build standard.
     sort_order: 11
-    tasks: []
+    tasks:
+    - name: propose-and-generate-build
+      description: >-
+        Propose the Build document for a newly-registering repository and, on approval, generate it from the build section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-readme
     description: >-
       Propose and, on approval, execute the generation of the README document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       README standard.
     sort_order: 12
-    tasks: []
+    tasks:
+    - name: propose-and-generate-readme
+      description: >-
+        Propose the README document for a newly-registering repository and, on approval, generate it from the readme section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
   - name: propose-and-generate-product-guide
     description: >-
       Propose and, on approval, execute the generation of the Product Guide document for a repository
       at the moment it registers against the rust-dev-domain Domain System, per the rust_dev
       Product Guide standard.
     sort_order: 13
-    tasks: []
+    tasks:
+    - name: propose-and-generate-product-guide
+      description: >-
+        Propose the Product Guide document for a newly-registering repository and, on approval, generate it from the product-guide section map and its upstream documents, then verify every required section and mandatory rule.
+      input_contract: *pg_input
+      output_contract: *pg_output
+      acceptance_criteria: *pg_acceptance
 - name: repo-existing
   objective: >-
     Bring the documentation of an already-existing repository into conformance with the rust_dev
@@ -110,28 +742,52 @@ epics:
       generate it if absent, otherwise leave it in place for the document-maintenance flow to
       act on (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 1
-    tasks: []
+    tasks:
+    - name: reconcile-vision
+      description: >-
+        Reconcile an existing repository's Vision document with the rust_dev vision standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-philosophy
     description: >-
       Reconcile the existing repository's Philosophy document with the rust_dev Philosophy standard:
       generate it if absent, otherwise leave it in place for the document-maintenance flow to
       act on (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 2
-    tasks: []
+    tasks:
+    - name: reconcile-philosophy
+      description: >-
+        Reconcile an existing repository's Philosophy document with the rust_dev philosophy standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-security
     description: >-
       Reconcile the existing repository's Security document with the rust_dev Security standard:
       generate it if absent, otherwise leave it in place for the document-maintenance flow to
       act on (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 3
-    tasks: []
+    tasks:
+    - name: reconcile-security
+      description: >-
+        Reconcile an existing repository's Security document with the rust_dev security standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-feature
     description: >-
       Reconcile the existing repository's Feature document with the rust_dev Feature standard:
       generate it if absent, otherwise leave it in place for the document-maintenance flow to
       act on (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 4
-    tasks: []
+    tasks:
+    - name: reconcile-feature
+      description: >-
+        Reconcile an existing repository's Feature document with the rust_dev feature standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-architecture
     description: >-
       Reconcile the existing repository's Architecture document with the rust_dev Architecture
@@ -139,7 +795,13 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 5
-    tasks: []
+    tasks:
+    - name: reconcile-architecture
+      description: >-
+        Reconcile an existing repository's Architecture document with the rust_dev architecture standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-engineering
     description: >-
       Reconcile the existing repository's Engineering document with the rust_dev Engineering
@@ -147,7 +809,13 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 6
-    tasks: []
+    tasks:
+    - name: reconcile-engineering
+      description: >-
+        Reconcile an existing repository's Engineering document with the rust_dev engineering standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-external-context
     description: >-
       Reconcile the existing repository's External Context document with the rust_dev External
@@ -155,7 +823,13 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 7
-    tasks: []
+    tasks:
+    - name: reconcile-external-context
+      description: >-
+        Reconcile an existing repository's External Context document with the rust_dev external-context standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-feature-technical
     description: >-
       Reconcile the existing repository's Feature Technical document with the rust_dev Feature
@@ -163,14 +837,26 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 8
-    tasks: []
+    tasks:
+    - name: reconcile-feature-technical
+      description: >-
+        Reconcile an existing repository's Feature Technical document with the rust_dev feature-technical standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-qa
     description: >-
       Reconcile the existing repository's QA document with the rust_dev QA standard: generate
       it if absent, otherwise leave it in place for the document-maintenance flow to act on
       (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 9
-    tasks: []
+    tasks:
+    - name: reconcile-qa
+      description: >-
+        Reconcile an existing repository's QA document with the rust_dev qa standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-implementation
     description: >-
       Reconcile the existing repository's Implementation document with the rust_dev Implementation
@@ -178,21 +864,39 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 10
-    tasks: []
+    tasks:
+    - name: reconcile-implementation
+      description: >-
+        Reconcile an existing repository's Implementation document with the rust_dev implementation standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-build
     description: >-
       Reconcile the existing repository's Build document with the rust_dev Build standard: generate
       it if absent, otherwise leave it in place for the document-maintenance flow to act on
       (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 11
-    tasks: []
+    tasks:
+    - name: reconcile-build
+      description: >-
+        Reconcile an existing repository's Build document with the rust_dev build standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-readme
     description: >-
       Reconcile the existing repository's README document with the rust_dev README standard:
       generate it if absent, otherwise leave it in place for the document-maintenance flow to
       act on (bootstrap-readme runs first when the repository has no documentation at all).
     sort_order: 12
-    tasks: []
+    tasks:
+    - name: reconcile-readme
+      description: >-
+        Reconcile an existing repository's README document with the rust_dev readme standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: reconcile-product-guide
     description: >-
       Reconcile the existing repository's Product Guide document with the rust_dev Product Guide
@@ -200,13 +904,25 @@ epics:
       flow to act on (bootstrap-readme runs first when the repository has no documentation at
       all).
     sort_order: 13
-    tasks: []
+    tasks:
+    - name: reconcile-product-guide
+      description: >-
+        Reconcile an existing repository's Product Guide document with the rust_dev product-guide standard: leave it in place when already conformant, report and route to the fix archetype when it fails mandatory rules, and generate it from scratch when absent.
+      input_contract: *rc_input
+      output_contract: *rc_output
+      acceptance_criteria: *rc_acceptance
   - name: bootstrap-readme
     description: >-
       Bootstrap the initial README document for an existing repository that has no documentation
       at all, so the per-domain reconcile usecases have a document set to act on.
     sort_order: 14
-    tasks: []
+    tasks:
+    - name: bootstrap-readme
+      description: >-
+        Bootstrap the initial README for an existing repository with no documentation, scaffolding any sections the source scan cannot ground in real structure.
+      input_contract: *br_input
+      output_contract: *br_output
+      acceptance_criteria: *br_acceptance
 - name: document-maintenance
   objective: >-
     Maintain any single domain document independent of repository state: generate, deterministically
@@ -218,318 +934,630 @@ epics:
       Generate the Vision document from the rust_dev Vision standard's template and writing
       guidance.
     sort_order: 1
-    tasks: []
+    tasks:
+    - name: generate-document-vision
+      description: >-
+        Generate the Vision document from the vision section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-vision
     description: >-
       Run the rust_dev Vision deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the Vision document and record scored findings.
     sort_order: 2
-    tasks: []
+    tasks:
+    - name: deterministic-audit-vision
+      description: >-
+        Run the vision deterministic audit against the Vision document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-vision
     description: >-
       Run the rust_dev Vision semantic audit against the Vision document and record the ensemble's
       scored findings.
     sort_order: 3
-    tasks: []
+    tasks:
+    - name: semantic-audit-vision
+      description: >-
+        Run the vision semantic audit against the Vision document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-vision
     description: >-
       Apply content-preserving fixes that bring the Vision document into conformance with the
       rust_dev Vision standard without redefining its intent.
     sort_order: 4
-    tasks: []
+    tasks:
+    - name: fix-vision
+      description: >-
+        Apply content-preserving fixes that bring the Vision document into conformance with the vision standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-philosophy
     description: >-
       Generate the Philosophy document from the rust_dev Philosophy standard's template and
       writing guidance.
     sort_order: 5
-    tasks: []
+    tasks:
+    - name: generate-document-philosophy
+      description: >-
+        Generate the Philosophy document from the philosophy section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-philosophy
     description: >-
       Run the rust_dev Philosophy deterministic audit (section-level structural checks with
       per-rule severity, weight, and evidence) against the Philosophy document and record scored
       findings.
     sort_order: 6
-    tasks: []
+    tasks:
+    - name: deterministic-audit-philosophy
+      description: >-
+        Run the philosophy deterministic audit against the Philosophy document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-philosophy
     description: >-
       Run the rust_dev Philosophy semantic audit against the Philosophy document and record
       the ensemble's scored findings.
     sort_order: 7
-    tasks: []
+    tasks:
+    - name: semantic-audit-philosophy
+      description: >-
+        Run the philosophy semantic audit against the Philosophy document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-philosophy
     description: >-
       Apply content-preserving fixes that bring the Philosophy document into conformance with
       the rust_dev Philosophy standard without redefining its intent.
     sort_order: 8
-    tasks: []
+    tasks:
+    - name: fix-philosophy
+      description: >-
+        Apply content-preserving fixes that bring the Philosophy document into conformance with the philosophy standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-security
     description: >-
       Generate the Security document from the rust_dev Security standard's template and writing
       guidance.
     sort_order: 9
-    tasks: []
+    tasks:
+    - name: generate-document-security
+      description: >-
+        Generate the Security document from the security section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-security
     description: >-
       Run the rust_dev Security deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the Security document and record scored findings.
     sort_order: 10
-    tasks: []
+    tasks:
+    - name: deterministic-audit-security
+      description: >-
+        Run the security deterministic audit against the Security document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-security
     description: >-
       Run the rust_dev Security semantic audit against the Security document and record the
       ensemble's scored findings.
     sort_order: 11
-    tasks: []
+    tasks:
+    - name: semantic-audit-security
+      description: >-
+        Run the security semantic audit against the Security document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-security
     description: >-
       Apply content-preserving fixes that bring the Security document into conformance with
       the rust_dev Security standard without redefining its intent.
     sort_order: 12
-    tasks: []
+    tasks:
+    - name: fix-security
+      description: >-
+        Apply content-preserving fixes that bring the Security document into conformance with the security standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-feature
     description: >-
       Generate the Feature document from the rust_dev Feature standard's template and writing
       guidance.
     sort_order: 13
-    tasks: []
+    tasks:
+    - name: generate-document-feature
+      description: >-
+        Generate the Feature document from the feature section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-feature
     description: >-
       Run the rust_dev Feature deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the Feature document and record scored findings.
     sort_order: 14
-    tasks: []
+    tasks:
+    - name: deterministic-audit-feature
+      description: >-
+        Run the feature deterministic audit against the Feature document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-feature
     description: >-
       Run the rust_dev Feature semantic audit against the Feature document and record the ensemble's
       scored findings.
     sort_order: 15
-    tasks: []
+    tasks:
+    - name: semantic-audit-feature
+      description: >-
+        Run the feature semantic audit against the Feature document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-feature
     description: >-
       Apply content-preserving fixes that bring the Feature document into conformance with the
       rust_dev Feature standard without redefining its intent.
     sort_order: 16
-    tasks: []
+    tasks:
+    - name: fix-feature
+      description: >-
+        Apply content-preserving fixes that bring the Feature document into conformance with the feature standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-architecture
     description: >-
       Generate the Architecture document from the rust_dev Architecture standard's template
       and writing guidance.
     sort_order: 17
-    tasks: []
+    tasks:
+    - name: generate-document-architecture
+      description: >-
+        Generate the Architecture document from the architecture section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-architecture
     description: >-
       Run the rust_dev Architecture deterministic audit (section-level structural checks with
       per-rule severity, weight, and evidence) against the Architecture document and record
       scored findings.
     sort_order: 18
-    tasks: []
+    tasks:
+    - name: deterministic-audit-architecture
+      description: >-
+        Run the architecture deterministic audit against the Architecture document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-architecture
     description: >-
       Run the rust_dev Architecture semantic audit against the Architecture document and record
       the ensemble's scored findings.
     sort_order: 19
-    tasks: []
+    tasks:
+    - name: semantic-audit-architecture
+      description: >-
+        Run the architecture semantic audit against the Architecture document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-architecture
     description: >-
       Apply content-preserving fixes that bring the Architecture document into conformance with
       the rust_dev Architecture standard without redefining its intent.
     sort_order: 20
-    tasks: []
+    tasks:
+    - name: fix-architecture
+      description: >-
+        Apply content-preserving fixes that bring the Architecture document into conformance with the architecture standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-engineering
     description: >-
       Generate the Engineering document from the rust_dev Engineering standard's template and
       writing guidance.
     sort_order: 21
-    tasks: []
+    tasks:
+    - name: generate-document-engineering
+      description: >-
+        Generate the Engineering document from the engineering section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-engineering
     description: >-
       Run the rust_dev Engineering deterministic audit (section-level structural checks with
       per-rule severity, weight, and evidence) against the Engineering document and record scored
       findings.
     sort_order: 22
-    tasks: []
+    tasks:
+    - name: deterministic-audit-engineering
+      description: >-
+        Run the engineering deterministic audit against the Engineering document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-engineering
     description: >-
       Run the rust_dev Engineering semantic audit against the Engineering document and record
       the ensemble's scored findings.
     sort_order: 23
-    tasks: []
+    tasks:
+    - name: semantic-audit-engineering
+      description: >-
+        Run the engineering semantic audit against the Engineering document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-engineering
     description: >-
       Apply content-preserving fixes that bring the Engineering document into conformance with
       the rust_dev Engineering standard without redefining its intent.
     sort_order: 24
-    tasks: []
+    tasks:
+    - name: fix-engineering
+      description: >-
+        Apply content-preserving fixes that bring the Engineering document into conformance with the engineering standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-external-context
     description: >-
       Generate the External Context document from the rust_dev External Context standard's template
       and writing guidance.
     sort_order: 25
-    tasks: []
+    tasks:
+    - name: generate-document-external-context
+      description: >-
+        Generate the External Context document from the external-context section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-external-context
     description: >-
       Run the rust_dev External Context deterministic audit (section-level structural checks
       with per-rule severity, weight, and evidence) against the External Context document and
       record scored findings.
     sort_order: 26
-    tasks: []
+    tasks:
+    - name: deterministic-audit-external-context
+      description: >-
+        Run the external-context deterministic audit against the External Context document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-external-context
     description: >-
       Run the rust_dev External Context semantic audit against the External Context document
       and record the ensemble's scored findings.
     sort_order: 27
-    tasks: []
+    tasks:
+    - name: semantic-audit-external-context
+      description: >-
+        Run the external-context semantic audit against the External Context document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-external-context
     description: >-
       Apply content-preserving fixes that bring the External Context document into conformance
       with the rust_dev External Context standard without redefining its intent.
     sort_order: 28
-    tasks: []
+    tasks:
+    - name: fix-external-context
+      description: >-
+        Apply content-preserving fixes that bring the External Context document into conformance with the external-context standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-feature-technical
     description: >-
       Generate the Feature Technical document from the rust_dev Feature Technical standard's
       template and writing guidance.
     sort_order: 29
-    tasks: []
+    tasks:
+    - name: generate-document-feature-technical
+      description: >-
+        Generate the Feature Technical document from the feature-technical section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-feature-technical
     description: >-
       Run the rust_dev Feature Technical deterministic audit (section-level structural checks
       with per-rule severity, weight, and evidence) against the Feature Technical document and
       record scored findings.
     sort_order: 30
-    tasks: []
+    tasks:
+    - name: deterministic-audit-feature-technical
+      description: >-
+        Run the feature-technical deterministic audit against the Feature Technical document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-feature-technical
     description: >-
       Run the rust_dev Feature Technical semantic audit against the Feature Technical document
       and record the ensemble's scored findings.
     sort_order: 31
-    tasks: []
+    tasks:
+    - name: semantic-audit-feature-technical
+      description: >-
+        Run the feature-technical semantic audit against the Feature Technical document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-feature-technical
     description: >-
       Apply content-preserving fixes that bring the Feature Technical document into conformance
       with the rust_dev Feature Technical standard without redefining its intent.
     sort_order: 32
-    tasks: []
+    tasks:
+    - name: fix-feature-technical
+      description: >-
+        Apply content-preserving fixes that bring the Feature Technical document into conformance with the feature-technical standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-qa
     description: >-
       Generate the QA document from the rust_dev QA standard's template and writing guidance.
     sort_order: 33
-    tasks: []
+    tasks:
+    - name: generate-document-qa
+      description: >-
+        Generate the QA document from the qa section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-qa
     description: >-
       Run the rust_dev QA deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the QA document and record scored findings.
     sort_order: 34
-    tasks: []
+    tasks:
+    - name: deterministic-audit-qa
+      description: >-
+        Run the qa deterministic audit against the QA document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-qa
     description: >-
       Run the rust_dev QA semantic audit against the QA document and record the ensemble's scored
       findings.
     sort_order: 35
-    tasks: []
+    tasks:
+    - name: semantic-audit-qa
+      description: >-
+        Run the qa semantic audit against the QA document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-qa
     description: >-
       Apply content-preserving fixes that bring the QA document into conformance with the rust_dev
       QA standard without redefining its intent.
     sort_order: 36
-    tasks: []
+    tasks:
+    - name: fix-qa
+      description: >-
+        Apply content-preserving fixes that bring the QA document into conformance with the qa standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-implementation
     description: >-
       Generate the Implementation document from the rust_dev Implementation standard's template
       and writing guidance.
     sort_order: 37
-    tasks: []
+    tasks:
+    - name: generate-document-implementation
+      description: >-
+        Generate the Implementation document from the implementation section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-implementation
     description: >-
       Run the rust_dev Implementation deterministic audit (section-level structural checks with
       per-rule severity, weight, and evidence) against the Implementation document and record
       scored findings.
     sort_order: 38
-    tasks: []
+    tasks:
+    - name: deterministic-audit-implementation
+      description: >-
+        Run the implementation deterministic audit against the Implementation document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-implementation
     description: >-
       Run the rust_dev Implementation semantic audit against the Implementation document and
       record the ensemble's scored findings.
     sort_order: 39
-    tasks: []
+    tasks:
+    - name: semantic-audit-implementation
+      description: >-
+        Run the implementation semantic audit against the Implementation document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-implementation
     description: >-
       Apply content-preserving fixes that bring the Implementation document into conformance
       with the rust_dev Implementation standard without redefining its intent.
     sort_order: 40
-    tasks: []
+    tasks:
+    - name: fix-implementation
+      description: >-
+        Apply content-preserving fixes that bring the Implementation document into conformance with the implementation standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-build
     description: >-
       Generate the Build document from the rust_dev Build standard's template and writing guidance.
     sort_order: 41
-    tasks: []
+    tasks:
+    - name: generate-document-build
+      description: >-
+        Generate the Build document from the build section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-build
     description: >-
       Run the rust_dev Build deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the Build document and record scored findings.
     sort_order: 42
-    tasks: []
+    tasks:
+    - name: deterministic-audit-build
+      description: >-
+        Run the build deterministic audit against the Build document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-build
     description: >-
       Run the rust_dev Build semantic audit against the Build document and record the ensemble's
       scored findings.
     sort_order: 43
-    tasks: []
+    tasks:
+    - name: semantic-audit-build
+      description: >-
+        Run the build semantic audit against the Build document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-build
     description: >-
       Apply content-preserving fixes that bring the Build document into conformance with the
       rust_dev Build standard without redefining its intent.
     sort_order: 44
-    tasks: []
+    tasks:
+    - name: fix-build
+      description: >-
+        Apply content-preserving fixes that bring the Build document into conformance with the build standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-readme
     description: >-
       Generate the README document from the rust_dev README standard's template and writing
       guidance.
     sort_order: 45
-    tasks: []
+    tasks:
+    - name: generate-document-readme
+      description: >-
+        Generate the README document from the readme section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-readme
     description: >-
       Run the rust_dev README deterministic audit (section-level structural checks with per-rule
       severity, weight, and evidence) against the README document and record scored findings.
     sort_order: 46
-    tasks: []
+    tasks:
+    - name: deterministic-audit-readme
+      description: >-
+        Run the readme deterministic audit against the README document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-readme
     description: >-
       Run the rust_dev README semantic audit against the README document and record the ensemble's
       scored findings.
     sort_order: 47
-    tasks: []
+    tasks:
+    - name: semantic-audit-readme
+      description: >-
+        Run the readme semantic audit against the README document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-readme
     description: >-
       Apply content-preserving fixes that bring the README document into conformance with the
       rust_dev README standard without redefining its intent.
     sort_order: 48
-    tasks: []
+    tasks:
+    - name: fix-readme
+      description: >-
+        Apply content-preserving fixes that bring the README document into conformance with the readme standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
   - name: generate-document-product-guide
     description: >-
       Generate the Product Guide document from the rust_dev Product Guide standard's template
       and writing guidance.
     sort_order: 49
-    tasks: []
+    tasks:
+    - name: generate-document-product-guide
+      description: >-
+        Generate the Product Guide document from the product-guide section map and the upstream documents its derivation chain requires, then verify the required sections and mandatory rules.
+      input_contract: *gd_input
+      output_contract: *gd_output
+      acceptance_criteria: *gd_acceptance
   - name: deterministic-audit-product-guide
     description: >-
       Run the rust_dev Product Guide deterministic audit (section-level structural checks with
       per-rule severity, weight, and evidence) against the Product Guide document and record
       scored findings.
     sort_order: 50
-    tasks: []
+    tasks:
+    - name: deterministic-audit-product-guide
+      description: >-
+        Run the product-guide deterministic audit against the Product Guide document: section-level structural checks with per-rule severity, weight, and evidence, producing a compliant, compliant-with-warnings, or non-compliant verdict.
+      input_contract: *da_input
+      output_contract: *da_output
+      acceptance_criteria: *da_acceptance
   - name: semantic-audit-product-guide
     description: >-
       Run the rust_dev Product Guide semantic audit against the Product Guide document and record
       the ensemble's scored findings.
     sort_order: 51
-    tasks: []
+    tasks:
+    - name: semantic-audit-product-guide
+      description: >-
+        Run the product-guide semantic audit against the Product Guide document against its writing objective, knowledge goal, and reader goal, producing a scored qualitative finding set.
+      input_contract: *sa_input
+      output_contract: *sa_output
+      acceptance_criteria: *sa_acceptance
   - name: fix-product-guide
     description: >-
       Apply content-preserving fixes that bring the Product Guide document into conformance
       with the rust_dev Product Guide standard without redefining its intent.
     sort_order: 52
-    tasks: []
+    tasks:
+    - name: fix-product-guide
+      description: >-
+        Apply content-preserving fixes that bring the Product Guide document into conformance with the product-guide standard without redefining its intent, bounded by a maximum attempt count.
+      input_contract: *fx_input
+      output_contract: *fx_output
+      acceptance_criteria: *fx_acceptance
 - name: cross-domain
   objective: >-
     Provide the repository- and domain-agnostic capabilities the other Epics consume: cross-domain
@@ -541,16 +1569,35 @@ epics:
       Compute the aggregated rust_dev audit scores across all domains of a repository, applying
       the standard's deterministic/semantic weight and merge formulas.
     sort_order: 1
-    tasks: []
+    tasks:
+    - name: calculate
+      description: >-
+        Compute the aggregated rust_dev audit scores across all domains of a repository via the weighted_sum formula, listing any domains whose scores are missing as explicit gaps.
+      input_contract: *calc_input
+      output_contract: *calc_output
+      acceptance_criteria: *calc_acceptance
   - name: render-report
     description: >-
       Render the consolidated rust_dev audit report for a repository from the calculated per-domain
       scores, per the standard's report templates.
     sort_order: 2
-    tasks: []
+    tasks:
+    - name: render-report
+      description: >-
+        Render the consolidated rust_dev audit report from the calculated per-domain scores and score history.
+      input_contract: *rr_input
+      output_contract: *rr_output
+      acceptance_criteria: *rr_acceptance
   - name: render-charts
     description: >-
       Render the rust_dev audit visualizations (score history, per-domain comparisons) from
       the recorded findings for inclusion in the report.
     sort_order: 3
-    tasks: []
+    tasks:
+    - name: render-charts
+      description: >-
+        Render the rust_dev audit visualizations (score history, per-domain comparisons) from the recorded findings.
+      input_contract: *chart_input
+      output_contract: *chart_output
+      acceptance_criteria: *chart_acceptance
+
