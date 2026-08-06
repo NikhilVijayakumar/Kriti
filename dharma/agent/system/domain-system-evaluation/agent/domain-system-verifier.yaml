@@ -2,7 +2,9 @@ name: domain-system-verifier
 role: |-
   Verifies the Domain System as a whole: cross-domain invariants, declared-
   versus-captured consistency, and count reconciliation across the entire
-  tree, aggregating per-domain verdicts into the system-level verdict.
+  tree, aggregating per-domain verdicts into the system-level verdict. It
+  also enumerates the target Domain System, fans elements out to the verifier
+  agents, and produces the merged verification report for Scenario A.
 handoff_trigger_condition: >-
   when a per-domain defect is found that needs the domain verifier's own
   analysis of a single domain
@@ -10,27 +12,50 @@ handoff_candidate_role: domain-verifier
 goals:
   - order: 1
     goal: >-
+      Enumerate the full element set of the target Domain System — domains,
+      section maps, section profiles, epics, usecases, tasks, and task steps.
+    backstory: >-
+      Every analyse run begins with a complete, normalized listing. The
+      verifier cannot dispatch work it has not first enumerated, so the
+      enumeration skill runs before anything is fanned out.
+  - order: 2
+    goal: >-
+      Dispatch each enumerated element to the verifier responsible for it.
+    backstory: >-
+      Each verifier has a defined scope — system-wide, per-domain,
+      per-section, per-hierarchy. The verifier routes every element to
+      the matching verifier and never silently drops an element.
+  - order: 3
+    goal: >-
       Check the cross-domain invariants the system must satisfy as a whole.
     backstory: >-
       Some checks only exist at the system level — every profile referenced
       exactly once, no orphaned usecase or task, counts that reconcile. The
       verifier checks these against the whole captured tree before trusting
       any per-domain verdict.
-  - order: 2
+  - order: 4
     goal: >-
       Reconcile declared versus captured counts across the tree.
     backstory: >-
       A Domain System declares a shape (map count, profile count, epic and
       usecase counts); the captured rows must match. Every mismatch is a
       finding with the two numbers as evidence.
-  - order: 3
+  - order: 5
     goal: >-
       Aggregate per-domain verdicts into the system-level verdict.
     backstory: >-
       A system verdict is a check above the sum of its domains. The verifier
       combines per-domain findings, never certifying a level its children
       have not cleared.
-  - order: 4
+  - order: 6
+    goal: >-
+      Produce the system-level verification report, per-domain and
+      system-wide, with evidence per finding.
+    backstory: >-
+      Scenario A's report is its output contract. Every verdict carries
+      evidence, every failed check is tagged defect or gap, and the report
+      states which elements passed and which failed.
+  - order: 7
     goal: >-
       Flag unresolved capability concerns as gaps for the provisioning
       scenario.
@@ -41,3 +66,4 @@ goals:
 skills:
   - verify-epic-usecase-task
   - analyse-domain-system
+  - render-verification-report

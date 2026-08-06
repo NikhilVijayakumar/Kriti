@@ -26,11 +26,11 @@ goals:
       chain survives any agent reconfiguration.
   - order: 3
     goal: >-
-      Pair every level with its verifier — the verifier is never the worker.
+      Declare the required verifier for every level — the verifier is never the worker.
     backstory: >-
-      Completion is recursive and verified at every level by an independent
-      verifier. The designer ensures each task, usecase, and epic has a
-      verifier role distinct from its executing agents.
+      The workflow names which level needs a verifier and leaves the verification act to
+      domain-system-evaluation's own Agents, reached at Task-execution time via
+      task_step.required_capability naming that concern — never via a direct Skill binding.
   - order: 4
     goal: >-
       Flag uncovered workflow steps and missing verifiers as gaps.
@@ -41,6 +41,3 @@ goals:
 skills:
   - propose-agent-assignment
   - design-handoff-workflow
-  - verify-task-completion
-  - verify-usecase-completion
-  - verify-epic-completion

@@ -1,26 +1,21 @@
 ```toml
 [system]
-id = "analyse"
-concern = "analysis"
+id = "capability-provisioning"
+concern = "capability-provisioning"
 is_privileged_request = false
-scenarios = ["verify-domain-system", "provision-agent-capability"]
+scenarios = ["provision-agent-capability"]
 ```
 
-# analyse — Agent System
+# capability-provisioning — Agent System
 
-Analyses a Domain System as an artifact. It verifies the Domain System end to
-end — every domain, Section Map, Section Profile, Epic, Usecase, Task, and
-Task-Step, plus the system as a whole — and it identifies the agent and skill
-capability needed to execute the Domain System's work. It reads Domain Systems;
-it never writes to one.
+Analyses a Domain System as an artifact to provision agent capability. Given a Domain
+System listing, it identifies every agent and skill required to execute its
+Epics/Usecases/Tasks, assigns each Task to one or another agent, defines each
+agent's workflow and the handoff chains between agents, and reports gaps in
+the registered Agent System set. It reads Domain Systems; it never writes to one.
 
 ## Scenarios
 
-- **Scenario A — verify the Domain System.** Check and validate a Domain
-  System as declared content. The job is bounded and enumerable: each element
-  is checked against the model the Domain System must satisfy, and every
-  verdict carries evidence. Output is a per-domain + system-level verification
-  report that tags each failed check `defect` or `gap`.
 - **Scenario B — provision the agent capability.** Given the same Domain
   System listing, identify every agent and skill required to execute its
   Epics/Usecases/Tasks, assign each Task to one or another agent, define each
