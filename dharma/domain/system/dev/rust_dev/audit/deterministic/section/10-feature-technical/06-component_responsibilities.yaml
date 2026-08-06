@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: component_responsibilities
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-resp-001
+    description: "Component Responsibilities section exists"
+    condition: "document has a section with semantic_type = 'component_responsibilities'"
+    message: "Missing optional 'Component Responsibilities' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "component_responsibilities"
+
+  - id: ft-sec-resp-002
+    description: "Component Responsibilities defines responsibilities"
+    condition: "section contains detailed responsibilities for each participating component"
+    message: "Component Responsibilities section does not define component responsibilities"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "responsible"
+        - "responsibility"
+        - "handles"
+        - "manages"
+        - "owns"
+
+  - id: ft-sec-resp-003
+    description: "Component Responsibilities aligns with Architecture"
+    condition: "section does not contradict the Architecture component model"
+    message: "Component Responsibilities section contradicts Architecture component model"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
+

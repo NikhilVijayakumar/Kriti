@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: non_goals
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-ng-001
+    description: "Non-goals section exists"
+    condition: "document has a section with semantic_type = 'non_goals'"
+    message: "Missing 'Non-Goals' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "non_goals"
+
+  - id: feat-sec-ng-002
+    description: "Non-goals are explicitly stated"
+    condition: "section lists what the feature deliberately does not address"
+    message: "Non-goals are not explicitly stated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+      keywords:
+        - "not"
+        - "excluded"
+        - "out of scope"
+        - "will not"
+
+  - id: feat-sec-ng-003
+    description: "Non-goals are technology-independent"
+    condition: "non-goals describe feature scope, not implementation choices"
+    message: "Non-goals contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

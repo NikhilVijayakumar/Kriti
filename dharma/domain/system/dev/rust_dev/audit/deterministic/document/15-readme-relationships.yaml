@@ -1,0 +1,117 @@
+system_id: samgraha-documentation
+domain: readme
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# README requires Build as upstream. README is standalone downstream.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: readme-name-derives-build
+    from_section: project_name
+    type: derives_from
+    target_domain: build
+    target_section: versioning_naming
+    owner: section
+
+  - id: readme-short-desc-derives-vision
+    from_section: short_description
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: readme-overview-derives-architecture
+    from_section: overview
+    type: derives_from
+    target_domain: architecture
+    target_section: system_overview
+    owner: section
+
+  - id: readme-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  - id: readme-capabilities-derives-feature
+    from_section: key_capabilities
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: readme-repo-struct-derives-engineering
+    from_section: repository_structure
+    type: derives_from
+    target_domain: engineering
+    target_section: project_layout
+    owner: section
+
+  - id: readme-doc-struct-derives-architecture
+    from_section: documentation_structure
+    type: derives_from
+    target_domain: architecture
+    target_section: system_overview
+    owner: section
+
+  - id: readme-getting-started-derives-build
+    from_section: getting_started
+    type: derives_from
+    target_domain: build
+    target_section: documentation_quality
+    owner: section
+
+  - id: readme-install-derives-build
+    from_section: installation
+    type: derives_from
+    target_domain: build
+    target_section: versioning_naming
+    owner: section
+
+  - id: readme-build-derives-build
+    from_section: build
+    type: derives_from
+    target_domain: build
+    target_section: documentation_quality
+    owner: section
+
+  - id: readme-usage-derives-feature
+    from_section: usage
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: readme-dev-derives-engineering
+    from_section: development
+    type: derives_from
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: readme-contrib-derives-engineering
+    from_section: contributing
+    type: derives_from
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: readme-section-consistency
+    type: section_consistency
+    description: "Sections within README are mutually consistent — usage examples match build instructions, development matches contributing"
+    owner: document
+
+  - id: readme-collection-coherence
+    type: collection_coherence
+    description: "All README documents in the domain cohere as one system — no orphaned or contradictory READMEs"
+    owner: document
+
+  - id: readme-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all README sections — same concept, same name"
+    owner: document

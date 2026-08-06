@@ -1,0 +1,68 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: component_interactions
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-interactions-001
+    description: "Component Interactions section exists"
+    condition: "document has a section with semantic_type = 'component_interactions'"
+    message: "Missing required 'Component Interactions' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "component_interactions"
+
+  - id: ft-sec-interactions-002
+    description: "Component Interactions describes interactions"
+    condition: "section contains descriptions of how components communicate and interact with each other"
+    message: "Component Interactions section does not describe interactions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "communicate"
+        - "interact"
+        - "call"
+        - "invoke"
+        - "message"
+        - "event"
+
+  - id: ft-sec-interactions-003
+    description: "Component Interactions is technology-independent"
+    condition: "section does not name specific communication protocols, message formats, or implementation technologies"
+    message: "Component Interactions section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - protocols
+
+  - id: ft-sec-interactions-004
+    description: "Component Interactions defines interaction patterns"
+    condition: "section specifies the patterns of interaction (sync, async, event-driven)"
+    message: "Component Interactions section does not define interaction patterns"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "synchronous"
+        - "asynchronous"
+        - "event"
+        - "request"
+        - "response"
+        - "stream"
+

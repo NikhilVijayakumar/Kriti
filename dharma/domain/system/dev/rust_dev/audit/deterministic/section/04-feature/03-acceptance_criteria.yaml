@@ -1,0 +1,66 @@
+system_id: samgraha-documentation
+domain: feature
+section_type: acceptance_criteria
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: feat-sec-ac-001
+    description: "Acceptance criteria section exists"
+    condition: "document has a section with semantic_type = 'acceptance_criteria'"
+    message: "Missing required 'Acceptance Criteria' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "acceptance_criteria"
+
+  - id: feat-sec-ac-002
+    description: "Acceptance criteria are testable"
+    condition: "each criterion is phrased as a concrete, verifiable condition"
+    message: "Acceptance criteria are not testable"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "given"
+        - "when"
+        - "then"
+        - "expected"
+        - "pass"
+        - "fail"
+        - "test"
+
+  - id: feat-sec-ac-003
+    description: "Acceptance criteria cover happy path and edge cases"
+    condition: "section includes both normal flow and error/edge-case scenarios"
+    message: "Acceptance criteria do not cover edge cases"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "error"
+        - "edge"
+        - "invalid"
+        - "boundary"
+        - "missing"
+
+  - id: feat-sec-ac-004
+    description: "Acceptance criteria are technology-independent"
+    condition: "criteria describe observable behavior, not implementation details"
+    message: "Acceptance criteria contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

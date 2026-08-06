@@ -1,0 +1,124 @@
+system_id: samgraha-documentation
+domain: feature-design
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: fd-purpose-derives-feature
+    from_section: purpose
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: fd-purpose-derives-design
+    from_section: purpose
+    type: derives_from
+    target_domain: design
+    target_section: purpose
+    owner: section
+
+  - id: fd-ux-derives-feature
+    from_section: user_experience
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: fd-ux-derives-design
+    from_section: user_experience
+    type: derives_from
+    target_domain: design
+    target_section: user_experience
+    owner: section
+
+  - id: fd-workflow-derives-feature
+    from_section: workflow
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: fd-workflow-derives-design
+    from_section: workflow
+    type: derives_from
+    target_domain: design
+    target_section: workflow
+    owner: section
+
+  - id: fd-states-derives-feature
+    from_section: states
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: fd-states-derives-design
+    from_section: states
+    type: derives_from
+    target_domain: design
+    target_section: states
+    owner: section
+
+  - id: fd-nongoals-derives-feature
+    from_section: non_goals
+    type: derives_from
+    target_domain: feature
+    target_section: non_goals
+    owner: section
+
+  - id: fd-nongoals-derives-design
+    from_section: non_goals
+    type: derives_from
+    target_domain: design
+    target_section: non_goals
+    owner: section
+
+  - id: fd-constraints-constrains-ft
+    from_section: constraints
+    type: constrains
+    target_domain: feature-technical
+    target_section: runtime_constraints
+    owner: section
+
+  - id: fd-constraints-derives-design
+    from_section: constraints
+    type: derives_from
+    target_domain: design
+    target_section: constraints
+    owner: section
+
+  - id: fd-trace-derives-feature
+    from_section: traceability
+    type: traceable_to
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: fd-trace-derives-design
+    from_section: traceability
+    type: traceable_to
+    target_domain: design
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: fd-section-consistency
+    type: section_consistency
+    description: "Sections within feature-design docs are mutually consistent — no contradictions between user_experience, workflow, and states"
+    owner: document
+
+  - id: fd-collection-coherence
+    type: collection_coherence
+    description: "All feature-design documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: fd-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all feature-design sections — same concept, same name"
+    owner: document

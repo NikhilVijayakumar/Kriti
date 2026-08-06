@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: feature_specification
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-spec-001
+    description: "Feature Specification section exists"
+    condition: "document has a section with semantic_type = 'feature_specification'"
+    message: "Missing optional 'Feature Specification' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "feature_specification"
+
+  - id: ft-sec-spec-002
+    description: "Feature Specification defines technical behavior"
+    condition: "section contains the technical specification of the feature behavior"
+    message: "Feature Specification section does not define technical behavior"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "specification"
+        - "behavior"
+        - "technical"
+        - "interface"
+        - "contract"
+
+  - id: ft-sec-spec-003
+    description: "Feature Specification is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Feature Specification section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

@@ -1,0 +1,3 @@
+name: dharma-bootstrap
+description: |-
+  Dharma's own bootstrap domain system for self-analysis. Formalizes the verify/provision/verify workflow.

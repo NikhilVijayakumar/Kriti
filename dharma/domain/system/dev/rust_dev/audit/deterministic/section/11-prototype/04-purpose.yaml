@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing optional 'Purpose' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: proto-sec-purpose-002
+    description: "Purpose states prototype intent"
+    condition: "section contains a statement of why this prototype exists"
+    message: "Purpose section does not state prototype intent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "prototype"
+        - "purpose"
+        - "intent"
+
+  - id: proto-sec-purpose-003
+    description: "Purpose defines scope boundaries"
+    condition: "section defines what the prototype is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing optional 'Traceability' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: fd-sec-trace-002
+    description: "Traceability links to upstream domains"
+    condition: "section contains references back to Feature, Design, or External Context that informed the design"
+    message: "Traceability section does not link to upstream domains"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "derived from"
+        - "informed by"
+        - "traceable"
+        - "links to"
+
+  - id: fd-sec-trace-003
+    description: "Traceability links to downstream validation"
+    condition: "section contains forward references to Prototype or Feature Technical that validate or consume this design"
+    message: "Traceability section does not link to downstream validation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "validated by"
+        - "consumed by"
+        - "realized in"
+        - "prototype"
+

@@ -1,0 +1,67 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: target_audience
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-ta-001
+    description: "Target Audience section exists"
+    condition: "document has a section with semantic_type = 'target_audience'"
+    message: "Missing required 'Target Audience' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "target_audience"
+
+  - id: vis-sec-ta-002
+    description: "Target Audience identifies who the product serves"
+    condition: "section clearly identifies the primary users, customers, or beneficiaries"
+    message: "Target Audience section does not identify who the product serves"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "user"
+        - "customer"
+        - "audience"
+        - "beneficiary"
+        - "stakeholder"
+        - "persona"
+        - "segment"
+
+  - id: vis-sec-ta-003
+    description: "Target Audience is technology-independent"
+    condition: "section does not reference specific technologies, tools, or technical skill requirements"
+    message: "Target Audience section contains technology-specific references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: vis-sec-ta-004
+    description: "Target Audience includes at least two audience segments"
+    condition: "section identifies two or more distinct audience groups"
+    message: "Target Audience section should identify multiple audience segments"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "also"
+        - "additionally"
+        - "secondary"
+        - "primary"
+        - "and"
+

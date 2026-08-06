@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing optional 'Purpose' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: qa-sec-purpose-002
+    description: "Purpose states QA intent"
+    condition: "section contains a statement of why QA Documentation exists"
+    message: "Purpose section does not state QA intent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "quality"
+        - "assurance"
+        - "testing"
+        - "purpose"
+
+  - id: qa-sec-purpose-003
+    description: "Purpose defines scope boundaries"
+    condition: "section defines what QA Documentation is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

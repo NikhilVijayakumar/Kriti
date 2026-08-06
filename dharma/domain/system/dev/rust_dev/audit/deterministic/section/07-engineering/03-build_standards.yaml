@@ -1,0 +1,81 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: build_standards
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-build-001
+    description: "Build Standards section exists"
+    condition: "document has a section with semantic_type = 'build_standards'"
+    message: "Missing required 'Build Standards' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "build_standards"
+
+  - id: eng-sec-build-002
+    description: "Build Standards defines concrete standards"
+    condition: "section contains specific build requirements such as version control, CI/CD, dependency management, or release processes"
+    message: "Build Standards section does not define concrete standards"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "build"
+        - "release"
+        - "version"
+        - "dependency"
+        - "pipeline"
+        - "continuous"
+
+  - id: eng-sec-build-003
+    description: "Build Standards are technology-independent"
+    condition: "section does not name specific CI tools, package managers, or build systems"
+    message: "Build Standards section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - build_tools
+
+  - id: eng-sec-build-004
+    description: "Build Standards includes versioning strategy"
+    condition: "section defines how versions are managed and released"
+    message: "Build Standards section does not include versioning strategy"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "version"
+        - "semver"
+        - "release"
+        - "tag"
+
+  - id: eng-sec-build-005
+    description: "Build Standards includes dependency policy"
+    condition: "section defines how external dependencies are managed and audited"
+    message: "Build Standards section does not include dependency policy"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "dependency"
+        - "external"
+        - "audit"
+        - "supply"
+

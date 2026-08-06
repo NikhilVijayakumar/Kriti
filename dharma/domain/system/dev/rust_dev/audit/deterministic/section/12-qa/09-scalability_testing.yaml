@@ -1,0 +1,41 @@
+system_id: samgraha-documentation
+standard_id: documentation-standards
+domain: qa
+section_type: scalability_testing
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-scalability_testing-001
+    description: "Scalability Testing section exists"
+    condition: "document has a section with semantic_type = 'scalability_testing'"
+    message: "Missing required 'Scalability Testing' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "scalability_testing"
+
+  - id: qa-sec-scalability_testing-002
+    description: "Scalability Testing has substantive content"
+    condition: "section contains at least one paragraph of project-specific content"
+    message: "Scalability Testing section is empty or placeholder only"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_length: 100
+
+  - id: qa-sec-scalability_testing-003
+    description: "Scalability Testing is specific to this project"
+    condition: "section contains project-specific details, not generic boilerplate"
+    message: "Scalability Testing contains generic content"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "qa"

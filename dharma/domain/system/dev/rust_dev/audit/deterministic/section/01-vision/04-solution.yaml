@@ -1,0 +1,87 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: solution
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-solution-001
+    description: "Solution section exists"
+    condition: "document has a section with semantic_type = 'solution'"
+    message: "Missing required 'Solution' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "solution"
+
+  - id: vis-sec-solution-002
+    description: "Solution describes the proposed approach"
+    condition: "section describes the high-level approach to solving the stated problem"
+    message: "Solution section does not describe the proposed approach"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "approach"
+        - "solution"
+        - "propose"
+        - "strategy"
+        - "method"
+        - "concept"
+        - "model"
+
+  - id: vis-sec-solution-003
+    description: "Solution is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, APIs, libraries, or implementation details"
+    message: "Solution section contains implementation details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - protocols
+        - database_schemas
+
+  - id: vis-sec-solution-004
+    description: "Solution does not contain implementation specifics"
+    condition: "section does not contain code references, API names, schema definitions, or library names"
+    message: "Solution section contains implementation-specific content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      keywords:
+        - "API"
+        - "schema"
+        - "class"
+        - "function"
+        - "import"
+        - "package"
+        - "npm"
+        - "pip"
+
+  - id: vis-sec-solution-005
+    description: "Solution addresses the stated problem"
+    condition: "section references or aligns with the problem statement"
+    message: "Solution section does not clearly address the stated problem"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "problem"
+        - "challenge"
+        - "address"
+        - "solve"
+

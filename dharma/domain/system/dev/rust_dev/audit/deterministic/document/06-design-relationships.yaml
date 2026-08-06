@@ -1,0 +1,73 @@
+system_id: samgraha-documentation
+domain: design
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: design-principles-guided-by-philosophy
+    from_section: design_principles
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-ux-guided-by-philosophy
+    from_section: ux_principles
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-accessibility-guided-by-philosophy
+    from_section: accessibility
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-purpose-guided-by-philosophy
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-constraints-guided-by-philosophy
+    from_section: constraints
+    type: constrains
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-traceability-traces-philosophy
+    from_section: traceability
+    type: traceable_to
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: design-traceability-derives-feature-design
+    from_section: traceability
+    type: derives_from
+    target_domain: feature_design
+    target_section: design_rationale
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: design-section-consistency
+    type: section_consistency
+    description: "Sections within design docs are mutually consistent — no contradictions between design_principles, ux_principles, and accessibility"
+    owner: document
+
+  - id: design-collection-coherence
+    type: collection_coherence
+    description: "All design documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: design-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all design sections — same concept, same name"
+    owner: document

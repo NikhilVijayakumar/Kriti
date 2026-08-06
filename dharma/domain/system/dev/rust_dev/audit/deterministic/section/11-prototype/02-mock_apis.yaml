@@ -1,0 +1,63 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: mock_apis
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-mock-001
+    description: "Mock APIs section exists"
+    condition: "document has a section with semantic_type = 'mock_apis'"
+    message: "Missing required 'Mock APIs' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "mock_apis"
+
+  - id: proto-sec-mock-002
+    description: "Mock APIs define endpoints"
+    condition: "section contains at least one mock API endpoint definition"
+    message: "Mock APIs section has no endpoint definitions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "endpoint"
+        - "method"
+        - "path"
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+
+  - id: proto-sec-mock-003
+    description: "Mock APIs include request/response shapes"
+    condition: "each endpoint defines request and response data shapes"
+    message: "Mock endpoints missing request/response shapes"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "request"
+        - "response"
+        - "body"
+        - "schema"
+
+  - id: proto-sec-mock-004
+    description: "Mock APIs reference data model"
+    condition: "endpoint types reference types defined in data_model section"
+    message: "Mock APIs reference undefined types"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      scope: within_document
+      to_section: data_model

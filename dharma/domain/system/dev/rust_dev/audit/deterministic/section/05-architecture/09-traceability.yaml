@@ -1,0 +1,60 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: traceability
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-trace-001
+    description: "Traceability section exists"
+    condition: "document has a section with semantic_type = 'traceability'"
+    message: "Missing 'Traceability' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "traceability"
+
+  - id: arch-sec-trace-002
+    description: "Derivation chain documented"
+    condition: "section includes a diagram or list showing Architecture's position in the documentation tier model"
+    message: "Traceability section lacks a derivation chain"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "Tier"
+        - "derivation"
+        - "chain"
+
+  - id: arch-sec-trace-003
+    description: "Non-contradiction rule stated"
+    condition: "section explicitly states that no downstream document may contradict Architecture"
+    message: "Traceability section does not state the non-contradiction rule"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "non-contradiction"
+        - "contradict"
+        - "must not contradict"
+
+  - id: arch-sec-trace-004
+    description: "Downstream standards listed"
+    condition: "section lists the standards that Architecture feeds into (Feature Technical, Engineering)"
+    message: "Traceability section does not list downstream standards"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "Feature Technical"
+        - "Engineering"
+

@@ -1,0 +1,94 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: component_model
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-cm-001
+    description: "Component Model section exists"
+    condition: "document has a section with semantic_type = 'component_model'"
+    message: "Missing required 'Component Model' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "component_model"
+
+  - id: arch-sec-cm-002
+    description: "Component Model has required subsections"
+    condition: "section contains Components and Component Diagram subsections"
+    message: "Component Model is missing required subsections (Components, Component Diagram)"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: subsection_presence
+      required:
+        - "Components"
+        - "Component Diagram"
+
+  - id: arch-sec-cm-003
+    description: "Each component has responsibility defined"
+    condition: "every listed component has a Responsibility field"
+    message: "One or more components lack a defined responsibility"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Responsibility"
+
+  - id: arch-sec-cm-004
+    description: "Each component has ownership defined"
+    condition: "every listed component has an Ownership field"
+    message: "One or more components lack defined ownership"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Ownership"
+
+  - id: arch-sec-cm-005
+    description: "No overlapping responsibilities"
+    condition: "component responsibilities do not overlap — each responsibility is assigned to exactly one component"
+    message: "Component responsibilities overlap"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_deduplication
+      scope: across_components
+      field: "Responsibility"
+
+  - id: arch-sec-cm-006
+    description: "Component Model is technology-independent"
+    condition: "section does not describe class hierarchies, function signatures, or implementation details"
+    message: "Component Model contains implementation details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - class_hierarchies
+        - function_signatures
+        - implementation_details
+
+  - id: arch-sec-cm-007
+    description: "Component relationship diagram present"
+    condition: "section contains or references a diagram showing component relationships"
+    message: "Component Model lacks a relationship diagram"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: diagram_presence
+      kinds:
+        - component
+

@@ -1,0 +1,84 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: problem
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-problem-001
+    description: "Problem section exists"
+    condition: "document has a section with semantic_type = 'problem'"
+    message: "Missing required 'Problem' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "problem"
+
+  - id: vis-sec-problem-002
+    description: "Problem states the problem clearly"
+    condition: "section describes what problem or pain point the product addresses"
+    message: "Problem section does not clearly state the problem"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "problem"
+        - "challenge"
+        - "pain"
+        - "gap"
+        - "need"
+        - "issue"
+        - "lack"
+
+  - id: vis-sec-problem-003
+    description: "Problem section does not describe solutions"
+    condition: "section focuses on the problem, not on how it will be solved"
+    message: "Problem section describes solutions instead of focusing on the problem"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      negative_keywords:
+        - "solution"
+        - "approach"
+        - "implementation"
+        - "we will"
+        - "our plan"
+        - "by using"
+
+  - id: vis-sec-problem-004
+    description: "Problem is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Problem section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: vis-sec-problem-005
+    description: "Problem section has measurable impact"
+    condition: "section includes or references quantifiable impact of the problem"
+    message: "Problem section lacks measurable impact data"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "\\d+"
+        - "percent"
+        - "million"
+        - "hours"
+        - "cost"
+

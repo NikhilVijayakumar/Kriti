@@ -1,0 +1,152 @@
+system_id: samgraha-documentation
+domain: security
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: sec-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  - id: sec-purpose-guided-by-philosophy
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: sec-threat-model-derives-vision
+    from_section: threat_model
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: sec-threat-model-guided-by-philosophy
+    from_section: threat_model
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: sec-threat-model-informs-architecture
+    from_section: threat_model
+    type: informs
+    target_domain: architecture
+    target_section: security_considerations
+    owner: section
+
+  - id: sec-threat-model-references-data-classification
+    from_section: threat_model
+    type: traceable_to
+    target_domain: security
+    target_section: data_classification
+    owner: section
+
+  - id: sec-data-classification-derives-vision
+    from_section: data_classification
+    type: derives_from
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: sec-data-classification-informs-architecture
+    from_section: data_classification
+    type: informs
+    target_domain: architecture
+    target_section: data_flow
+    owner: section
+
+  - id: sec-data-classification-referenced-by-threat-model
+    from_section: data_classification
+    type: traceable_to
+    target_domain: security
+    target_section: threat_model
+    owner: section
+
+  - id: sec-security-principles-derives-philosophy
+    from_section: security_principles
+    type: derives_from
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: sec-security-principles-guides-architecture
+    from_section: security_principles
+    type: derives_from
+    target_domain: architecture
+    target_section: security_considerations
+    owner: section
+
+  - id: sec-security-principles-guides-engineering
+    from_section: security_principles
+    type: derives_from
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: sec-constraints-derives-philosophy
+    from_section: constraints
+    type: derives_from
+    target_domain: philosophy
+    target_section: tradeoffs
+    owner: section
+
+  - id: sec-constraints-constrains-architecture
+    from_section: constraints
+    type: constrains
+    target_domain: architecture
+    target_section: security_considerations
+    owner: section
+
+  - id: sec-constraints-constrains-engineering
+    from_section: constraints
+    type: constrains
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: sec-traceability-traceable-to-vision
+    from_section: traceability
+    type: traceable_to
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  - id: sec-traceability-traceable-to-philosophy
+    from_section: traceability
+    type: traceable_to
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: sec-traceability-traceable-to-architecture
+    from_section: traceability
+    type: traceable_to
+    target_domain: architecture
+    target_section: security_considerations
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: sec-section-consistency
+    type: section_consistency
+    description: "Sections within security docs are mutually consistent — threat_model, data_classification, and security_principles do not contradict each other"
+    owner: document
+
+  - id: sec-collection-coherence
+    type: collection_coherence
+    description: "All security documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: sec-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all security sections — same concept, same name"
+    owner: document

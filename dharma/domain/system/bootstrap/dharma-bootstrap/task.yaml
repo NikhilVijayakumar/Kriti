@@ -1,0 +1,114 @@
+epics:
+- name: verify-domain-system
+  objective: >-
+    Produce both a structural verification report and a deep-analysis score for a target Domain System.
+  sort_order: 1
+  usecases:
+  - name: structural-verification
+    description: >-
+      Check and validate a Domain System as declared content.
+    sort_order: 1
+    tasks:
+    - name: structural-verification
+      description: >-
+        Perform structural checks (does the declared tree exist, is it well-formed) against the target Domain System.
+      input_contract:
+        type: object
+      output_contract:
+        type: object
+      acceptance_criteria:
+        happy_path:
+        - the system-level verification report correctly identifies all structural elements and flags no defects
+        corner_case:
+        - a structural issue is found and tagged correctly as a defect or gap
+        edge_case:
+        - the target domain system is entirely absent; fails closed
+      task_steps:
+      - description: Execute domain system verifier checks
+        required_capability: domain-system-evaluation
+  - name: deep-analysis
+    description: >-
+      Perform deep qualitative analysis (gaps, improvement points, optimization) against the target Domain System using the existing Audit subsystem.
+    sort_order: 2
+    tasks:
+    - name: run-deep-analysis
+      description: >-
+        Run deterministic and semantic audits against the registered repository to calculate a deep-analysis score.
+      input_contract:
+        type: object
+        properties:
+          repo_path:
+            type: string
+          commit_hash:
+            type: string
+        required:
+        - repo_path
+        - commit_hash
+      output_contract:
+        type: object
+      acceptance_criteria:
+        happy_path:
+        - both deterministic and semantic audits run, producing a merged qualitative score
+        corner_case:
+        - the audit definitions are missing for this specific domain system; fails loudly rather than silently no-oping
+        edge_case:
+        - repo_path is invalid; fails immediately
+      task_steps:
+      - description: Invoke run_audit per domain and kind against the audit subsystem
+        required_capability: domain-system-evaluation
+
+- name: provision-capability
+  objective: >-
+    Map tasks to capabilities, assign agents, design workflow handoffs, and report capability gaps for a Domain System.
+  sort_order: 2
+  usecases:
+  - name: provision-capability
+    description: >-
+      Run the capability provisioning pipeline to produce an execution blueprint.
+    sort_order: 1
+    tasks:
+    - name: map-and-assign
+      description: >-
+        Map every task in the domain system to a capable agent/skill, design the workflow chain, and report gaps.
+      input_contract:
+        type: object
+      output_contract:
+        type: object
+      acceptance_criteria:
+        happy_path:
+        - an execution blueprint is successfully generated mapping every task to a capable agent with designed handoffs
+        corner_case:
+        - an unresolved required capability is found; a gap is reported in the blueprint instead of failing the pipeline
+        edge_case:
+        - the input domain system has no tasks; the blueprint reports an empty state
+      task_steps:
+      - description: Execute capability provisioning pipeline
+        required_capability: capability-provisioning
+
+- name: verify-agent-system
+  objective: >-
+    Judge an Agent System's agents, skills, and bindings for completeness.
+  sort_order: 3
+  usecases:
+  - name: verify-agent-system
+    description: >-
+      Perform structural and heuristic checks (binding completeness, no orphaned skills) against a target Agent System.
+    sort_order: 1
+    tasks:
+    - name: structural-and-heuristic-checks
+      description: >-
+        Verify coverage of declared concerns, ensure no orphaned skills exist, and check that all bindings resolve.
+      input_contract:
+        type: object
+      output_contract:
+        type: object
+      acceptance_criteria:
+        happy_path:
+        - all agents and skills bind correctly under the declared concern
+        corner_case:
+        - an orphaned skill is detected; flagged with reasons instead of failing outright
+        edge_case:
+        - the target agent system is structurally broken; fails with a detailed report
+      task_steps:
+      - description: Execute agent system evaluation checks
+        required_capability: agent-system-evaluation

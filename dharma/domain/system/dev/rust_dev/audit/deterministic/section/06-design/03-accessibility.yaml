@@ -1,0 +1,59 @@
+system_id: samgraha-documentation
+domain: design
+section_type: accessibility
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: design-sec-a11y-001
+    description: "Accessibility section exists"
+    condition: "document has a section with semantic_type = 'accessibility'"
+    message: "Missing required 'Accessibility' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "accessibility"
+
+  - id: design-sec-a11y-002
+    description: "Accessibility requirements are enumerated"
+    condition: "section lists at least two distinct accessibility requirements"
+    message: "Accessibility requirements are not enumerated"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_count: 2
+
+  - id: design-sec-a11y-003
+    description: "Accessibility references a standard"
+    condition: "section references an accessibility standard (e.g., WCAG, Section 508, ADA)"
+    message: "Accessibility section does not reference an accessibility standard"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "WCAG"
+        - "Section 508"
+        - "ADA"
+        - "A11y"
+        - "accessibility standard"
+
+  - id: design-sec-a11y-004
+    description: "Accessibility is technology-independent"
+    condition: "requirements describe accessible behavior, not specific implementation libraries"
+    message: "Accessibility requirements contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries

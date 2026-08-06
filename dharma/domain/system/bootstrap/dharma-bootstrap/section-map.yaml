@@ -1,0 +1,5 @@
+sections:
+  - id: 01-bootstrap
+    title: Bootstrap
+    description: Core workflow definition for self-analysis
+    type: document

@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: runtime_behavior
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-runtime-001
+    description: "Runtime Behavior section exists"
+    condition: "document has a section with semantic_type = 'runtime_behavior'"
+    message: "Missing optional 'Runtime Behavior' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "runtime_behavior"
+
+  - id: ft-sec-runtime-002
+    description: "Runtime Behavior describes runtime behavior"
+    condition: "section contains descriptions of how the feature behaves at runtime"
+    message: "Runtime Behavior section does not describe runtime behavior"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "runtime"
+        - "execute"
+        - "operate"
+        - "process"
+        - "perform"
+
+  - id: ft-sec-runtime-003
+    description: "Runtime Behavior is technology-independent"
+    condition: "section does not reference specific runtime environments, VMs, or implementation technologies"
+    message: "Runtime Behavior section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

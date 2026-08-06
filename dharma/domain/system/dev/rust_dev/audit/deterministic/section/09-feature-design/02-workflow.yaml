@@ -1,0 +1,68 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: workflow
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-workflow-001
+    description: "Workflow section exists"
+    condition: "document has a section with semantic_type = 'workflow'"
+    message: "Missing required 'Workflow' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "workflow"
+
+  - id: fd-sec-workflow-002
+    description: "Workflow describes feature flow"
+    condition: "section contains descriptions of the step-by-step flow or process the feature follows"
+    message: "Workflow section does not describe feature flow"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "step"
+        - "flow"
+        - "process"
+        - "sequence"
+        - "trigger"
+        - "action"
+
+  - id: fd-sec-workflow-003
+    description: "Workflow is technology-independent"
+    condition: "section does not reference specific technologies, APIs, or implementation mechanisms"
+    message: "Workflow section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - api_references
+
+  - id: fd-sec-workflow-004
+    description: "Workflow defines entry and exit conditions"
+    condition: "section defines how the workflow starts and when it completes"
+    message: "Workflow section does not define entry and exit conditions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "start"
+        - "begin"
+        - "complete"
+        - "end"
+        - "trigger"
+        - "finish"
+

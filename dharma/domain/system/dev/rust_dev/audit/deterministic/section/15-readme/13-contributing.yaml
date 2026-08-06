@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: contributing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-contrib-001
+    description: "Contributing section exists"
+    condition: "document has a section with semantic_type = 'contributing'"
+    message: "Missing required 'Contributing' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "contributing"
+
+  - id: readme-sec-contrib-002
+    description: "Contributing provides process"
+    condition: "section contains contribution process or guidelines"
+    message: "Contributing section does not provide process"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "contribute"
+        - "contributing"
+        - "process"
+        - "guideline"
+
+  - id: readme-sec-contrib-003
+    description: "Contributing defines PR process"
+    condition: "section defines pull request or merge request process"
+    message: "Contributing does not define PR process"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "pull request"
+        - "merge request"
+        - "PR"
+        - "MR"
+

@@ -1,0 +1,69 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: data_ownership
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-data-001
+    description: "Data Ownership section exists"
+    condition: "document has a section with semantic_type = 'data_ownership'"
+    message: "Missing required 'Data Ownership' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "data_ownership"
+
+  - id: ft-sec-data-002
+    description: "Data Ownership defines data ownership"
+    condition: "section contains descriptions of which components own or are responsible for which data"
+    message: "Data Ownership section does not define data ownership"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "owns"
+        - "responsible"
+        - "data"
+        - "store"
+        - "persist"
+        - "read"
+        - "write"
+
+  - id: ft-sec-data-003
+    description: "Data Ownership is technology-independent"
+    condition: "section does not name specific databases, storage technologies, or implementation details"
+    message: "Data Ownership section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - database_schemas
+
+  - id: ft-sec-data-004
+    description: "Data Ownership defines data lifecycle"
+    condition: "section specifies how data is created, read, updated, and deleted across components"
+    message: "Data Ownership section does not define data lifecycle"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "create"
+        - "read"
+        - "update"
+        - "delete"
+        - "lifecycle"
+        - "retention"
+

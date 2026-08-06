@@ -1,0 +1,103 @@
+system_id: samgraha-documentation
+domain: architecture
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# See proposal.md §10.4 for the assignment rules.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: arch-purpose-derives-vision
+    from_section: purpose
+    type: derives_from
+    target_domain: vision
+    target_section: purpose
+    owner: section
+
+  - id: arch-purpose-guided-by-philosophy
+    from_section: purpose
+    type: guided_by
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: arch-system-overview-derives-feature
+    from_section: system_overview
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: arch-component-model-derives-feature-technical
+    from_section: component_model
+    type: derives_from
+    target_domain: feature-technical
+    target_section: component_responsibilities
+    owner: section
+
+  - id: arch-data-flow-derives-feature-technical
+    from_section: data_flow
+    type: derives_from
+    target_domain: feature-technical
+    target_section: runtime_behavior
+    owner: section
+
+  - id: arch-communication-paths-derives-feature-technical
+    from_section: communication_paths
+    type: derives_from
+    target_domain: feature-technical
+    target_section: communication_paths
+    owner: section
+
+  - id: arch-security-derives-security
+    from_section: security_considerations
+    type: derives_from
+    target_domain: security
+    target_section: purpose
+    owner: section
+
+  - id: arch-constraints-derives-engineering
+    from_section: constraints
+    type: constrains
+    target_domain: engineering
+    target_section: code_standards
+    owner: section
+
+  - id: arch-operational-readiness-derives-engineering
+    from_section: operational_readiness
+    type: derives_from
+    target_domain: engineering
+    target_section: build_standards
+    owner: section
+
+  - id: arch-observability-derives-engineering
+    from_section: observability
+    type: derives_from
+    target_domain: engineering
+    target_section: testing_standards
+    owner: section
+
+  - id: arch-traceability-derives-vision
+    from_section: traceability
+    type: traceable_to
+    target_domain: vision
+    target_section: vision_statement
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: arch-section-consistency
+    type: section_consistency
+    description: "Sections within architecture docs are mutually consistent — no contradictions between component_model, data_flow, and communication_paths"
+    owner: document
+
+  - id: arch-collection-coherence
+    type: collection_coherence
+    description: "All architecture documents in the domain cohere as one system — no orphaned or contradictory documents"
+    owner: document
+
+  - id: arch-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all architecture sections — same concept, same name"
+    owner: document

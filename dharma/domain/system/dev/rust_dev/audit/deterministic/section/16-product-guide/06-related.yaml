@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: related
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-related-001
+    description: "Related section exists"
+    condition: "document has a section with semantic_type = 'related'"
+    message: "Missing optional 'Related' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "related"
+
+  - id: pg-sec-related-002
+    description: "Related lists related guides"
+    condition: "section contains at least one link to a related product guide or documentation"
+    message: "Related section has no related links"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "related"
+        - "see also"
+        - "link"
+        - "reference"
+
+  - id: pg-sec-related-003
+    description: "Related has valid links"
+    condition: "all links in the section resolve to existing documents"
+    message: "Related section contains broken links"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: link_validation
+      check: valid

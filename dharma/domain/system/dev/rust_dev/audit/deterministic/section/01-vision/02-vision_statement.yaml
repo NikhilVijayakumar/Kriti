@@ -1,0 +1,63 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: vision_statement
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-vs-001
+    description: "Vision Statement section exists"
+    condition: "document has a section with semantic_type = 'vision_statement'"
+    message: "Missing required 'Vision Statement' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "vision_statement"
+
+  - id: vis-sec-vs-002
+    description: "Vision Statement describes long-term direction"
+    condition: "section contains a forward-looking statement describing the product's desired future state"
+    message: "Vision Statement does not describe long-term direction"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "vision"
+        - "goal"
+        - "direction"
+        - "future"
+        - "aim"
+        - "aspiration"
+
+  - id: vis-sec-vs-003
+    description: "Vision Statement is technology-independent"
+    condition: "section does not reference specific technologies, frameworks, languages, or implementation approaches"
+    message: "Vision Statement contains technology-specific references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - protocols
+        - database_schemas
+
+  - id: vis-sec-vs-004
+    description: "Vision Statement is concise"
+    condition: "section is no longer than 500 words"
+    message: "Vision Statement is excessively long; consider condensing"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: word_count
+      max: 500
+

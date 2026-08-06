@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: implementation
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: impl-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing optional 'Purpose' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: impl-sec-purpose-002
+    description: "Purpose states implementation intent"
+    condition: "section contains a statement of why Implementation Documentation exists"
+    message: "Purpose section does not state implementation intent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "implementation"
+        - "generation"
+        - "purpose"
+        - "intent"
+
+  - id: impl-sec-purpose-003
+    description: "Purpose defines scope boundaries"
+    condition: "section defines what Implementation Documentation is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

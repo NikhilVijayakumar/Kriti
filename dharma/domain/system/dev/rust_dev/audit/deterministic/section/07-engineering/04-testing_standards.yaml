@@ -1,0 +1,67 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: testing_standards
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-testing-001
+    description: "Testing Standards section exists"
+    condition: "document has a section with semantic_type = 'testing_standards'"
+    message: "Missing required 'Testing Standards' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "testing_standards"
+
+  - id: eng-sec-testing-002
+    description: "Testing Standards defines concrete standards"
+    condition: "section contains specific testing requirements such as test types, coverage thresholds, or quality gates"
+    message: "Testing Standards section does not define concrete standards"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "test"
+        - "coverage"
+        - "quality"
+        - "gate"
+        - "assertion"
+        - "validation"
+
+  - id: eng-sec-testing-003
+    description: "Testing Standards covers multiple test levels"
+    condition: "section addresses at least two of: unit testing, integration testing, system testing, acceptance testing"
+    message: "Testing Standards section does not cover multiple test levels"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "unit"
+        - "integration"
+        - "system"
+        - "acceptance"
+        - "end-to-end"
+
+  - id: eng-sec-testing-004
+    description: "Testing Standards defines coverage expectations"
+    condition: "section specifies coverage targets or quality thresholds"
+    message: "Testing Standards section does not define coverage expectations"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "\\d+%"
+        - "threshold"
+        - "coverage"
+        - "minimum"
+

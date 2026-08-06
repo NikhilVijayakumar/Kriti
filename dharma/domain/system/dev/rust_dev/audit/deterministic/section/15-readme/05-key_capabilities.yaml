@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: key_capabilities
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-capabilities-001
+    description: "Key capabilities section exists"
+    condition: "document has a section with semantic_type = 'key_capabilities'"
+    message: "Missing required 'Key Capabilities' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "key_capabilities"
+
+  - id: readme-sec-capabilities-002
+    description: "Key capabilities lists features"
+    condition: "section contains at least one key feature or capability"
+    message: "Key capabilities section has no features listed"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "feature"
+        - "capability"
+        - "functionality"
+        - "-"
+
+  - id: readme-sec-capabilities-003
+    description: "Key capabilities references feature docs"
+    condition: "section references Feature Documentation for detailed capabilities"
+    message: "Key capabilities does not reference Feature Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+

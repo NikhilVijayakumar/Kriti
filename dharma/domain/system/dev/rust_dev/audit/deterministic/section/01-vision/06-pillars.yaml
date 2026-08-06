@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: vision
+section_type: pillars
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: vis-sec-pillars-001
+    description: "Pillars section exists"
+    condition: "document has a section with semantic_type = 'pillars'"
+    message: "Missing optional 'Pillars' section"
+    severity: suggestion
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "pillars"
+
+  - id: vis-sec-pillars-002
+    description: "Pillars are technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Pillars section contains implementation technology references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: vis-sec-pillars-003
+    description: "Pillars list at least three pillars"
+    condition: "section lists three or more core pillars"
+    message: "Pillars section should list at least three pillars"
+    severity: suggestion
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: list_count
+      min: 3
+

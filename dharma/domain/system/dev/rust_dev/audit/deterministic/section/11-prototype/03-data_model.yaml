@@ -1,0 +1,61 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: data_model
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-data-001
+    description: "Data model section exists"
+    condition: "document has a section with semantic_type = 'data_model'"
+    message: "Missing required 'Data Model' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "data_model"
+
+  - id: proto-sec-data-002
+    description: "Data model defines types"
+    condition: "section contains at least one type or schema definition"
+    message: "Data model section has no type definitions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "type"
+        - "schema"
+        - "model"
+        - "entity"
+
+  - id: proto-sec-data-003
+    description: "Data model types have fields"
+    condition: "each defined type has at least one field or property"
+    message: "Data model types are defined without fields"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "field"
+        - "property"
+        - "attribute"
+        - ":"
+
+  - id: proto-sec-data-004
+    description: "Data model references feature technical"
+    condition: "section references upstream Feature Technical data structures"
+    message: "Data model does not reference Feature Technical"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature-technical
+          direction: derives_from

@@ -1,0 +1,52 @@
+system_id: samgraha-documentation
+domain: engineering
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: eng-sec-constraints-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing optional 'Constraints' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: eng-sec-constraints-002
+    description: "Constraints section defines engineering constraints"
+    condition: "section contains specific constraints on engineering practices such as regulatory, operational, or technical constraints"
+    message: "Constraints section does not define engineering constraints"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "must"
+        - "shall"
+        - "cannot"
+        - "prohibited"
+        - "constraint"
+        - "limitation"
+
+  - id: eng-sec-constraints-003
+    description: "Constraints have clear sources"
+    condition: "each constraint identifies where it originates (regulation, architecture, business)"
+    message: "Constraints section does not identify constraint sources"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "regulation"
+        - "compliance"
+        - "architecture"
+        - "business"
+        - "regulatory"
+

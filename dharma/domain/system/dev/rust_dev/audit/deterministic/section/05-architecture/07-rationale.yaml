@@ -1,0 +1,55 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: rationale
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-rat-001
+    description: "Rationale section exists"
+    condition: "document has a section with semantic_type = 'rationale'"
+    message: "Missing 'Rationale' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "rationale"
+
+  - id: arch-sec-rat-002
+    description: "Each decision has alternatives documented"
+    condition: "every rationale entry names at least one alternative that was considered"
+    message: "One or more rationale entries lack documented alternatives"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Alternatives Considered"
+
+  - id: arch-sec-rat-003
+    description: "Each decision has a rejection reason"
+    condition: "every rationale entry explains why alternatives were rejected"
+    message: "One or more rationale entries lack rejection reasons"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Rejection Reason"
+
+  - id: arch-sec-rat-004
+    description: "Rationale references architectural goals"
+    condition: "each decision ties back to an architectural goal or pillar"
+    message: "Rationale entries are not tied to architectural goals"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Architectural Goal"
+

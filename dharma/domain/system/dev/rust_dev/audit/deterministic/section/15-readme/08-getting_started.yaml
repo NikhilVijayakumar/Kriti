@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: getting_started
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-start-001
+    description: "Getting started section exists"
+    condition: "document has a section with semantic_type = 'getting_started'"
+    message: "Missing required 'Getting Started' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "getting_started"
+
+  - id: readme-sec-start-002
+    description: "Getting started provides quick start"
+    condition: "section contains quick start instructions or a pointer to them"
+    message: "Getting started section does not provide quick start instructions"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "start"
+        - "quick"
+        - "begin"
+        - "first"
+
+  - id: readme-sec-start-003
+    description: "Getting started has prerequisites"
+    condition: "section lists prerequisites or links to installation"
+    message: "Getting started does not list prerequisites"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "prerequisite"
+        - "requirement"
+        - "install"
+        - "before"
+

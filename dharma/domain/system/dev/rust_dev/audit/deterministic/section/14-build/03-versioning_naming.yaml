@@ -1,0 +1,63 @@
+system_id: samgraha-documentation
+domain: build
+section_type: versioning_naming
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: build-sec-version-001
+    description: "Versioning naming section exists"
+    condition: "document has a section with semantic_type = 'versioning_naming'"
+    message: "Missing required 'Versioning Naming' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "versioning_naming"
+
+  - id: build-sec-version-002
+    description: "Versioning naming defines scheme"
+    condition: "section specifies versioning scheme (semver, calver, etc.)"
+    message: "Versioning naming section does not define versioning scheme"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "version"
+        - "semver"
+        - "calver"
+        - "scheme"
+        - "naming"
+
+  - id: build-sec-version-003
+    description: "Versioning naming defines conventions"
+    condition: "section specifies naming conventions for artifacts or releases"
+    message: "Versioning naming section does not define naming conventions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "convention"
+        - "format"
+        - "pattern"
+        - "naming"
+
+  - id: build-sec-version-004
+    description: "Versioning naming references engineering"
+    condition: "section references Engineering Documentation build standards"
+    message: "Versioning naming does not reference Engineering Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: engineering
+          direction: derives_from
+

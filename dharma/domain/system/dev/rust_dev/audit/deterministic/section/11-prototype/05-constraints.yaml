@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: prototype
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: proto-sec-constraints-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing optional 'Constraints' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: proto-sec-constraints-002
+    description: "Constraints list limitations"
+    condition: "section contains at least one constraint or limitation"
+    message: "Constraints section has no constraint definitions"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "constraint"
+        - "limitation"
+        - "cannot"
+        - "must not"
+        - "restricted"
+
+  - id: proto-sec-constraints-003
+    description: "Constraints trace to upstream"
+    condition: "constraints reference their source (architecture, security, or engineering standards)"
+    message: "Constraints do not trace to their source"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
+        - domain: security
+          direction: derives_from
+        - domain: engineering
+          direction: derives_from

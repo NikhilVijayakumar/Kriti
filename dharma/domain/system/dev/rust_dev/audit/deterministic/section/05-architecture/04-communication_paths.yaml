@@ -1,0 +1,83 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: communication_paths
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-comm-001
+    description: "Communication section exists"
+    condition: "document has a section with semantic_type = 'communication_paths'"
+    message: "Missing required 'Communication' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "communication_paths"
+
+  - id: arch-sec-comm-002
+    description: "Communication has required subsections"
+    condition: "section contains Communication Paths and Communication Diagram subsections"
+    message: "Communication is missing required subsections"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: subsection_presence
+      required:
+        - "Communication Paths"
+        - "Communication Diagram"
+
+  - id: arch-sec-comm-003
+    description: "All component-to-component paths documented"
+    condition: "for every pair of interacting components in the Component Model, a communication path is defined"
+    message: "Not all component interactions have documented communication paths"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: cross_section_check
+      requires_section: component_model
+      coverage: all_interactions
+
+  - id: arch-sec-comm-004
+    description: "Each path has a pattern classified"
+    condition: "every communication path has an interaction pattern (sync, async, event-driven)"
+    message: "One or more communication paths lack a classified interaction pattern"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: field_presence
+      per_entry:
+        field: "Pattern"
+        allowed_values: ["sync", "async", "event-driven", "queue-based"]
+
+  - id: arch-sec-comm-005
+    description: "Communication is technology-independent"
+    condition: "section does not specify network protocols, serialization formats, or transport details"
+    message: "Communication section contains transport-level implementation details"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - network_protocols
+        - serialization_formats
+        - transport_details
+
+  - id: arch-sec-comm-006
+    description: "Sequence diagram present"
+    condition: "section contains or references a sequence diagram of primary communication paths"
+    message: "Communication section lacks a sequence diagram"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: diagram_presence
+      kinds:
+        - sequence
+

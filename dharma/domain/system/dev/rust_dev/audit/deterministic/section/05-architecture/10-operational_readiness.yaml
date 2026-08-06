@@ -1,0 +1,33 @@
+system_id: samgraha-documentation
+domain: architecture
+section_type: operational_readiness
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: arch-sec-or-001
+    description: "Operational Readiness section present"
+    condition: "document optionally has a section with semantic_type = 'operational_readiness'"
+    message: "Operational Readiness section is missing (recommended)"
+    severity: suggestion
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "operational_readiness"
+
+  - id: arch-sec-or-002
+    description: "Operational concerns documented"
+    condition: "if present, section covers at least: monitoring, alerting, deployment, rollback"
+    message: "Operational Readiness section is incomplete"
+    severity: warning
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "monitoring"
+        - "deployment"
+        - "rollback"
+

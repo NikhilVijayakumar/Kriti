@@ -1,0 +1,60 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: body
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-body-001
+    description: "Body section exists"
+    condition: "document has a section with semantic_type = 'body'"
+    message: "Missing required 'Body' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "body"
+
+  - id: pg-sec-body-002
+    description: "Body has substantive content"
+    condition: "section contains substantive content (minimum 50 words)"
+    message: "Body section lacks substantive content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_words: 50
+
+  - id: pg-sec-body-003
+    description: "Body has clear structure"
+    condition: "section uses headings, lists, or other structural elements for readability"
+    message: "Body section lacks structural organization"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "##"
+        - "-"
+        - "1."
+        - "```"
+
+  - id: pg-sec-body-004
+    description: "Body contains actionable content"
+    condition: "section contains actionable instructions, steps, or explanations"
+    message: "Body section lacks actionable content"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "step"
+        - "click"
+        - "select"
+        - "enter"
+        - "run"

@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: development
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-dev-001
+    description: "Development section exists"
+    condition: "document has a section with semantic_type = 'development'"
+    message: "Missing required 'Development' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "development"
+
+  - id: readme-sec-dev-002
+    description: "Development provides guidelines"
+    condition: "section contains development guidelines or contributing instructions"
+    message: "Development section does not provide guidelines"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "development"
+        - "develop"
+        - "contribute"
+        - "workflow"
+
+  - id: readme-sec-dev-003
+    description: "Development references engineering"
+    condition: "section references Engineering Documentation for code standards"
+    message: "Development does not reference Engineering Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: engineering
+          direction: derives_from
+

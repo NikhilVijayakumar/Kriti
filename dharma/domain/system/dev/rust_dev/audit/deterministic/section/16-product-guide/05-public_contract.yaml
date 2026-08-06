@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: product-guide
+section_type: public_contract
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: pg-sec-contract-001
+    description: "Public contract section exists"
+    condition: "document has a section with semantic_type = 'public_contract'"
+    message: "Missing optional 'Public Contract' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "public_contract"
+
+  - id: pg-sec-contract-002
+    description: "Public contract defines interface"
+    condition: "section defines the public API or interface exposed to users"
+    message: "Public contract section does not define public interface"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "API"
+        - "interface"
+        - "public"
+        - "contract"
+
+  - id: pg-sec-contract-003
+    description: "Public contract defines stability"
+    condition: "section specifies API stability or versioning guarantees"
+    message: "Public contract does not define stability guarantees"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "stable"
+        - "version"
+        - "guarantee"
+        - "breaking"

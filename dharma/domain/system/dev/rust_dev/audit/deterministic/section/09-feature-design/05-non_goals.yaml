@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: non_goals
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-nongoals-001
+    description: "Non-Goals section exists"
+    condition: "document has a section with semantic_type = 'non_goals'"
+    message: "Missing optional 'Non-Goals' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "non_goals"
+
+  - id: fd-sec-nongoals-002
+    description: "Non-Goals defines what the feature does not do"
+    condition: "section contains explicit statements about what the feature design deliberately excludes"
+    message: "Non-Goals section does not define excluded features"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "not"
+        - "out of scope"
+        - "does not"
+        - "excluded"
+        - "non-goal"
+
+  - id: fd-sec-nongoals-003
+    description: "Non-Goals are technology-independent"
+    condition: "section does not reference specific technologies or implementation details"
+    message: "Non-Goals section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

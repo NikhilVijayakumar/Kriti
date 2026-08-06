@@ -1,0 +1,46 @@
+system_id: samgraha-documentation
+domain: external-context
+section_type: dependencies
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ext-sec-dep-001
+    description: "Dependencies section exists"
+    condition: "document has a section with semantic_type = 'dependencies'"
+    message: "Missing 'Dependencies' section"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "dependencies"
+
+  - id: ext-sec-dep-002
+    description: "Dependencies are enumerated"
+    condition: "section lists each dependency on external systems, services, or standards"
+    message: "Dependencies are not clearly enumerated"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      min_count: 1
+
+  - id: ext-sec-dep-003
+    description: "Dependencies distinguish direction"
+    condition: "each dependency states whether it is inbound (external depends on us) or outbound (we depend on external)"
+    message: "Dependencies do not distinguish direction"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "inbound"
+        - "outbound"
+        - "we depend"
+        - "depends on us"
+        - "consumer"
+        - "provider"

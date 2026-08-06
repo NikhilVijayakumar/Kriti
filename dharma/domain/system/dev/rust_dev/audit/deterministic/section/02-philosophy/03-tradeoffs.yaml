@@ -1,0 +1,78 @@
+system_id: samgraha-documentation
+domain: philosophy
+section_type: tradeoffs
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: phil-sec-to-001
+    description: "Tradeoffs section exists"
+    condition: "document has a section with semantic_type = 'tradeoffs'"
+    message: "Missing required 'Tradeoffs' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "tradeoffs"
+
+  - id: phil-sec-to-002
+    description: "Tradeoffs documented with reasoning"
+    condition: "each tradeoff identifies the competing concerns, the chosen direction, and the reasoning for the choice"
+    message: "Tradeoffs lack reasoning for the chosen direction"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: tradeoff_with_reasoning
+
+  - id: phil-sec-to-003
+    description: "Tradeoffs identify competing concerns"
+    condition: "each tradeoff explicitly names the two or more concerns being balanced"
+    message: "Tradeoffs do not identify competing concerns"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: competing_concerns_identified
+
+  - id: phil-sec-to-004
+    description: "Tradeoffs are technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Tradeoffs contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: phil-sec-to-005
+    description: "Tradeoffs are not one-sided"
+    condition: "each tradeoff acknowledges what is lost or deprioritized, not only what is gained"
+    message: "Tradeoffs are presented as one-sided decisions without acknowledging losses"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: balanced_tradeoff
+
+  - id: phil-sec-to-006
+    description: "At least one tradeoff documented"
+    condition: "section contains at least one documented tradeoff with reasoning"
+    message: "No tradeoffs documented"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 1
+

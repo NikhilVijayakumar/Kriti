@@ -1,0 +1,51 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: security_considerations
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-security-001
+    description: "Security Considerations section exists"
+    condition: "document has a section with semantic_type = 'security_considerations'"
+    message: "Missing optional 'Security Considerations' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "security_considerations"
+
+  - id: ft-sec-security-002
+    description: "Security Considerations defines security aspects"
+    condition: "section contains security considerations such as authentication, authorization, encryption, or data protection"
+    message: "Security Considerations section does not define security aspects"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "authenticat"
+        - "authoriz"
+        - "encrypt"
+        - "secure"
+        - "protect"
+        - "permission"
+        - "access control"
+
+  - id: ft-sec-security-003
+    description: "Security Considerations is technology-independent"
+    condition: "section does not reference specific security libraries, frameworks, or implementation technologies"
+    message: "Security Considerations section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: false
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+

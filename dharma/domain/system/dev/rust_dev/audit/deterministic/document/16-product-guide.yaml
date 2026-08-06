@@ -1,0 +1,83 @@
+system_id: samgraha-documentation
+domain: product-guide
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Product Guide Documentation. Validates structural completeness and content richness that can be checked without LLM judgment. Flat content domain — no derivation relationships."
+
+rules:
+  # --- Collection completeness ---
+  - id: pg-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards Product Guide requirements"
+    message: "Product Guide document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - title
+        - body
+
+  - id: pg-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: pg-doc-003
+    description: "Document covers one product topic"
+    condition: "document has a single primary focus — does not mix unrelated product guides"
+    message: "Document covers multiple unrelated product topics; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Content richness ---
+  - id: pg-doc-004
+    description: "Body section is substantive"
+    condition: "body section contains substantive content (not just links or references)"
+    message: "Product Guide body section lacks substantive content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      min_words: 50
+
+  # --- Duplicate content ---
+  - id: pg-doc-005
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Product Guide document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document
+
+  # --- Script-sourced: ground truth from repo ---
+  - id: pg-doc-012
+    description: "Public contract matches implementation"
+    condition: "public-contract-diff script reports mismatches == 0"
+    message: "Public contract does not match implementation — mismatches found"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: script_result
+      rule_ref: "script/schema/16-product-guide/public-contract-diff.schema.json#metrics.mismatches"
+      threshold: 0
+      comparison: "=="

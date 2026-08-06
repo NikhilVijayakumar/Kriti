@@ -1,0 +1,47 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: usage
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-usage-001
+    description: "Usage section exists"
+    condition: "document has a section with semantic_type = 'usage'"
+    message: "Missing required 'Usage' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "usage"
+
+  - id: readme-sec-usage-002
+    description: "Usage provides examples"
+    condition: "section contains at least one usage example or code snippet"
+    message: "Usage section has no examples"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      patterns:
+        - "example"
+        - "usage"
+        - "```"
+        - "code"
+
+  - id: readme-sec-usage-003
+    description: "Usage references feature docs"
+    condition: "section references Feature Documentation for detailed usage"
+    message: "Usage does not reference Feature Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+

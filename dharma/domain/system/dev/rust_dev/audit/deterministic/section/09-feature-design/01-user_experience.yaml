@@ -1,0 +1,66 @@
+system_id: samgraha-documentation
+domain: feature-design
+section_type: user_experience
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: fd-sec-ux-001
+    description: "User Experience section exists"
+    condition: "document has a section with semantic_type = 'user_experience'"
+    message: "Missing required 'User Experience' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "user_experience"
+
+  - id: fd-sec-ux-002
+    description: "User Experience describes user-facing behavior"
+    condition: "section contains descriptions of how the feature appears to or interacts with users"
+    message: "User Experience section does not describe user-facing behavior"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "user"
+        - "experience"
+        - "interface"
+        - "interaction"
+        - "display"
+        - "present"
+
+  - id: fd-sec-ux-003
+    description: "User Experience is technology-independent"
+    condition: "section does not reference specific UI frameworks, component libraries, or implementation technologies"
+    message: "User Experience section contains implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+        - ui_components
+
+  - id: fd-sec-ux-004
+    description: "User Experience includes user stories or scenarios"
+    condition: "section contains at least one user story, scenario, or use case"
+    message: "User Experience section does not include user stories or scenarios"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "as a"
+        - "when"
+        - "user wants"
+        - "scenario"
+

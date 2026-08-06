@@ -1,0 +1,138 @@
+system_id: samgraha-documentation
+domain: vision
+
+# Relationship ownership: each entry declares which level (section or document)
+# is responsible for checking this relationship. No relationship appears in
+# both a section prompt and a document prompt — the owner field prevents it.
+#
+# Vision is Tier 1: it derives from nothing. It inspires Philosophy, Feature,
+# and Security. All relationships are outgoing (inspires) — no incoming derives_from.
+
+relationships:
+  # --- Section-owned: outgoing edges from this section ---
+  - id: vis-purpose-inspires-philosophy
+    from_section: purpose
+    type: derives_from
+    target_domain: philosophy
+    target_section: purpose
+    owner: section
+
+  - id: vis-vision-statement-inspires-philosophy
+    from_section: vision_statement
+    type: derives_from
+    target_domain: philosophy
+    target_section: vision_alignment
+    owner: section
+
+  - id: vis-vision-statement-inspires-feature
+    from_section: vision_statement
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: vis-vision-statement-inspires-security
+    from_section: vision_statement
+    type: derives_from
+    target_domain: security
+    target_section: purpose
+    owner: section
+
+  - id: vis-problem-inspires-philosophy
+    from_section: problem
+    type: derives_from
+    target_domain: philosophy
+    target_section: problem_framing
+    owner: section
+
+  - id: vis-solution-inspires-feature
+    from_section: solution
+    type: derives_from
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: vis-solution-inspires-architecture
+    from_section: solution
+    type: derives_from
+    target_domain: architecture
+    target_section: system_overview
+    owner: section
+
+  - id: vis-target-audience-informs-philosophy
+    from_section: target_audience
+    type: informs
+    target_domain: philosophy
+    target_section: user_model
+    owner: section
+
+  - id: vis-pillars-inspires-philosophy
+    from_section: pillars
+    type: derives_from
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: vis-guiding-principles-inspires-philosophy
+    from_section: guiding_principles
+    type: derives_from
+    target_domain: philosophy
+    target_section: guiding_principles
+    owner: section
+
+  - id: vis-success-criteria-traceable-to-feature
+    from_section: success_criteria
+    type: traceable_to
+    target_domain: feature
+    target_section: acceptance_criteria
+    owner: section
+
+  - id: vis-traceability-no-upstream
+    from_section: traceability
+    type: traceable_to
+    target_domain: null
+    target_section: null
+    owner: section
+    note: "Vision is Tier 1 — no upstream domain"
+
+  - id: vis-traceability-downstream-philosophy
+    from_section: traceability
+    type: traceable_to
+    target_domain: philosophy
+    target_section: purpose
+    owner: section
+
+  - id: vis-traceability-downstream-feature
+    from_section: traceability
+    type: traceable_to
+    target_domain: feature
+    target_section: purpose
+    owner: section
+
+  - id: vis-traceability-downstream-security
+    from_section: traceability
+    type: traceable_to
+    target_domain: security
+    target_section: purpose
+    owner: section
+
+  # --- Document-owned: cross-section patterns ---
+  - id: vis-section-consistency
+    type: section_consistency
+    description: "Sections within vision docs are mutually consistent — problem, solution, and vision_statement align without contradiction"
+    owner: document
+
+  - id: vis-collection-coherence
+    type: collection_coherence
+    description: "All vision documents in the domain cohere as one coherent vision — no orphaned or contradictory documents"
+    owner: document
+
+  - id: vis-terminology-drift
+    type: terminology_drift
+    description: "Terminology is consistent across all vision sections — same concept, same name"
+    owner: document
+
+  - id: vis-technology-independence
+    type: technology_independence
+    description: "No section in the vision document contains implementation technology references — Vision is technology-independent by design"
+    owner: document

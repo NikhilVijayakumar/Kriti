@@ -1,0 +1,66 @@
+system_id: samgraha-documentation
+domain: security
+section_type: constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: sec-sec-con-001
+    description: "Constraints section exists"
+    condition: "document has a section with semantic_type = 'constraints'"
+    message: "Missing required 'Constraints' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "constraints"
+
+  - id: sec-sec-con-002
+    description: "Security constraints stated clearly"
+    condition: "each constraint is a discrete statement defining a boundary or limitation on security decisions"
+    message: "Security constraints are not stated as clear discrete boundaries"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: discrete_statements
+
+  - id: sec-sec-con-003
+    description: "No implementation technology references"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Constraints contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: sec-sec-con-004
+    description: "Constraints traceable to sources"
+    condition: "each constraint identifies its source (regulatory, organizational, technical, or philosophical)"
+    message: "Constraints lack source attribution"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: source_attribution
+
+  - id: sec-sec-con-005
+    description: "Constraints are testable or verifiable"
+    condition: "constraints are stated in a way that allows verification of compliance"
+    message: "Constraints are not verifiable"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: verifiable_statement
+

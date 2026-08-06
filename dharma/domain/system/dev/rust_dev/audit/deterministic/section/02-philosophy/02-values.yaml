@@ -1,0 +1,85 @@
+system_id: samgraha-documentation
+domain: philosophy
+section_type: values
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: phil-sec-val-001
+    description: "Values section exists"
+    condition: "document has a section with semantic_type = 'values'"
+    message: "Missing required 'Values' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "values"
+
+  - id: phil-sec-val-002
+    description: "Core values defined with clear statements"
+    condition: "each value is a discrete, named entity with a clear statement of what it means in this context"
+    message: "Values are not defined as discrete named entities"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: discrete_named_entities
+
+  - id: phil-sec-val-003
+    description: "Values are not vague platitudes"
+    condition: "each value includes enough specificity to distinguish it from generic values like 'quality' or 'excellence'"
+    message: "Values are vague platitudes lacking project-specific meaning"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: specific_not_generic
+      prohibited_generic_terms:
+        - "quality"
+        - "excellence"
+        - "best practices"
+        - "innovation"
+        - "synergy"
+        - "alignment"
+
+  - id: phil-sec-val-004
+    description: "Values are technology-independent"
+    condition: "section does not reference specific technologies, frameworks, or implementation details"
+    message: "Values contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: phil-sec-val-005
+    description: "Values are ordered or prioritized"
+    condition: "values are presented in an explicit priority order or include guidance for resolving conflicts between values"
+    message: "Values lack explicit priority ordering or conflict resolution guidance"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: priority_or_conflict_resolution
+
+  - id: phil-sec-val-006
+    description: "At least two values defined"
+    condition: "section contains at least two distinct values"
+    message: "Fewer than two values defined"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 2
+

@@ -1,0 +1,44 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: project_name
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-name-001
+    description: "Project name section exists"
+    condition: "document has a section with semantic_type = 'project_name'"
+    message: "Missing required 'Project Name' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "project_name"
+
+  - id: readme-sec-name-002
+    description: "Project name is present"
+    condition: "section contains a non-empty project name"
+    message: "Project name section is empty"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "project"
+        - "name"
+
+  - id: readme-sec-name-003
+    description: "Project name matches repository"
+    condition: "project name matches the repository or package name"
+    message: "Project name does not match repository name"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "samgraha"
+

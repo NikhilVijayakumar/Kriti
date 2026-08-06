@@ -1,0 +1,49 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: short_description
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-short-001
+    description: "Short description section exists"
+    condition: "document has a section with semantic_type = 'short_description'"
+    message: "Missing required 'Short Description' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "short_description"
+
+  - id: readme-sec-short-002
+    description: "Short description is concise"
+    condition: "section contains a one-to-two sentence project description"
+    message: "Short description is too long or missing"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "project"
+        - "application"
+        - "tool"
+        - "library"
+
+  - id: readme-sec-short-003
+    description: "Short description states purpose"
+    condition: "section contains a statement of what the project does"
+    message: "Short description does not state project purpose"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "is a"
+        - "provides"
+        - "enables"
+        - "allows"
+

@@ -1,0 +1,78 @@
+system_id: samgraha-documentation
+domain: philosophy
+section_type: guiding_principles
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: phil-sec-gp-001
+    description: "Guiding principles section exists"
+    condition: "document has a section with semantic_type = 'guiding_principles'"
+    message: "Missing required 'Guiding Principles' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "guiding_principles"
+
+  - id: phil-sec-gp-002
+    description: "Principles stated clearly"
+    condition: "each principle is a discrete, numbered or bulleted statement with a clear directive"
+    message: "Guiding principles are not stated as clear discrete directives"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: discrete_statements
+
+  - id: phil-sec-gp-003
+    description: "No implementation references in principles"
+    condition: "section does not reference specific technologies, frameworks, libraries, or implementation details"
+    message: "Guiding principles contain implementation technology references"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: keyword_absence
+      categories:
+        - programming_languages
+        - frameworks
+        - libraries
+
+  - id: phil-sec-gp-004
+    description: "Principles are prescriptive"
+    condition: "each principle uses imperative language directing future decisions rather than describing current state"
+    message: "Guiding principles read as observations rather than directives"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      check: prescriptive_not_descriptive
+
+  - id: phil-sec-gp-005
+    description: "At least three principles defined"
+    condition: "section contains at least three distinct guiding principles"
+    message: "Fewer than three guiding principles defined"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: minimum_count
+      count: 3
+
+  - id: phil-sec-gp-006
+    description: "Principles are technology-independent"
+    condition: "principles remain valid regardless of implementation technology choices"
+    message: "Some principles are technology-dependent"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      check: technology_independent
+

@@ -1,0 +1,48 @@
+system_id: samgraha-documentation
+domain: readme
+section_type: purpose
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: readme-sec-purpose-001
+    description: "Purpose section exists"
+    condition: "document has a section with semantic_type = 'purpose'"
+    message: "Missing required 'Purpose' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "purpose"
+
+  - id: readme-sec-purpose-002
+    description: "Purpose states project intent"
+    condition: "section contains a statement of why the project exists"
+    message: "Purpose section does not state project intent"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "purpose"
+        - "intent"
+        - "why"
+        - "exists"
+
+  - id: readme-sec-purpose-003
+    description: "Purpose defines scope boundaries"
+    condition: "section defines what the project is and is not"
+    message: "Purpose section does not define scope boundaries"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "unlike"
+        - "not"
+        - "does not"
+

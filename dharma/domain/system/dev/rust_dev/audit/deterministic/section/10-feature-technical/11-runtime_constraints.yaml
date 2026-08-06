@@ -1,0 +1,52 @@
+system_id: samgraha-documentation
+domain: feature-technical
+section_type: runtime_constraints
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: ft-sec-rtcon-001
+    description: "Runtime Constraints section exists"
+    condition: "document has a section with semantic_type = 'runtime_constraints'"
+    message: "Missing optional 'Runtime Constraints' section"
+    severity: info
+    weight: 0.3
+    mandatory: false
+    evidence:
+      type: section_presence
+      semantic_type: "runtime_constraints"
+
+  - id: ft-sec-rtcon-002
+    description: "Runtime Constraints defines constraints"
+    condition: "section contains constraints on runtime behavior such as latency, throughput, memory, or availability"
+    message: "Runtime Constraints section does not define runtime constraints"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      keywords:
+        - "latency"
+        - "throughput"
+        - "memory"
+        - "availability"
+        - "timeout"
+        - "limit"
+
+  - id: ft-sec-rtcon-003
+    description: "Runtime Constraints has measurable thresholds"
+    condition: "section defines measurable thresholds or targets for each constraint"
+    message: "Runtime Constraints section does not define measurable thresholds"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "\\d+"
+        - "ms"
+        - "mb"
+        - "percent"
+        - "threshold"
+

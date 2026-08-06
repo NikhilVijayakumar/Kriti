@@ -1,0 +1,88 @@
+system_id: samgraha-documentation
+domain: prototype
+standard_id: documentation-standards
+scope: document
+kind: deterministic
+
+description: "Whole-document deterministic rules for Prototype Documentation. Validates structural completeness, mock fidelity, and data model coverage that can be checked without LLM judgment."
+
+rules:
+  # --- Collection completeness ---
+  - id: proto-doc-001
+    description: "Required sections present"
+    condition: "document contains all required sections per documentation-standards prototype requirements"
+    message: "Prototype document is missing required sections"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      required_semantic_types:
+        - scope
+        - mock_apis
+        - data_model
+
+  - id: proto-doc-002
+    description: "No empty required sections"
+    condition: "every required section has non-empty content (not just a heading)"
+    message: "Required section exists but has no content"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: section_content
+      check: non_empty
+
+  # --- Modularity ---
+  - id: proto-doc-003
+    description: "Document covers one feature prototype"
+    condition: "document has a single primary focus — does not mix unrelated feature prototypes"
+    message: "Document covers multiple unrelated feature prototypes; consider splitting"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: heading_analysis
+      check: single_concern
+
+  # --- Mock fidelity ---
+  - id: proto-doc-004
+    description: "Mock APIs reference defined data model"
+    condition: "every mock API endpoint references types or schemas defined in the data_model section"
+    message: "Mock API references types not defined in the data model"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+        type: cross_reference
+        scope: within_document
+        from_section: mock_apis
+        to_section: data_model
+
+  # --- Cross-references ---
+  - id: proto-doc-005
+    description: "Required cross-references present"
+    condition: "document references upstream Feature Design and Feature Technical standards where applicable"
+    message: "Prototype document is missing expected cross-references"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: feature
+          direction: derives_from
+        - domain: feature-technical
+          direction: derives_from
+
+  # --- Duplicate content ---
+  - id: proto-doc-006
+    description: "No duplicate content within document"
+    condition: "no section repeats the same information as another section"
+    message: "Prototype document contains duplicate content across sections"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_deduplication
+      scope: within_document

@@ -1,0 +1,61 @@
+system_id: samgraha-documentation
+domain: qa
+section_type: integration_testing
+standard_id: documentation-standards
+scope: section
+kind: deterministic
+
+rules:
+  - id: qa-sec-integration-001
+    description: "Integration testing section exists"
+    condition: "document has a section with semantic_type = 'integration_testing'"
+    message: "Missing required 'Integration Testing' section"
+    severity: error
+    weight: 1.5
+    mandatory: true
+    evidence:
+      type: section_presence
+      semantic_type: "integration_testing"
+
+  - id: qa-sec-integration-002
+    description: "Integration testing defines interfaces"
+    condition: "section specifies which component interfaces are tested"
+    message: "Integration testing section does not define interface scope"
+    severity: error
+    weight: 1.0
+    mandatory: true
+    evidence:
+      type: content_check
+      keywords:
+        - "interface"
+        - "integration"
+        - "component"
+        - "boundary"
+
+  - id: qa-sec-integration-003
+    description: "Integration testing defines scenarios"
+    condition: "section contains at least one integration test scenario or use case"
+    message: "Integration testing section has no test scenarios"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: content_check
+      patterns:
+        - "scenario"
+        - "test case"
+        - "flow"
+        - "sequence"
+
+  - id: qa-sec-integration-004
+    description: "Integration testing references architecture"
+    condition: "section references Architecture Documentation communication paths or data flow"
+    message: "Integration testing does not reference Architecture Documentation"
+    severity: warning
+    weight: 0.5
+    mandatory: false
+    evidence:
+      type: cross_reference
+      expected:
+        - domain: architecture
+          direction: derives_from
